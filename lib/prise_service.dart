@@ -1,10 +1,10 @@
-// lib/prise_service.dart (Updated with auto-refresh every minute)
+// lib/prise_service.dart (Updated to provide all callbacks for all buttons)
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mon_projet/time_detail_card.dart';
 import 'package:mon_projet/models/service.dart';
-import 'dart:async'; // <--- NOUVELLE IMPORTATION pour utiliser Timer
+import 'dart:async';
 
 class PriseServiceScreen extends StatefulWidget {
   const PriseServiceScreen({super.key});
@@ -18,17 +18,16 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   DateTime _startDate = DateTime(2025, 7, 1);
   DateTime _endDate = DateTime(2025, 7, 31);
 
-  Timer? _timer; // <--- Déclaration du Timer
+  Timer? _timer;
 
-  // Liste de services factices
   final List<Service> _services = [
     Service(
       id: '0001',
       employeeName: 'PIERRICK ERIC',
       employeeDetails: 'SVR_NOM 86710 TEXT',
       employeeContact: '0662057140',
-      startTime: DateTime(2025, 7, 3, 7, 0), // Passé
-      endTime: DateTime(2025, 7, 3, 8, 47),
+      startTime: DateTime(2025, 7, 2, 7, 0), // Passé
+      endTime: DateTime(2025, 7, 5, 8, 30),
       clientInfo: 'OBM-SECUL1',
       clientName: 'Client Sécurité BMSoft n°1',
       clientLocationLine1: 'OBM-SECUL1',
@@ -41,7 +40,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       employeeDetails: '0002030406',
       employeeContact: '0602030406',
       startTime: DateTime(2025, 7, 4, 10, 0), // Futur (exemple)
-      endTime: DateTime(2025, 7, 4, 11, 47),
+      endTime: DateTime(2025, 7, 4, 12, 00),
       clientInfo: 'OBM-SECUL1',
       clientName: 'Client Sécurité BMSoft n°1',
       clientLocationLine1: 'OBM-SECUL1',
@@ -54,7 +53,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       employeeDetails: 'BONBON Délicieux',
       employeeContact: '0605040302',
       startTime: DateTime(2025, 7, 3, 20, 0), // Passé
-      endTime: DateTime(2025, 7, 3, 21, 47),
+      endTime: DateTime(2025, 7, 3, 22, 45),
       clientInfo: 'OBM-SECUL1',
       clientName: 'Client Sécurité BMSoft n°1',
       clientLocationLine1: 'OBM-SECUL1',
@@ -67,7 +66,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       employeeDetails: 'SVR_NOM 86710 TEXT',
       employeeContact: '0662057140',
       startTime: DateTime(2025, 7, 3, 13, 0), // Juste après l'heure actuelle si elle est 12h21
-      endTime: DateTime(2025, 7, 3, 14, 47),
+      endTime: DateTime(2025, 7, 3, 14, 45),
       clientInfo: 'OBM-SECUL1',
       clientName: 'Client Sécurité BMSoft n°1',
       clientLocationLine1: 'OBM-SECUL1',
@@ -102,35 +101,27 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     ),
   ];
 
-  // Initialisation du Timer lors de la création de l'état du widget
   @override
   void initState() {
     super.initState();
-    // Met à jour l'heure affichée immédiatement
     _updateCurrentTime();
-    // Démarre un timer périodique qui se déclenche toutes les minutes
     _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       _updateCurrentTime();
     });
   }
 
-  // Annulation du Timer lorsque le widget est retiré de l'arbre (pour éviter les fuites de mémoire)
   @override
   void dispose() {
-    _timer?.cancel(); // Annule le timer s'il est actif
+    _timer?.cancel();
     super.dispose();
   }
 
-  // Fonction pour mettre à jour l'heure actuelle et forcer le rafraîchissement de l'UI
   void _updateCurrentTime() {
     setState(() {
-      _currentDisplayDate = DateTime.now(); // Met à jour la date/heure affichée
-      // Le getter _sortedServices se réévalue automatiquement car il dépend de DateTime.now()
-      // Cela entraînera le rafraîchissement des TimeDetailCards et de leurs durées.
+      _currentDisplayDate = DateTime.now();
     });
   }
 
-  // Propriété calculée pour obtenir la liste des services triés
   List<Service> get _sortedServices {
     final now = DateTime.now();
     final List<Service> sortedList = List.from(_services);
@@ -153,12 +144,12 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     });
   }
 
-  void _handleValidate(String serviceId) {
+  void _handleValidate(String serviceId, bool newValidateStatus) {
     setState(() {
       final serviceIndex = _services.indexWhere((s) => s.id == serviceId);
       if (serviceIndex != -1) {
-        _services[serviceIndex] = _services[serviceIndex].copyWith(isValidated: true);
-        debugPrint('Service ${serviceId} - Validated');
+        _services[serviceIndex] = _services[serviceIndex].copyWith(isValidated: newValidateStatus);
+        debugPrint('Service ${serviceId} - Validated: ${newValidateStatus}');
       }
     });
   }
@@ -197,6 +188,16 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
+  // Fonctions "factices" pour les boutons non pertinents à une colonne spécifique
+  void _doNothingAbsent(bool newAbsentStatus) {
+    debugPrint('Bouton Présent/Absent pressé sur une carte Fin (action non pertinente ici).');
+  }
+
+  void _doNothingValidate(bool newValidateStatus) {
+    debugPrint('Bouton Valider/Dévalider pressé sur une carte Début (action non pertinente ici).');
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -226,10 +227,9 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () {}),
-                // L'heure ici sera mise à jour chaque minute
                 Text(
-                  DateFormat('EEEE dd MMMM HH:mm', 'fr_FR').format(_currentDisplayDate),
-                  style: const TextStyle(fontSize: 24, fontStyle: FontStyle.italic),
+                  DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
+                  style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
                 ),
               ],
             ),
@@ -268,13 +268,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                       return TimeDetailCard(
                         service: service,
                         type: TimeCardType.debut,
-                        onAbsentPressed: (newStatus) {
+                        onAbsentPressed: (newStatus) { // Active pour Début
                           _handleAbsentToggle(service.id, newStatus);
                         },
-                        onModifyTime: (currentTime) {
+                        onModifyTime: (currentTime) { // Active pour Début
                           _handleModifyTime(service.id, currentTime, TimeCardType.debut);
                         },
-                        onValidate: null, // Bouton "Valider" désactivé pour les cartes "Début"
+                        onValidate: _doNothingValidate, // Toujours fourni, mais ne fait rien de spécifique ici
                       );
                     },
                   ),
@@ -290,13 +290,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                       return TimeDetailCard(
                         service: service,
                         type: TimeCardType.fin,
-                        onModifyTime: (currentTime) {
+                        onModifyTime: (currentTime) { // Active pour Fin
                           _handleModifyTime(service.id, currentTime, TimeCardType.fin);
                         },
-                        onValidate: () {
-                          _handleValidate(service.id);
+                        onValidate: (newStatus) { // Active pour Fin
+                          _handleValidate(service.id, newStatus);
                         },
-                        onAbsentPressed: null, // Bouton "Présent/Absent" désactivé pour les cartes "Fin"
+                        onAbsentPressed: _doNothingAbsent, // Toujours fourni, mais ne fait rien de spécifique ici
                       );
                     },
                   ),
@@ -340,40 +340,40 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.blueAccent,
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: const Text('Juillet 2025', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent,
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: const Text('36H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.orangeAccent,
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: const Text('96H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.all(16.0),
+          //   child: Row(
+          //     mainAxisAlignment: MainAxisAlignment.end,
+          //     children: [
+          //       Container(
+          //         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          //         decoration: BoxDecoration(
+          //           color: Colors.blueAccent,
+          //           borderRadius: BorderRadius.circular(8.0),
+          //         ),
+          //         child: const Text('Juillet 2025', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          //       ),
+          //       const SizedBox(width: 10),
+          //       Container(
+          //         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          //         decoration: BoxDecoration(
+          //           color: Colors.redAccent,
+          //           borderRadius: BorderRadius.circular(8.0),
+          //         ),
+          //         child: const Text('36H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          //       ),
+          //       const SizedBox(width: 10),
+          //       Container(
+          //         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          //         decoration: BoxDecoration(
+          //           color: Colors.orangeAccent,
+          //           borderRadius: BorderRadius.circular(8.0),
+          //         ),
+          //         child: const Text('96H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          //       ),
+          //     ],
+          //   ),
+          // ),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
