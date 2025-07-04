@@ -6,6 +6,16 @@ import 'package:mon_projet/time_detail_card.dart';
 import 'package:mon_projet/models/service.dart';
 import 'dart:async';
 
+extension DateTimeExtension on DateTime {
+  DateTime startOfDay() {
+    return DateTime(year, month, day, 0, 0, 0);
+  }
+
+  DateTime endOfDay() {
+    return DateTime(year, month, day, 23, 59, 59, 999);
+  }
+}
+
 class PriseServiceScreen extends StatefulWidget {
   const PriseServiceScreen({super.key});
 
@@ -192,28 +202,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     });
   }
 
-  List<Service> get _sortedDebutServices {
-    final now = DateTime.now();
-    final List<Service> sortedList = List.from(_services);
-    sortedList.sort((a, b) {
-      final Duration durationA = a.startTime.difference(now);
-      final Duration durationB = b.startTime.difference(now);
-      return durationA.compareTo(durationB);
-    });
-    return sortedList;
-  }
-
-  List<Service> get _sortedFinServices {
-    final now = DateTime.now();
-    final List<Service> sortedList = List.from(_services);
-    sortedList.sort((a, b) {
-      final Duration durationA = a.endTime.difference(now);
-      final Duration durationB = b.endTime.difference(now);
-      return durationA.compareTo(durationB);
-    });
-    return sortedList;
-  }
-
+  // --- Fonctions de navigation de date ---
   void _changeDateByDay(DateTime dateToChange, int daysToAdd, Function(DateTime) updateState) {
     setState(() {
       updateState(dateToChange.add(Duration(days: daysToAdd)));
@@ -246,6 +235,37 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         updateState(picked);
       });
     }
+  }
+
+  List<Service> get _filteredAndSortedDebutServices {
+    final now = DateTime.now();
+    final filteredList = _services.where((service) {
+      // Un service est inclus si son début est avant ou le jour de fin de la plage ET sa fin est après ou le jour de début de la plage
+      // Cela couvre les services qui commencent et finissent dans la plage, ou qui la chevauchent.
+      return service.startTime.isBefore(_endDate.endOfDay()) && service.endTime.isAfter(_startDate.startOfDay());
+    }).toList();
+
+    filteredList.sort((a, b) {
+      final Duration durationA = a.startTime.difference(now);
+      final Duration durationB = b.startTime.difference(now);
+      return durationA.compareTo(durationB); // Ordre croissant des durées (négatif avant positif)
+    });
+    return filteredList;
+  }
+
+  List<Service> get _filteredAndSortedFinServices {
+    final now = DateTime.now();
+    final filteredList = _services.where((service) {
+      // Utilise le même critère de filtrage pour que les deux colonnes affichent le même ensemble de services
+      return service.startTime.isBefore(_endDate.endOfDay()) && service.endTime.isAfter(_startDate.startOfDay());
+    }).toList();
+
+    filteredList.sort((a, b) {
+      final Duration durationA = a.endTime.difference(now); // Tri basé sur l'heure de fin
+      final Duration durationB = b.endTime.difference(now);
+      return durationA.compareTo(durationB); // Ordre croissant des durées (négatif avant positif)
+    });
+    return filteredList;
   }
 
   void _handleAbsentToggle(String serviceId, bool newAbsentStatus) {
@@ -305,8 +325,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   void _scrollToService(Service serviceToScrollTo) {
     const double itemHeight = 200.0; // Hauteur estimée d'une carte
 
-    // Trouver l'index du service dans la liste triée de la colonne Début
-    final int debutIndex = _sortedDebutServices.indexWhere((s) => s.id == serviceToScrollTo.id);
+    // Trouver l'index du service dans la liste filtrée et triée de la colonne Début
+    final int debutIndex = _filteredAndSortedDebutServices.indexWhere((s) => s.id == serviceToScrollTo.id);
     if (debutIndex != -1) {
       _debutScrollController.animateTo(
         debutIndex * itemHeight,
@@ -315,8 +335,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       );
     }
 
-    // Trouver l'index du service dans la liste triée de la colonne Fin
-    final int finIndex = _sortedFinServices.indexWhere((s) => s.id == serviceToScrollTo.id);
+    // Trouver l'index du service dans la liste filtrée et triée de la colonne Fin
+    final int finIndex = _filteredAndSortedFinServices.indexWhere((s) => s.id == serviceToScrollTo.id);
     if (finIndex != -1) {
       _finScrollController.animateTo(
         finIndex * itemHeight,
@@ -342,7 +362,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   void _doNothingValidate(bool newValidateStatus) {
     // debugPrint('Bouton Valider/Dévalider pressé sur cette colonne (action non pertinente ici).');
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -418,7 +437,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 
                 const SizedBox(width: 8), // Espace entre les deux dates
                 Text(
-                  '-',
+                  '|',
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 8), // Espace entre les deux dates
@@ -496,9 +515,9 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                   child: ListView.builder(
                     controller: _debutScrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    itemCount: _sortedDebutServices.length,
+                    itemCount: _filteredAndSortedDebutServices.length,
                     itemBuilder: (context, index) {
-                      final service = _sortedDebutServices[index];
+                      final service = _filteredAndSortedDebutServices[index];
                       return TimeDetailCard(
                         service: service,
                         type: TimeCardType.debut,
@@ -519,9 +538,9 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                   child: ListView.builder(
                     controller: _finScrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    itemCount: _sortedFinServices.length,
+                    itemCount: _filteredAndSortedFinServices.length,
                     itemBuilder: (context, index) {
-                      final service = _sortedFinServices[index];
+                      final service = _filteredAndSortedFinServices[index];
                       return TimeDetailCard(
                         service: service,
                         type: TimeCardType.fin,
@@ -542,9 +561,9 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                   child: ListView.builder(
                     controller: _resultatScrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    itemCount: _sortedDebutServices.length,
+                    itemCount: _filteredAndSortedDebutServices.length,
                     itemBuilder: (context, index) {
-                      final service = _sortedDebutServices[index];
+                      final service = _filteredAndSortedDebutServices[index];
                       return GestureDetector(
                         onTap: () {
                           _scrollToService(service);
@@ -561,6 +580,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
+                                Text(service.employeeName),
                                 Text('Service ${service.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 5),
                                 Text(
@@ -620,19 +640,31 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center, // Centrera l'ensemble si pas de Spacer
               children: [
-                IconButton(icon: const Icon(Icons.arrow_back_ios), onPressed: () {}),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.blue),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: const Text('1', style: TextStyle(color: Colors.blue)),
+                const Spacer(), // Pousse le groupe de pagination vers le centre
+
+                // Groupe de contrôles de pagination (< 1 >)
+                Row(
+                  mainAxisSize: MainAxisSize.min, // S'assure que cette Row prend le moins d'espace possible
+                  children: [
+                    IconButton(icon: const Icon(Icons.arrow_back_ios), onPressed: () {}),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: const Text('1', style: TextStyle(color: Colors.blue)),
+                    ),
+                    IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () {}),
+                  ],
                 ),
-                IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () {}),
-                Text("© BMSoft 2025, tous droits réservés   ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
+
+                const Spacer(), // Pousse le groupe de pagination vers le centre ET le texte de copyright vers la droite
+
+                Text(
+                  "BMSoft 2025, tous droits réservés   ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color.fromARGB(255, 3, 53, 190)),
                 ),
               ],
