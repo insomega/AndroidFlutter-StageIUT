@@ -1,4 +1,4 @@
-// lib/time_detail_card.dart (All buttons clickable, Validate/Unvalidate toggle)
+// lib/time_detail_card.dart (Affichage uniforme Début/Fin)
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -9,19 +9,17 @@ enum TimeCardType { debut, fin }
 class TimeDetailCard extends StatelessWidget {
   final Service service;
   final TimeCardType type;
-  // Les callbacks ne sont plus nullables ici, ils doivent toujours être fournis par le parent
-  // Le parent fournira une fonction vide si l'action n'est pas pertinente pour la colonne.
   final Function(bool newAbsentStatus) onAbsentPressed;
-  final Function(bool newValidateStatus) onValidate; // Change pour un booléen pour le toggle
+  final Function(bool newValidateStatus) onValidate;
   final Function(DateTime currentTime) onModifyTime;
 
   const TimeDetailCard({
     super.key,
     required this.service,
     required this.type,
-    required this.onAbsentPressed, // Rendu obligatoire
-    required this.onValidate,     // Rendu obligatoire
-    required this.onModifyTime,   // Rendu obligatoire
+    required this.onAbsentPressed,
+    required this.onValidate,
+    required this.onModifyTime,
   });
 
   String _formatDuration(Duration duration) {
@@ -64,7 +62,7 @@ class TimeDetailCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Ligne 1: ID, Nom Employé/Client, Contact
+            // Ligne 1: ID, Nom Employé, Détails Employé, Contact Employé (identique pour Début et Fin)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -74,27 +72,24 @@ class TimeDetailCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(service.id, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                      // Nom de l'employé pour les deux colonnes
                       Text(
-                        isDebut ? service.employeeName : service.clientName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        service.employeeName, // Toujours le nom de l'employé
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color.fromARGB(255, 61, 132, 214)),
                       ),
-                      if (isDebut)
-                        Text(
-                          service.employeeDetails,
-                          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                        )
-                      else
-                        Text(
-                          service.clientInfo,
-                          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                        ),
+                      // Détails de l'employé pour les deux colonnes
+                      Text(
+                        service.employeeSvrLib, // Toujours les détails de l'employé
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
                 Expanded(
                   flex: 2,
+                  // Numéro de téléphone de l'employé pour les deux colonnes
                   child: Text(
-                    isDebut ? service.employeeContact : service.clientInfo,
+                    service.employeeTelPort, // Toujours le numéro de téléphone de l'employé
                     textAlign: TextAlign.end,
                     style: const TextStyle(fontSize: 12),
                   ),
@@ -141,9 +136,9 @@ class TimeDetailCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            // Lignes de localisation client
-            Text(service.clientLocationLine1, style: TextStyle(color: Colors.grey[800], fontSize: 12)),
-            Text(service.clientLocationLine2, style: TextStyle(color: Colors.grey[800], fontSize: 12)),
+            // Lignes de localisation client (identiques pour Début et Fin)
+            Text(service.locationCode, style: TextStyle(color: Colors.grey[800], fontSize: 12)),
+            Text(service.locationLib, style: TextStyle(color: Colors.grey[800], fontSize: 12)),
             Text(service.clientLocationLine3, style: TextStyle(color: Colors.grey[800], fontSize: 12)),
             const SizedBox(height: 12),
 
@@ -154,7 +149,7 @@ class TimeDetailCard extends StatelessWidget {
                 // Bouton "Modifier"
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => onModifyTime(displayTime), // Toujours cliquable
+                    onPressed: () => onModifyTime(displayTime),
                     icon: const Icon(Icons.edit, size: 18),
                     label: const Text('Modifier', style: TextStyle(fontSize: 12)),
                     style: ElevatedButton.styleFrom(
@@ -170,7 +165,7 @@ class TimeDetailCard extends StatelessWidget {
                 // Bouton "Présent/Absent"
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => onAbsentPressed(!service.isAbsent), // Toujours cliquable
+                    onPressed: () => onAbsentPressed(!service.isAbsent),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: service.isAbsent ? Colors.red.shade700 : Colors.blueGrey.shade600,
                       foregroundColor: Colors.white,
@@ -188,14 +183,14 @@ class TimeDetailCard extends StatelessWidget {
                 // Bouton "Valider" / "Dévalider"
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => onValidate(!service.isValidated), // Toujours cliquable, passe le nouvel état
-                    icon: Icon(service.isValidated ? Icons.undo : Icons.check, size: 18), // Icône change
+                    onPressed: () => onValidate(!service.isValidated),
+                    icon: Icon(service.isValidated ? Icons.undo : Icons.check, size: 18),
                     label: Text(
-                      service.isValidated ? 'Dévalider' : 'Valider', // Texte change
+                      service.isValidated ? 'Dévalider' : 'Valider',
                       style: const TextStyle(fontSize: 12),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: service.isValidated ? Colors.orange.shade600 : Colors.green.shade600, // Couleur change
+                      backgroundColor: service.isValidated ? Colors.orange.shade600 : Colors.green.shade600,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
