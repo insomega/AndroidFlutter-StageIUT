@@ -60,8 +60,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           employeeSvrCode: 'BM-SAL04',
           employeeSvrLib: 'SVR_NOM 86710 TEXT',
           employeeTelPort: '0662057140',
-          startTime: _parseDateTime('03/07/2025 07:00'),
-          endTime: _parseDateTime('05/07/2025 08:47'), // Changé pour une heure de fin future
+          startTime: _parseDateTime('06/07/2025 07:00'),
+          endTime: _parseDateTime('08/07/2025 08:47'), // Changé pour une heure de fin future
           locationCode: '0BM-SECU1',
           locationLib: '0Lieu de prestatio client BM-CL01',
           clientLocationLine3: 'client BM-CL01',
@@ -76,8 +76,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           employeeSvrCode: '142320',
           employeeSvrLib: '0002030406',
           employeeTelPort: '0602030406',
-          startTime: _parseDateTime('02/07/2025 20:00'),
-          endTime: _parseDateTime('03/07/2025 08:00'), // Heure de fin passée
+          startTime: _parseDateTime('06/08/2025 20:00'),
+          endTime: _parseDateTime('07/08/2025 08:00'), // Heure de fin passée
           locationCode: '0BM-SECU1',
           locationLib: '0Lieu de prestatio client BM-CL01',
           clientLocationLine3: 'client BM-CL01',
@@ -92,8 +92,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           employeeSvrCode: 'PIERRICK',
           employeeSvrLib: 'BONBON Délicieux',
           employeeTelPort: '0605040302',
-          startTime: DateTime(2025, 7, 5, 20, 0), // Heure de début future
-          endTime: DateTime(2025, 7, 5, 21, 47), // Heure de fin future
+          startTime: DateTime(2025, 7, 8, 20, 0), // Heure de début future
+          endTime: DateTime(2025, 7, 8, 21, 47), // Heure de fin future
           locationCode: '0BM-SECU1',
           locationLib: '0Lieu de prestatio client BM-CL01',
           clientLocationLine3: 'client BM-CL01',
@@ -108,8 +108,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           employeeSvrCode: '1',
           employeeSvrLib: '673644897',
           employeeTelPort: '0673644897',
-          startTime: _parseDateTime('03/07/2025 10:00'),
-          endTime: DateTime(2025, 7, 3, 17, 30), // Heure de fin future (pour test)
+          startTime: _parseDateTime('06/07/2025 10:00'),
+          endTime: DateTime(2025, 7, 7, 17, 30), // Heure de fin future (pour test)
           locationCode: '0BM-SECU1',
           locationLib: '0Lieu de prestatio client BM-CL01',
           clientLocationLine3: 'client BM-CL01',
@@ -125,8 +125,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           employeeSvrCode: 'EMP001',
           employeeSvrLib: 'ASSISTANT',
           employeeTelPort: '0711223344',
-          startTime: DateTime(2025, 7, 4, 15, 0), // Futur proche
-          endTime: DateTime(2025, 7, 4, 16, 30),
+          startTime: DateTime(2025, 7, 8, 15, 0), // Futur proche
+          endTime: DateTime(2025, 7, 8, 16, 30),
           locationCode: 'LOC-ABC',
           locationLib: 'Bureau Central',
           clientLocationLine3: 'client ABC-Corp',
@@ -141,8 +141,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           employeeSvrCode: 'EMP002',
           employeeSvrLib: 'TECHNICIEN',
           employeeTelPort: '0755667788',
-          startTime: DateTime(2025, 7, 4, 9, 0), // Passé
-          endTime: DateTime(2025, 7, 4, 10, 0),
+          startTime: DateTime(2025, 7, 6, 9, 0), // Passé
+          endTime: DateTime(2025, 7, 6, 10, 0),
           locationCode: 'LOC-XYZ',
           locationLib: 'Site Production',
           clientLocationLine3: 'client XYZ-Prod',
@@ -157,8 +157,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           employeeSvrCode: 'EMP003',
           employeeSvrLib: 'CONSULTANT',
           employeeTelPort: '0799887766',
-          startTime: DateTime(2025, 7, 6, 8, 0), // Futur lointain
-          endTime: DateTime(2025, 7, 6, 17, 0),
+          startTime: DateTime(2025, 7, 10, 8, 0), // Futur lointain
+          endTime: DateTime(2025, 7, 10, 17, 0),
           locationCode: 'LOC-DEF',
           locationLib: 'Siège Social',
           clientLocationLine3: 'client DEF-Group',
@@ -173,8 +173,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           employeeSvrCode: 'EMP004',
           employeeSvrLib: 'DEVELOPPEUR',
           employeeTelPort: '0744332211',
-          startTime: DateTime(2025, 7, 3, 11, 0), // Passé, mais avec fin future
-          endTime: DateTime(2025, 7, 4, 18, 0), // Fin future
+          startTime: DateTime(2025, 7, 7, 11, 0), // Passé, mais avec fin future
+          endTime: DateTime(2025, 7, 7, 18, 0), // Fin future
           locationCode: 'LOC-GHI',
           locationLib: 'Centre de Recherche',
           clientLocationLine3: 'client GHI-Tech',
@@ -240,15 +240,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   List<Service> get _filteredAndSortedDebutServices {
     final now = DateTime.now();
     final filteredList = _services.where((service) {
-      // Un service est inclus si son début est avant ou le jour de fin de la plage ET sa fin est après ou le jour de début de la plage
-      // Cela couvre les services qui commencent et finissent dans la plage, ou qui la chevauchent.
       return service.startTime.isBefore(_endDate.endOfDay()) && service.endTime.isAfter(_startDate.startOfDay());
     }).toList();
 
     filteredList.sort((a, b) {
       final Duration durationA = a.startTime.difference(now);
       final Duration durationB = b.startTime.difference(now);
-      return durationA.compareTo(durationB); // Ordre croissant des durées (négatif avant positif)
+      return durationB.compareTo(durationA); // Tri décroissant des durées
     });
     return filteredList;
   }
@@ -257,13 +255,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     final now = DateTime.now();
     final filteredList = _services.where((service) {
       // Utilise le même critère de filtrage pour que les deux colonnes affichent le même ensemble de services
-      return service.startTime.isBefore(_endDate.endOfDay()) && service.endTime.isAfter(_startDate.startOfDay());
+      return service.endTime.isBefore(_endDate.endOfDay()) && service.endTime.isAfter(_startDate.startOfDay());
     }).toList();
 
     filteredList.sort((a, b) {
       final Duration durationA = a.endTime.difference(now); // Tri basé sur l'heure de fin
       final Duration durationB = b.endTime.difference(now);
-      return durationA.compareTo(durationB); // Ordre croissant des durées (négatif avant positif)
+      return durationB.compareTo(durationA); // Tri décroissant des durées
     });
     return filteredList;
   }
@@ -272,8 +270,15 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     setState(() {
       final serviceIndex = _services.indexWhere((s) => s.id == serviceId);
       if (serviceIndex != -1) {
-        _services[serviceIndex] = _services[serviceIndex].copyWith(isAbsent: newAbsentStatus);
-        debugPrint('Service ${serviceId} - Absent: ${newAbsentStatus}');
+        // Si l'état devient absent, la validation est automatiquement retirée
+        if (newAbsentStatus == true) {
+          _services[serviceIndex] = _services[serviceIndex].copyWith(isAbsent: newAbsentStatus, isValidated: false);
+          debugPrint('Service ${serviceId} - Absent: ${newAbsentStatus}, Validation retirée.');
+        } else {
+          // Si l'état devient présent, on met juste à jour isAbsent
+          _services[serviceIndex] = _services[serviceIndex].copyWith(isAbsent: newAbsentStatus);
+          debugPrint('Service ${serviceId} - Absent: ${newAbsentStatus}');
+        }
       }
     });
   }
@@ -353,14 +358,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         curve: Curves.easeInOut,
       );
     }
-  }
-
-  void _doNothingAbsent(bool newAbsentStatus) {
-    // debugPrint('Bouton Présent/Absent pressé sur cette colonne (action non pertinente ici).');
-  }
-
-  void _doNothingValidate(bool newValidateStatus) {
-    // debugPrint('Bouton Valider/Dévalider pressé sur cette colonne (action non pertinente ici).');
   }
 
   @override
@@ -527,7 +524,12 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                         onModifyTime: (currentTime) {
                           _handleModifyTime(service.id, currentTime, TimeCardType.debut);
                         },
-                        onValidate: _doNothingValidate,
+                        onValidate: (newStatus) {
+                          _handleValidate(service.id, newStatus);
+                        },
+                        onTap: () {
+                           _scrollToService(service);
+                        }
                       );
                     },
                   ),
@@ -550,12 +552,17 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                         onValidate: (newStatus) {
                           _handleValidate(service.id, newStatus);
                         },
-                        onAbsentPressed: _doNothingAbsent,
+                        onAbsentPressed:  (newStatus) {
+                          _handleAbsentToggle(service.id, newStatus);
+                        },
+                        onTap: () {
+                           _scrollToService(service);
+                        }
                       );
                     },
                   ),
                 ),
-                // Colonne "Résultat" (suit l'ordre de la colonne Début)
+                // Colonne "Résultat"
                 Expanded(
                   flex: 1,
                   child: ListView.builder(
@@ -564,36 +571,19 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                     itemCount: _filteredAndSortedDebutServices.length,
                     itemBuilder: (context, index) {
                       final service = _filteredAndSortedDebutServices[index];
-                      return GestureDetector(
-                        onTap: () {
-                          _scrollToService(service);
+                      return TimeDetailCard(
+                        service: service,
+                        type: TimeCardType.result,
+                        onAbsentPressed: (newStatus) {
+                          _handleAbsentToggle(service.id, newStatus);
                         },
-                        child: Card(
-                          margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
-                          elevation: 2.0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                            side: BorderSide(color: Colors.grey.shade200, width: 1.0),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(service.employeeName),
-                                Text('Service ${service.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 5),
-                                Text(
-                                  service.isValidated ? 'Validé' : 'En attente',
-                                  style: TextStyle(
-                                    color: service.isValidated ? Colors.green : Colors.orange,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        onValidate: (newStatus) {
+                          _handleValidate(service.id, newStatus);
+                        },
+                        onModifyTime: (currentTime) {
+                          _handleModifyTime(service.id, currentTime, TimeCardType.debut);
+                        },
+                        onTap: () => _scrollToService(service),
                       );
                     },
                   ),
@@ -640,13 +630,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center, // Centrera l'ensemble si pas de Spacer
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Spacer(), // Pousse le groupe de pagination vers le centre
+                const Spacer(),
 
                 // Groupe de contrôles de pagination (< 1 >)
                 Row(
-                  mainAxisSize: MainAxisSize.min, // S'assure que cette Row prend le moins d'espace possible
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(icon: const Icon(Icons.arrow_back_ios), onPressed: () {}),
                     Container(
@@ -661,10 +651,10 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                   ],
                 ),
 
-                const Spacer(), // Pousse le groupe de pagination vers le centre ET le texte de copyright vers la droite
+                const Spacer(),
 
                 Text(
-                  "BMSoft 2025, tous droits réservés   ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
+                  "© BMSoft 2025, tous droits réservés   ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color.fromARGB(255, 3, 53, 190)),
                 ),
               ],
