@@ -106,7 +106,7 @@ class Service {
     // Les résultats sont ensuite convertis en String ou passés à la fonction de parsing de date.
     return Service(
       id: _extractCellValue(data['VAC_IDF'])?.toString() ?? '',
-      employeeName: _extractCellValue(data['USR_LIB'])?.toString() ?? '',
+      employeeName: _extractCellValue(data['SVR_LIB'])?.toString() ?? '',
       employeeSvrCode: _extractCellValue(data['SVR_CODE'])?.toString() ?? '',
       employeeSvrLib: _extractCellValue(data['SVR_LIB'])?.toString() ?? '',
       employeeTelPort: _extractCellValue(data['SVR_TELPOR'])?.toString() ?? '',
@@ -114,7 +114,7 @@ class Service {
       endTime: _parseExcelDateValue(data['VAC_END_HOUR'], 'VAC_END_HOUR'),
       locationCode: _extractCellValue(data['LIE_CODE'])?.toString() ?? '',
       locationLib: _extractCellValue(data['LIE_LIB'])?.toString() ?? '',
-      clientLocationLine3: 'client BM-CL01', // Cette valeur semble être statique d'après votre exemple
+      clientLocationLine3: 'client BM-CL01',
       clientSvrCode: _extractCellValue(data['SVR_CODE'])?.toString() ?? '',
       clientSvrLib: _extractCellValue(data['SVR_LIB'])?.toString() ?? '',
       isAbsent: false,
