@@ -1,10 +1,13 @@
-// lib/prise_service.dart (Updated with independent sorting and precise scrolling)
+// lib/prise_service.dart (Updated with Excel import functionality)
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mon_projet/time_detail_card.dart';
 import 'package:mon_projet/models/service.dart';
 import 'dart:async';
+import 'package:file_picker/file_picker.dart';
+import 'package:excel/excel.dart' hide Border; // NOUVEAU: Importation pour la lecture Excel
+import 'dart:typed_data'; // Pour Uint8List
 
 extension DateTimeExtension on DateTime {
   DateTime startOfDay() {
@@ -25,8 +28,8 @@ class PriseServiceScreen extends StatefulWidget {
 
 class _PriseServiceScreenState extends State<PriseServiceScreen> {
   DateTime _currentDisplayDate = DateTime.now();
-  DateTime _startDate = DateTime(2025, 7, 1);
-  DateTime _endDate = DateTime(2025, 7, 31);
+  DateTime _startDate = DateTime(2025, 7, 1); // Date de début de période
+  DateTime _endDate = DateTime(2025, 7, 31); // Date de fin de période
 
   Timer? _timer;
 
@@ -34,158 +37,30 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   final ScrollController _finScrollController = ScrollController();
   final ScrollController _resultatScrollController = ScrollController();
 
-  DateTime _parseDateTime(String dateTimeString) {
-    final format = DateFormat("dd/MM/yyyy HH:mm");
-    return format.parse(dateTimeString);
-  }
+  // Cette fonction n'est plus utilisée car les dates seront importées du CSV/Excel
+  // et gérées dans Service.fromExcelRow.
+  // DateTime _parseDateTime(String dateTimeString) {
+  //   final format = DateFormat("dd/MM/yyyy HH:mm");
+  //   return format.parse(dateTimeString);
+  // }
 
   List<Service> _services = [];
 
   @override
   void initState() {
     super.initState();
-    _populateServices();
+    // _populateServices(); // COMMENTÉ: Ne pas peupler avec des données en dur au démarrage
     _updateCurrentTime();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateCurrentTime();
     });
   }
 
-  void _populateServices() {
-    setState(() {
-      _services = [
-        Service(
-          id: '422419',
-          employeeName: 'PIERRICK ERIC',
-          employeeSvrCode: 'BM-SAL04',
-          employeeSvrLib: 'SVR_NOM 86710 TEXT',
-          employeeTelPort: '0662057140',
-          startTime: _parseDateTime('06/07/2025 07:00'),
-          endTime: _parseDateTime('08/07/2025 08:47'), // Changé pour une heure de fin future
-          locationCode: '0BM-SECU1',
-          locationLib: '0Lieu de prestatio client BM-CL01',
-          clientLocationLine3: 'client BM-CL01',
-          clientSvrCode: 'BM-SAL04',
-          clientSvrLib: 'BONBON Délicieux',
-          isAbsent: false,
-          isValidated: false,
-        ),
-        Service(
-          id: '422847',
-          employeeName: 'MELCHIORRE GERALD',
-          employeeSvrCode: '142320',
-          employeeSvrLib: '0002030406',
-          employeeTelPort: '0602030406',
-          startTime: _parseDateTime('06/08/2025 20:00'),
-          endTime: _parseDateTime('07/08/2025 08:00'), // Heure de fin passée
-          locationCode: '0BM-SECU1',
-          locationLib: '0Lieu de prestatio client BM-CL01',
-          clientLocationLine3: 'client BM-CL01',
-          clientSvrCode: '142320',
-          clientSvrLib: 'MELCHIORRE GERALD',
-          isAbsent: false,
-          isValidated: false,
-        ),
-        Service(
-          id: '424862',
-          employeeName: 'BM-SAL04',
-          employeeSvrCode: 'PIERRICK',
-          employeeSvrLib: 'BONBON Délicieux',
-          employeeTelPort: '0605040302',
-          startTime: DateTime(2025, 7, 8, 20, 0), // Heure de début future
-          endTime: DateTime(2025, 7, 8, 21, 47), // Heure de fin future
-          locationCode: '0BM-SECU1',
-          locationLib: '0Lieu de prestatio client BM-CL01',
-          clientLocationLine3: 'client BM-CL01',
-          clientSvrCode: 'PIERRICK',
-          clientSvrLib: 'SVR_NOM 86710 TEXT ERIC',
-          isAbsent: false,
-          isValidated: false,
-        ),
-        Service(
-          id: '424865',
-          employeeName: 'BMSOFT 05 Salarié',
-          employeeSvrCode: '1',
-          employeeSvrLib: '673644897',
-          employeeTelPort: '0673644897',
-          startTime: _parseDateTime('06/07/2025 10:00'),
-          endTime: DateTime(2025, 7, 7, 17, 30), // Heure de fin future (pour test)
-          locationCode: '0BM-SECU1',
-          locationLib: '0Lieu de prestatio client BM-CL01',
-          clientLocationLine3: 'client BM-CL01',
-          clientSvrCode: '1',
-          clientSvrLib: 'BMSOFT 05 Salarié',
-          isAbsent: false,
-          isValidated: false,
-        ),
-        // NOUVELLES VACATIONS POUR TEST
-        Service(
-          id: '425001',
-          employeeName: 'JULIE MARTIN',
-          employeeSvrCode: 'EMP001',
-          employeeSvrLib: 'ASSISTANT',
-          employeeTelPort: '0711223344',
-          startTime: DateTime(2025, 7, 8, 15, 0), // Futur proche
-          endTime: DateTime(2025, 7, 8, 16, 30),
-          locationCode: 'LOC-ABC',
-          locationLib: 'Bureau Central',
-          clientLocationLine3: 'client ABC-Corp',
-          clientSvrCode: 'CLIENT-ABC',
-          clientSvrLib: 'ABC Corporation',
-          isAbsent: false,
-          isValidated: false,
-        ),
-        Service(
-          id: '425002',
-          employeeName: 'DAVID DUBOIS',
-          employeeSvrCode: 'EMP002',
-          employeeSvrLib: 'TECHNICIEN',
-          employeeTelPort: '0755667788',
-          startTime: DateTime(2025, 7, 6, 9, 0), // Passé
-          endTime: DateTime(2025, 7, 6, 10, 0),
-          locationCode: 'LOC-XYZ',
-          locationLib: 'Site Production',
-          clientLocationLine3: 'client XYZ-Prod',
-          clientSvrCode: 'CLIENT-XYZ',
-          clientSvrLib: 'XYZ Industries',
-          isAbsent: false,
-          isValidated: false,
-        ),
-        Service(
-          id: '425003',
-          employeeName: 'SOPHIE LEBLANC',
-          employeeSvrCode: 'EMP003',
-          employeeSvrLib: 'CONSULTANT',
-          employeeTelPort: '0799887766',
-          startTime: DateTime(2025, 7, 10, 8, 0), // Futur lointain
-          endTime: DateTime(2025, 7, 10, 17, 0),
-          locationCode: 'LOC-DEF',
-          locationLib: 'Siège Social',
-          clientLocationLine3: 'client DEF-Group',
-          clientSvrCode: 'CLIENT-DEF',
-          clientSvrLib: 'DEF Group',
-          isAbsent: false,
-          isValidated: false,
-        ),
-        Service(
-          id: '425004',
-          employeeName: 'THOMAS PETIT',
-          employeeSvrCode: 'EMP004',
-          employeeSvrLib: 'DEVELOPPEUR',
-          employeeTelPort: '0744332211',
-          startTime: DateTime(2025, 7, 7, 11, 0), // Passé, mais avec fin future
-          endTime: DateTime(2025, 7, 7, 18, 0), // Fin future
-          locationCode: 'LOC-GHI',
-          locationLib: 'Centre de Recherche',
-          clientLocationLine3: 'client GHI-Tech',
-          clientSvrCode: 'CLIENT-GHI',
-          clientSvrLib: 'GHI Technologies',
-          isAbsent: false,
-          isValidated: false,
-        ),
-      ];
-    });
-  }
+  // void _populateServices() {
+  //   setState(() {
+  //     _services = []; // Assure que la liste est vide si cette méthode est accidentellement appelée
+  //   });
+  // }
 
   @override
   void dispose() {
@@ -360,6 +235,85 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
+  Future<void> _importServicesFromExcel() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['xlsx'], // Autorise uniquement les fichiers .xlsx
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        final Uint8List bytes = result.files.single.bytes!;
+        final Excel excel = Excel.decodeBytes(bytes);
+
+        // Supposons que les données sont dans la première feuille
+        final String? sheetName = excel.tables.keys.first;
+        if (sheetName == null) {
+          debugPrint('Aucune feuille trouvée dans le fichier Excel.');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erreur: Aucune feuille trouvée dans le fichier Excel.')),
+          );
+          return;
+        }
+
+        final sheet = excel.tables[sheetName];
+        if (sheet == null || sheet.rows.isEmpty) {
+          debugPrint('La feuille Excel est vide.');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Le fichier Excel est vide ou la feuille sélectionnée est vide.')),
+          );
+          return;
+        }
+
+        List<String> headers = [];
+        // Récupérer les en-têtes de la première ligne
+        if (sheet.rows.isNotEmpty) {
+          headers = sheet.rows[0].map((cell) => cell?.value?.toString() ?? '').toList();
+        }
+
+        List<Service> importedServices = [];
+
+        // Parcourir les lignes de données (à partir de la deuxième ligne)
+        for (int i = 1; i < sheet.rows.length; i++) {
+          final row = sheet.rows[i];
+          Map<String, dynamic> rowData = {};
+          // Dans lib/prise_service.dart, à l'intérieur de _importServicesFromExcel
+          for (int j = 0; j < headers.length; j++) {
+            if (j < row.length) {
+              // C'est la ligne correcte à utiliser pour passer la CellValue à Service.fromExcelRow
+              // Votre _parseExcelDateValue saura maintenant gérer directement cette CellValue.
+              rowData[headers[j]] = row[j]?.value;
+            }
+          }
+          try {
+            // CHANGEMENT ICI: Utilise Service.fromExcelRow
+            importedServices.add(Service.fromExcelRow(rowData));
+          } catch (e) {
+            debugPrint('Erreur lors de la création du service à partir de la ligne Excel ${i + 1}: $rowData - $e');
+          }
+        }
+
+        setState(() {
+          _services = importedServices;
+          debugPrint('Importation de ${importedServices.length} services depuis Excel réussie.');
+        });
+      } else {
+        // Message plus clair si l'utilisateur annule ou si le fichier est vide
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Aucun fichier sélectionné ou le fichier est vide.')),
+        );
+        debugPrint('Aucun fichier sélectionné ou fichier vide.');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de l\'importation du fichier Excel: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de l\'importation du fichier Excel: $e')),
+      );
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -383,6 +337,10 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         actions: [
+          TextButton(
+            onPressed: _importServicesFromExcel, // NOUVEAU: Bouton pour importer le CSV
+            child: const Text('Importer Vacations', style: TextStyle(color: Colors.white)),
+          ),
           TextButton(
             onPressed: () {
               debugPrint('Bouton "Changer" pressé');

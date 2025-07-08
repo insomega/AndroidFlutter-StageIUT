@@ -31,9 +31,12 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  intl: ^0.20.2 
+  intl: ^0.20.2
   flutter_localizations:
     sdk: flutter
+  file_picker: ^8.0.0
+  excel: ^4.0.6 # MIS À JOUR : Changé à la version compatible
+  csv: ^5.1.1   # Vous pouvez supprimer cette ligne si vous n'utilisez plus les fichiers CSV
 
 dev_dependencies:
   flutter_test:
