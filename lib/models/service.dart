@@ -42,61 +42,68 @@ class Service {
     required this.clientSvrLib,
   });
 
-  // Helper pour extraire la valeur réelle d'un CellValue ou d'un autre type
-  static dynamic _extractCellValue(dynamic value) {
-    if (value is CellValue) {
-      // Utilisez le getter spécifique si disponible
-      if (value is DateTimeCellValue) {
-        return value.dateTime;
-      } else if (value is TextCellValue) {
-        return value.text;
-      } else if (value is IntCellValue) {
-        return value.intValue;
-      } else if (value is DoubleCellValue) {
-        return value.doubleValue;
-      }
-      // Fallback pour d'autres types de CellValue si nécessaire
-      // Note: Dans les versions récentes de 'excel', les CellValue ont des getters spécifiques.
-      // Ce 'value.value' est un fallback pour les cas inattendus ou les versions très anciennes.
-      return value.value; 
+  // Helper pour extraire la valeur réelle d'un CellValue ou d'un autre type.
+  // Cette fonction va maintenant toujours retourner une String si c'est un CellValue,
+  // et le type original si ce n'est pas un CellValue (ex: déjà String, int, DateTime).
+  static dynamic _extractCellValue(dynamic valueObject) {
+    if (valueObject == null) {
+      return null;
     }
-    return value; // Si ce n'est pas un CellValue, retournez la valeur telle quelle
+    // Si l'objet est une instance de CellValue (ou l'une de ses sous-classes),
+    // nous utilisons sa représentation en chaîne.
+    if (valueObject is CellValue) {
+      return valueObject.toString();
+    }
+    // Si ce n'est pas un CellValue (par exemple, c'est déjà un DateTime, String, int, double),
+    // nous le retournons tel quel.
+    return valueObject;
   }
 
   // Méthode factory pour créer un Service à partir d'une Map (issue d'une ligne Excel)
   factory Service.fromExcelRow(Map<String, dynamic> data) {
-    // Format de date attendu si la date est une chaîne de caractères dans Excel
-    final DateFormat format = DateFormat("dd/MM/yyyy HH:mm");
-
-    // Helper pour parser les dates en gérant les différents types de données de Excel
-    DateTime _parseExcelDateValue(dynamic cellValueObject, String fieldName) {
-      if (cellValueObject == null) {
+    // Helper pour parser les dates en gérant les différents types de données de Excel.
+    DateTime _parseExcelDateValue(dynamic rawValue, String fieldName) {
+      if (rawValue == null) {
         debugPrint('Avertissement: La date pour $fieldName est vide ou nulle. Utilisation de DateTime.now().');
         return DateTime.now();
       }
 
-      // Extrait la valeur réelle avant de la traiter
-      final dynamic actualValue = _extractCellValue(cellValueObject);
+      // Extrait la valeur réelle en utilisant la fonction _extractCellValue.
+      // On s'attend maintenant à ce que _extractCellValue retourne une String ou un num.
+      final dynamic actualValue = _extractCellValue(rawValue);
 
-      if (actualValue is DateTime) {
-        return actualValue;
-      } else if (actualValue is String) {
+      if (actualValue is String) {
         try {
-          return format.parse(actualValue);
+          // Tente d'abord de parser le format ISO 8601 (ex: "2025-07-02T20:00:00.000Z")
+          return DateTime.parse(actualValue);
+        } catch (_) {
+          // Si ISO 8601 échoue, tente le format "dd/MM/yyyy HH:mm"
+          try {
+            final format = DateFormat("dd/MM/yyyy HH:mm");
+            return format.parse(actualValue);
+          } catch (e) {
+            debugPrint('Erreur de parsing de date pour $fieldName (String): "$actualValue" - $e. Utilisation de DateTime.now().');
+            return DateTime.now();
+          }
+        }
+      } else if (actualValue is num) { // Gère les dates numériques d'Excel
+        try {
+          // Excel base les dates sur le 1er janvier 1900 (jour 1). Ajustement pour la base 0 de Dart.
+          final DateTime excelEpoch = DateTime(1899, 12, 30); // Date de référence Excel pour le jour 0
+          final Duration duration = Duration(days: actualValue.toInt(), milliseconds: ((actualValue - actualValue.toInt()) * 24 * 60 * 60 * 1000).toInt());
+          return excelEpoch.add(duration);
         } catch (e) {
-          debugPrint('Erreur de parsing de date pour $fieldName (String): "$actualValue" - $e. Utilisation de DateTime.now().');
+          debugPrint('Erreur de conversion de date numérique pour $fieldName (num): "$actualValue" - $e. Utilisation de DateTime.now().');
           return DateTime.now();
         }
-      } else if (actualValue is num) {
-        debugPrint('Avertissement: $fieldName est un nombre (${actualValue}). Conversion de date numérique non implémentée. Utilisation de DateTime.now().');
-        return DateTime.now();
       }
       
       debugPrint('Avertissement: Type de données inattendu et non géré pour $fieldName: ${actualValue.runtimeType} ($actualValue). Utilisation de DateTime.now().');
       return DateTime.now();
     }
 
-    // Utilise _extractCellValue pour toutes les données provenant de l'Excel
+    // Utilise _extractCellValue pour toutes les données provenant de l'Excel.
+    // Les résultats sont ensuite convertis en String ou passés à la fonction de parsing de date.
     return Service(
       id: _extractCellValue(data['VAC_IDF'])?.toString() ?? '',
       employeeName: _extractCellValue(data['USR_LIB'])?.toString() ?? '',
@@ -107,16 +114,15 @@ class Service {
       endTime: _parseExcelDateValue(data['VAC_END_HOUR'], 'VAC_END_HOUR'),
       locationCode: _extractCellValue(data['LIE_CODE'])?.toString() ?? '',
       locationLib: _extractCellValue(data['LIE_LIB'])?.toString() ?? '',
-      // 'client BM-CL01' semble être une chaîne statique dans votre exemple Excel.
-      // Si cette valeur provient d'une colonne Excel, vous devrez la mapper comme les autres.
-      clientLocationLine3: 'client BM-CL01', 
+      clientLocationLine3: 'client BM-CL01', // Cette valeur semble être statique d'après votre exemple
       clientSvrCode: _extractCellValue(data['SVR_CODE'])?.toString() ?? '',
       clientSvrLib: _extractCellValue(data['SVR_LIB'])?.toString() ?? '',
-      isAbsent: false, // Valeur par défaut
-      isValidated: false, // Valeur par défaut
+      isAbsent: false,
+      isValidated: false,
     );
   }
 
+  // Méthode copyWith pour la mise à jour des propriétés
   Service copyWith({
     String? id,
     String? employeeName,
@@ -150,24 +156,4 @@ class Service {
       clientSvrLib: clientSvrLib ?? this.clientSvrLib,
     );
   }
-}
-
-extension on CellValue {
-   get value => value;
-}
-
-extension on DoubleCellValue {
-  get doubleValue => doubleValue;
-}
-
-extension on IntCellValue {
-  get intValue => intValue;
-}
-
-extension on TextCellValue {
-  String get text => text;
-}
-
-extension on DateTimeCellValue {
-  DateTime get dateTime => dateTime;
 }

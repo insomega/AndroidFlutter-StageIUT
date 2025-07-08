@@ -37,30 +37,16 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   final ScrollController _finScrollController = ScrollController();
   final ScrollController _resultatScrollController = ScrollController();
 
-  // Cette fonction n'est plus utilisée car les dates seront importées du CSV/Excel
-  // et gérées dans Service.fromExcelRow.
-  // DateTime _parseDateTime(String dateTimeString) {
-  //   final format = DateFormat("dd/MM/yyyy HH:mm");
-  //   return format.parse(dateTimeString);
-  // }
-
   List<Service> _services = [];
 
   @override
   void initState() {
     super.initState();
-    // _populateServices(); // COMMENTÉ: Ne pas peupler avec des données en dur au démarrage
     _updateCurrentTime();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateCurrentTime();
     });
   }
-
-  // void _populateServices() {
-  //   setState(() {
-  //     _services = []; // Assure que la liste est vide si cette méthode est accidentellement appelée
-  //   });
-  // }
 
   @override
   void dispose() {
@@ -278,7 +264,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         for (int i = 1; i < sheet.rows.length; i++) {
           final row = sheet.rows[i];
           Map<String, dynamic> rowData = {};
-          // Dans lib/prise_service.dart, à l'intérieur de _importServicesFromExcel
           for (int j = 0; j < headers.length; j++) {
             if (j < row.length) {
               // C'est la ligne correcte à utiliser pour passer la CellValue à Service.fromExcelRow
@@ -287,7 +272,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             }
           }
           try {
-            // CHANGEMENT ICI: Utilise Service.fromExcelRow
             importedServices.add(Service.fromExcelRow(rowData));
           } catch (e) {
             debugPrint('Erreur lors de la création du service à partir de la ligne Excel ${i + 1}: $rowData - $e');
