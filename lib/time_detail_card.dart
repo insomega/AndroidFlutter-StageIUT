@@ -19,9 +19,9 @@ class TimeDetailCard extends StatelessWidget {
     super.key,
     required this.service,
     required this.type,
-    this.onAbsentPressed, 
-    this.onValidate,   
-    this.onModifyTime,  
+    this.onAbsentPressed,
+    this.onValidate,
+    this.onModifyTime,
     this.onTap,
   });
 
@@ -41,14 +41,177 @@ class TimeDetailCard extends StatelessWidget {
     return '$sign${hours}h${minutes} min';
   }
 
+  // Méthode d'aide pour construire la ligne d'en-tête (ID, Nom, Contact)
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          flex: 3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Code service de l'employé
+              Text(
+                service.employeeSvrCode,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+              ),
+              // Nom de l'employé
+              Text(
+                service.employeeName,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: const Color.fromARGB(255, 91, 168, 231), // Couleur d'origine
+                    ),
+              ),
+            ],
+          ),
+        ),
+        // Numéro de téléphone de l'employé, visible sauf pour le type 'result'
+        if (type != TimeCardType.result)
+          Expanded(
+            flex: 2,
+            child: Text(
+              service.employeeTelPort,
+              textAlign: TextAlign.end,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+      ],
+    );
+  }
+
+  // Méthode d'aide pour construire la ligne de date, heure et durée
+  Widget _buildTimeAndDuration(BuildContext context, DateTime displayTime, Duration calculatedDuration) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Tag de la date
+        _buildTimeTag(
+          context,
+          'Date: ${DateFormat('dd/MM/yyyy').format(displayTime)}',
+          Colors.red.shade600, // Couleur d'origine
+        ),
+        // Tag de l'heure (début ou fin)
+        _buildTimeTag(
+          context,
+          type == TimeCardType.debut
+              ? 'H.D: ${DateFormat('HH:mm').format(displayTime)}'
+              : 'H.F: ${DateFormat('HH:mm').format(displayTime)}',
+          Colors.red.shade600, // Couleur d'origine
+        ),
+        // Affichage de la durée calculée avec la couleur d'origine
+        Text(
+          _formatDuration(calculatedDuration),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 12, // Taille de police d'origine
+                fontWeight: FontWeight.bold,
+                color: calculatedDuration.isNegative ? Colors.green : Colors.red, // Logique de couleur d'origine
+              ),
+        ),
+      ],
+    );
+  }
+
+  // Méthode d'aide pour créer les tags de date/heure stylisés
+  Widget _buildTimeTag(BuildContext context, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
+      ),
+    );
+  }
+
+  // Méthode d'aide pour construire les lignes de localisation du client
+  Widget _buildLocation(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(service.locationCode, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800])),
+        Text(service.locationLib, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800])),
+        Text(service.clientLocationLine3, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800])),
+      ],
+    );
+  }
+
+  // Méthode d'aide pour construire les boutons d'action (Modifier, Absent/Présent, Valider/Dévalider) 
+  Widget _buildActionButtons(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        // Bouton "Modifier", visible sauf pour le type 'result'
+        if (type != TimeCardType.result)
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: onModifyTime != null ? () => onModifyTime!(type == TimeCardType.debut ? service.startTime : service.endTime) : null,
+              icon: const Icon(Icons.edit, size: 18),
+              label: const Text('Modifier', style: TextStyle(fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade600, // Couleur d'origine
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              ),
+            ),
+          ),
+        if (type != TimeCardType.result) const SizedBox(width: 8),
+
+        // Bouton "Présent/Absent"
+        Expanded(
+          child: ElevatedButton(
+            onPressed: onAbsentPressed != null ? () => onAbsentPressed!(!service.isAbsent) : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: service.isAbsent
+                  ? Colors.red.shade700 // Couleur d'origine
+                  : Colors.blueGrey.shade600, // Couleur d'origine
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            ),
+            child: Text(
+              service.isAbsent ? 'Absent' : 'Présent',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+
+        // Bouton "Valider/Dévalider"
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: onValidate != null && !service.isAbsent ? () => onValidate!(!service.isValidated) : null,
+            icon: Icon(service.isValidated ? Icons.undo : Icons.check, size: 18),
+            label: Text(
+              service.isValidated ? 'Dévalider' : 'Valider',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: service.isAbsent
+                  ? Colors.grey.shade400 // Couleur d'origine (désactivé si absent)
+                  : (service.isValidated ? Colors.orange.shade600 : Colors.green.shade600), // Couleurs d'origine
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool isDebut = type == TimeCardType.debut;
-    final DateTime displayTime = isDebut ? service.startTime : service.endTime;
+    final DateTime displayTime = type == TimeCardType.debut ? service.startTime : service.endTime;
 
     // Calcul de la durée dynamique
     Duration calculatedDuration;
-    if (isDebut) {
+    if (type == TimeCardType.debut) {
       // Pour les cartes "Début", calculer la durée depuis l'heure de début jusqu'à l'heure actuelle
       calculatedDuration = DateTime.now().difference(service.startTime);
     } else {
@@ -59,12 +222,13 @@ class TimeDetailCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        color: service.isAbsent ? Colors.red.shade100 : null,
+        // Couleur de la carte si le service est absent (rouge clair)
+        color: service.isAbsent ? Colors.red.shade100 : null, // Couleur d'origine
         margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
         elevation: 2.0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
-          side: BorderSide(color: Colors.grey.shade200, width: 1.0),
+          side: BorderSide(color: Colors.grey.shade200, width: 1.0), // Couleur d'origine
         ),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -72,146 +236,16 @@ class TimeDetailCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Ligne 1: ID, Nom Employé/Client, Contact
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(service.id, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        Text(
-                          service.employeeName,
-                          //isDebut ? service.employeeName : service.clientSvrLib, // Utilise clientSvrLib pour la colonne Fin
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color.fromARGB(255, 91, 168, 231)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (type != TimeCardType.result) ...[
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        service.employeeTelPort,
-                        //isDebut ? service.employeeTelPort : service.clientLocationLine3, // Utilise clientLocationLine3 pour la colonne Fin
-                        textAlign: TextAlign.end,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+              _buildHeader(context),
               const SizedBox(height: 8),
-
-              // Ligne 2: Date, Heure, Durée
+              // Les détails de temps et de localisation ne sont pas affichés pour le type 'result'
               if (type != TimeCardType.result) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade600,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Date: ${DateFormat('dd/MM/yyyy').format(displayTime)}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade600,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        isDebut ? 'H.D: ${DateFormat('HH:mm').format(displayTime)}' : 'H.F: ${DateFormat('HH:mm').format(displayTime)}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
-                      ),
-                    ),
-                    Text(
-                      _formatDuration(calculatedDuration),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: calculatedDuration.isNegative ? Colors.green : Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
+                _buildTimeAndDuration(context, displayTime, calculatedDuration),
                 const SizedBox(height: 8),
-
-                // Lignes de localisation client
-                Text(service.locationCode, style: TextStyle(color: Colors.grey[800], fontSize: 12)),
-                Text(service.locationLib, style: TextStyle(color: Colors.grey[800], fontSize: 12)),
-                Text(service.clientLocationLine3, style: TextStyle(color: Colors.grey[800], fontSize: 12)),
+                _buildLocation(context),
                 const SizedBox(height: 12),
               ],
-              
-              // Boutons d'action
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  if (type != TimeCardType.result) ...[
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: onModifyTime != null ? () => onModifyTime!(displayTime) : null,
-                        icon: const Icon(Icons.edit, size: 18),
-                        label: const Text('Modifier', style: TextStyle(fontSize: 12)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade600,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-
-
-                  // Bouton "Présent/Absent"
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: onAbsentPressed != null ? () => onAbsentPressed!(!service.isAbsent) : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: service.isAbsent ? Colors.red.shade700 : Colors.blueGrey.shade600,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                      ),
-                      child: Text(
-                        service.isAbsent ? 'Absent' : 'Présent',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Bouton "Valider"
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: onValidate != null && !service.isAbsent ? () => onValidate!(!service.isValidated) : null,
-                      icon: Icon(service.isValidated ? Icons.undo : Icons.check, size: 18),
-                      label: Text(
-                        service.isValidated ? 'Dévalider' : 'Valider',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: service.isAbsent
-                            ? Colors.grey.shade400 // Couleur grise si absent et désactivé
-                            : (service.isValidated ? Colors.orange.shade600 : Colors.green.shade600),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              _buildActionButtons(context),
             ],
           ),
         ),

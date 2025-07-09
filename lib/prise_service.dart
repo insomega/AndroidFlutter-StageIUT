@@ -2,13 +2,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mon_projet/time_detail_card.dart';
-import 'package:mon_projet/models/service.dart';
+import 'package:mon_projet/time_detail_card.dart'; // Assurez-vous que ce fichier existe
+import 'package:mon_projet/models/service.dart'; // Assurez-vous que ce fichier existe
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
-import 'package:excel/excel.dart' hide Border; // Importation pour la lecture Excel
+import 'package:excel/excel.dart' hide Border; // Importation pour la lecture et l'écriture Excel
 import 'dart:typed_data'; // Pour Uint8List
+import 'package:path_provider/path_provider.dart'; // Pour obtenir les répertoires temporaires/documents
+import 'dart:io'; // Pour File
 
+// Extension pour faciliter la manipulation des dates (début/fin de journée)
 extension DateTimeExtension on DateTime {
   DateTime startOfDay() {
     return DateTime(year, month, day, 0, 0, 0);
@@ -28,8 +31,8 @@ class PriseServiceScreen extends StatefulWidget {
 
 class _PriseServiceScreenState extends State<PriseServiceScreen> {
   DateTime _currentDisplayDate = DateTime.now();
-  DateTime _startDate = DateTime(2025, 7, 1); // Date de début de période
-  DateTime _endDate = DateTime(2025, 7, 31); // Date de fin de période
+  DateTime _startDate = DateTime(2025, 7, 1); // Date de début de période par défaut
+  DateTime _endDate = DateTime(2025, 7, 31); // Date de fin de période par défaut
 
   Timer? _timer;
 
@@ -40,20 +43,27 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = ''; // La chaîne de recherche actuelle
 
-  List<Service> _services = [];
-  bool _dataLoaded = false;
+  List<Service> _services = []; // Liste des services chargés
+  bool _dataLoaded = false; // Indicateur si les données ont été chargées
+
+  double _totalWorkedHours = 0.0; // Heures totales travaillées
+  double _remainingHours = 0.0; // Heures restantes (prévues - travaillées)
+  double _totalScheduledHours = 0.0; // Heures totales prévues
 
   @override
   void initState() {
     super.initState();
-    _updateCurrentTime();
+    _updateCurrentTime(); // Met à jour l'heure affichée
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _updateCurrentTime();
+      _updateCurrentTime(); // Met à jour l'heure toutes les secondes
     });
 
-    _searchController.addListener(_onSearchChanged);
+    _searchController.addListener(_onSearchChanged); // Écoute les changements dans la barre de recherche
+    Intl.defaultLocale = 'fr_FR'; // Assure la locale française pour les dates
+    _calculateSummaryData(); // Calcul initial des données de résumé
   }
 
+  // Met à jour la chaîne de recherche et déclenche un rafraîchissement de l'UI
   void _onSearchChanged() {
     setState(() {
       _searchQuery = _searchController.text;
@@ -62,7 +72,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer?.cancel(); // Annule le timer pour éviter les fuites de mémoire
     _debutScrollController.dispose();
     _finScrollController.dispose();
     _resultatScrollController.dispose();
@@ -71,6 +81,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     super.dispose();
   }
 
+  // Met à jour l'heure actuelle affichée
   void _updateCurrentTime() {
     setState(() {
       _currentDisplayDate = DateTime.now();
@@ -78,12 +89,16 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   }
 
   // --- Fonctions de navigation de date ---
+  // Change la date par jour (pour _startDate ou _endDate)
   void _changeDateByDay(DateTime dateToChange, int daysToAdd, Function(DateTime) updateState) {
     setState(() {
       updateState(dateToChange.add(Duration(days: daysToAdd)));
+      _filterAndSortServices(); // Rafraîchit après changement de date
+      _calculateSummaryData(); // Recalcule les données de résumé
     });
   }
 
+  // Change la date par mois (pour _startDate ou _endDate)
   void _changeDateByMonth(DateTime dateToChange, int monthsToAdd, Function(DateTime) updateState) {
     setState(() {
       updateState(DateTime(
@@ -91,15 +106,18 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         dateToChange.month + monthsToAdd,
         dateToChange.day,
       ));
+      _filterAndSortServices(); // Rafraîchit après changement de date
+      _calculateSummaryData(); // Recalcule les données de résumé
     });
   }
 
+  // Ouvre un sélecteur de date pour choisir une date spécifique
   Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) updateState) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
       firstDate: DateTime(2000), // Date de début possible
-      lastDate: DateTime(2030),  // Date de fin possible
+      lastDate: DateTime(2030), // Date de fin possible
       helpText: 'Sélectionner une date',
       cancelText: 'Annuler',
       confirmText: 'Confirmer',
@@ -108,48 +126,113 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     if (picked != null && picked != initialDate) {
       setState(() {
         updateState(picked);
+        _filterAndSortServices(); // Rafraîchit après changement de date
+        _calculateSummaryData(); // Recalcule les données de résumé
       });
     }
   }
 
+  // Helper pour parser la durée (ex: "1h 30min") en heures totales
+  // Cette fonction n'est pas utilisée directement dans le code actuel car
+  // le modèle Service gère déjà la conversion de durée.
+  double _parseDurationToHours(String durationString) {
+    double totalHours = 0.0;
+    final parts = durationString.toLowerCase().split('h');
+
+    if (parts.isNotEmpty) {
+      // Gère la partie heures
+      final hourPart = parts[0].trim();
+      try {
+        totalHours += double.parse(hourPart.replaceAll(',', '.')); // Gère la virgule comme séparateur décimal
+      } catch (e) {
+        debugPrint('Error parsing hour part: $hourPart, $e');
+      }
+
+      // Gère la partie minutes si disponible
+      if (parts.length > 1 && parts[1].contains('min')) {
+        final minPart = parts[1].split('min')[0].trim();
+        try {
+          totalHours += int.parse(minPart) / 60.0;
+        } catch (e) {
+          debugPrint('Error parsing minute part: $minPart, $e');
+        }
+      }
+    }
+    return totalHours;
+  }
+
+  // Calcule les données de résumé (total et restant)
+  void _calculateSummaryData() {
+    double currentTotalWorkedHours = 0.0;
+    double currentTotalScheduledHours = 0.0;
+
+    // Itérer sur tous les services pour calculer les heures prévues et travaillées
+    for (var service in _services) {
+      // Vérifie si le service est dans la plage de dates actuelle
+      bool isInDateRange = service.startTime.isAfter(_startDate.startOfDay()) &&
+          service.startTime.isBefore(_endDate.endOfDay());
+
+      if (isInDateRange) {
+        // Ajoute la durée de tous les services à _totalScheduledHours
+        currentTotalScheduledHours += service.durationInHours;
+
+        // Ajoute la durée des services validés et non absents à _totalWorkedHours
+        if (service.isValidated && !service.isAbsent) {
+          currentTotalWorkedHours += service.durationInHours;
+        }
+      }
+    }
+
+    setState(() {
+      _totalWorkedHours = currentTotalWorkedHours;
+      _totalScheduledHours = currentTotalScheduledHours;
+      _remainingHours = _totalScheduledHours - _totalWorkedHours;
+    });
+  }
+
+  // Méthode pour déclencher le filtrage et le tri des services
+  void _filterAndSortServices() {
+    setState(() {
+      // Le simple fait de déclencher setState() fera que les getters seront recalculés.
+    });
+  }
+
+  // Getter pour les services filtrés et triés pour la colonne "Début"
   List<Service> get _filteredAndSortedDebutServices {
-    final now = DateTime.now();
     final filteredList = _services.where((service) {
       // Filtre par plage de dates
-      bool isInDateRange = service.startTime.isBefore(_endDate.endOfDay()) && service.endTime.isAfter(_startDate.startOfDay());
-      // NOUVEAU: Filtre par nom d'employé
+      bool isInDateRange = service.startTime.isBefore(_endDate.endOfDay()) && service.startTime.isAfter(_startDate.startOfDay());
+      // Filtre par nom d'employé (recherche insensible à la casse)
       bool matchesSearch = _searchQuery.isEmpty ||
           service.employeeName.toLowerCase().contains(_searchQuery.toLowerCase());
       return isInDateRange && matchesSearch;
     }).toList();
 
-    filteredList.sort((a, b) {
-      final Duration durationA = a.startTime.difference(now);
-      final Duration durationB = b.startTime.difference(now);
-      return durationB.compareTo(durationA); // Tri décroissant des durées
-    });
+    filteredList.sort((a, b) => a.startTime.compareTo(b.startTime)); // Tri par heure de début
     return filteredList;
   }
 
+  // Getter pour les services filtrés et triés pour la colonne "Fin"
   List<Service> get _filteredAndSortedFinServices {
-    final now = DateTime.now();
     final filteredList = _services.where((service) {
       // Filtre par plage de dates
       bool isInDateRange = service.endTime.isBefore(_endDate.endOfDay()) && service.endTime.isAfter(_startDate.startOfDay());
-      // NOUVEAU: Filtre par nom d'employé
+      // Filtre par nom d'employé
       bool matchesSearch = _searchQuery.isEmpty ||
           service.employeeName.toLowerCase().contains(_searchQuery.toLowerCase());
       return isInDateRange && matchesSearch;
     }).toList();
 
-    filteredList.sort((a, b) {
-      final Duration durationA = a.endTime.difference(now); // Tri basé sur l'heure de fin
-      final Duration durationB = b.endTime.difference(now);
-      return durationB.compareTo(durationA); // Tri décroissant des durées
-    });
+    filteredList.sort((a, b) => a.endTime.compareTo(b.endTime)); // Tri par heure de fin
     return filteredList;
   }
 
+  // La colonne Résultat affiche les mêmes services que Début, mais avec une carte différente
+  List<Service> get _filteredAndSortedResultatServices {
+    return List.from(_filteredAndSortedDebutServices);
+  }
+
+  // Gère le basculement de l'état "Absent" d'un service
   void _handleAbsentToggle(String serviceId, bool newAbsentStatus) {
     setState(() {
       final serviceIndex = _services.indexWhere((s) => s.id == serviceId);
@@ -157,30 +240,51 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         // Si l'état devient absent, la validation est automatiquement retirée
         if (newAbsentStatus == true) {
           _services[serviceIndex] = _services[serviceIndex].copyWith(isAbsent: newAbsentStatus, isValidated: false);
-          debugPrint('Service ${serviceId} - Absent: ${newAbsentStatus}, Validation retirée.');
+          debugPrint('Service $serviceId - Absent: $newAbsentStatus, Validation retirée.');
         } else {
           // Si l'état devient présent, on met juste à jour isAbsent
           _services[serviceIndex] = _services[serviceIndex].copyWith(isAbsent: newAbsentStatus);
-          debugPrint('Service ${serviceId} - Absent: ${newAbsentStatus}');
+          debugPrint('Service $serviceId - Absent: $newAbsentStatus');
         }
+        _calculateSummaryData(); // Recalcule les données de résumé
       }
     });
   }
 
+  // Gère le basculement de l'état "Validé" d'un service
   void _handleValidate(String serviceId, bool newValidateStatus) {
     setState(() {
       final serviceIndex = _services.indexWhere((s) => s.id == serviceId);
       if (serviceIndex != -1) {
         _services[serviceIndex] = _services[serviceIndex].copyWith(isValidated: newValidateStatus);
-        debugPrint('Service ${serviceId} - Validated: ${newValidateStatus}');
+        debugPrint('Service $serviceId - Validated: $newValidateStatus');
+        _calculateSummaryData(); // Recalcule les données de résumé
       }
     });
   }
 
+  // Gère la modification de l'heure de début ou de fin d'un service
   Future<void> _handleModifyTime(String serviceId, DateTime currentTime, TimeCardType type) async {
+    // Étape 1: Sélectionner la date
+    final DateTime? newDate = await showDatePicker(
+      context: context,
+      initialDate: currentTime, // Date initiale basée sur l'heure actuelle du service
+      firstDate: DateTime(2000), // Date de début possible
+      lastDate: DateTime(2030), // Date de fin possible
+      helpText: 'Sélectionner la date',
+      cancelText: 'Annuler',
+      confirmText: 'Confirmer',
+      locale: const Locale('fr', 'FR'), // Force le sélecteur de date en français
+    );
+
+    if (newDate == null) {
+      return; // L'utilisateur a annulé la sélection de la date
+    }
+
+    // Étape 2: Sélectionner l'heure
     final TimeOfDay? newTime = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(currentTime),
+      initialTime: TimeOfDay.fromDateTime(currentTime), // Heure initiale basée sur l'heure actuelle du service
       helpText: 'Sélectionner l\'heure',
       cancelText: 'Annuler',
       confirmText: 'Confirmer',
@@ -196,20 +300,14 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
       final Service currentService = _services[serviceIndex];
 
-      // Construire le DateTime complet pour la mise à jour du service
+      // Construire le DateTime complet avec la NOUVELLE date et la NOUVELLE heure
       final DateTime updatedDateTime = DateTime(
-        currentTime.year,
-        currentTime.month,
-        currentTime.day,
+        newDate.year, // Utilise l'année de la nouvelle date
+        newDate.month, // Utilise le mois de la nouvelle date
+        newDate.day, // Utilise le jour de la nouvelle date
         newTime.hour,
         newTime.minute,
       );
-
-      // Créer des objets DateTime temporaires sur une date arbitraire (ex: an 2000, 1er janvier)
-      // pour comparer uniquement les composants heure et minute, ignorant la date réelle.
-      final DateTime tempNewTime = DateTime(2000, 1, 1, newTime.hour, newTime.minute);
-      final DateTime tempCurrentStartTime = DateTime(2000, 1, 1, currentService.startTime.hour, currentService.startTime.minute);
-      final DateTime tempCurrentEndTime = DateTime(2000, 1, 1, currentService.endTime.hour, currentService.endTime.minute);
 
       debugPrint('--- Débogage de la validation ---');
       debugPrint('ID du service: $serviceId');
@@ -217,26 +315,26 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       debugPrint('Heure de début actuelle (complète): ${currentService.startTime}');
       debugPrint('Heure de fin actuelle (complète): ${currentService.endTime}');
       debugPrint('Nouvelle heure sélectionnée (complète): $updatedDateTime');
-      debugPrint('--- Valeurs pour la comparaison (heure seule) ---');
-      debugPrint('Nouvelle heure temporaire: ${DateFormat('HH:mm').format(tempNewTime)}');
-      debugPrint('Heure de début actuelle temporaire: ${DateFormat('HH:mm').format(tempCurrentStartTime)}');
-      debugPrint('Heure de fin actuelle temporaire: ${DateFormat('HH:mm').format(tempCurrentEndTime)}');
       debugPrint('--- Fin du débogage de la validation ---');
 
       bool canUpdate = true;
       String? errorMessage;
 
       if (type == TimeCardType.debut) {
-        // Si la nouvelle heure de début est après ou égale à l'heure de fin existante
-        if (tempNewTime.isAfter(tempCurrentEndTime) || tempNewTime.isAtSameMomentAs(tempCurrentEndTime)) {
+        // Pour une modification de l'heure de DÉBUT :
+        // La nouvelle heure de début (updatedDateTime) doit être AVANT l'heure de fin actuelle (currentService.endTime).
+        // Si elle est APRÈS ou ÉGALE, c'est une erreur.
+        if (updatedDateTime.isAfter(currentService.endTime) || updatedDateTime.isAtSameMomentAs(currentService.endTime)) {
           canUpdate = false;
-          errorMessage = 'L\'heure de début (${DateFormat('HH:mm').format(tempNewTime)}) ne peut pas être après ou égale à l\'heure de fin actuelle (${DateFormat('HH:mm').format(tempCurrentEndTime)}).';
+          errorMessage = 'L\'heure de début (${DateFormat('dd/MM HH:mm').format(updatedDateTime)}) ne peut pas être après ou égale à l\'heure de fin actuelle (${DateFormat('dd/MM HH:mm').format(currentService.endTime)}).';
         }
       } else { // type == TimeCardType.fin
-        // Si la nouvelle heure de fin est avant ou égale à l'heure de début existante
-        if (tempNewTime.isBefore(tempCurrentStartTime) || tempNewTime.isAtSameMomentAs(tempCurrentStartTime)) {
+        // Pour une modification de l'heure de FIN :
+        // La nouvelle heure de fin (updatedDateTime) doit être APRÈS l'heure de début actuelle (currentService.startTime).
+        // Si elle est AVANT ou ÉGALE, c'est une erreur.
+        if (updatedDateTime.isBefore(currentService.startTime) || updatedDateTime.isAtSameMomentAs(currentService.startTime)) {
           canUpdate = false;
-          errorMessage = 'L\'heure de fin (${DateFormat('HH:mm').format(tempNewTime)}) ne peut pas être avant ou égale à l\'heure de début actuelle (${DateFormat('HH:mm').format(tempCurrentStartTime)}).';
+          errorMessage = 'L\'heure de fin (${DateFormat('dd/MM HH:mm').format(updatedDateTime)}) ne peut pas être avant ou égale à l\'heure de début actuelle (${DateFormat('dd/MM HH:mm').format(currentService.startTime)}).';
         }
       }
 
@@ -244,11 +342,12 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         setState(() {
           if (type == TimeCardType.debut) {
             _services[serviceIndex] = currentService.copyWith(startTime: updatedDateTime);
-            debugPrint('Service $serviceId - Nouvelle heure de début: ${DateFormat('HH:mm').format(updatedDateTime)}');
+            debugPrint('Service $serviceId - Nouvelle heure de début: ${DateFormat('dd/MM HH:mm').format(updatedDateTime)}');
           } else {
             _services[serviceIndex] = currentService.copyWith(endTime: updatedDateTime);
-            debugPrint('Service $serviceId - Nouvelle heure de fin: ${DateFormat('HH:mm').format(updatedDateTime)}');
+            debugPrint('Service $serviceId - Nouvelle heure de fin: ${DateFormat('dd/MM HH:mm').format(updatedDateTime)}');
           }
+          _calculateSummaryData(); // Recalcule les données de résumé
         });
         // Afficher un SnackBar de succès (optionnel, mais bonne pratique)
         ScaffoldMessenger.of(context).showSnackBar(
@@ -272,7 +371,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
-
+  // Fait défiler les différentes colonnes pour afficher le service spécifié
   void _scrollToService(Service serviceToScrollTo) {
     const double itemHeight = 200.0; // Hauteur estimée d'une carte
 
@@ -306,6 +405,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
+  // Fonction pour importer les services depuis un fichier Excel
   Future<void> _importServicesFromExcel() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -351,8 +451,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           Map<String, dynamic> rowData = {};
           for (int j = 0; j < headers.length; j++) {
             if (j < row.length) {
-              // C'est la ligne correcte à utiliser pour passer la CellValue à Service.fromExcelRow
-              // Votre _parseExcelDateValue saura maintenant gérer directement cette CellValue.
               rowData[headers[j]] = row[j]?.value;
             }
           }
@@ -360,6 +458,10 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             importedServices.add(Service.fromExcelRow(rowData));
           } catch (e) {
             debugPrint('Erreur lors de la création du service à partir de la ligne Excel ${i + 1}: $rowData - $e');
+            // Optionnel: Afficher un SnackBar pour chaque erreur de ligne
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erreur à la ligne ${i + 1}: $e')),
+            );
           }
         }
 
@@ -367,7 +469,16 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           _services = importedServices;
           _dataLoaded = true;
           debugPrint('Importation de ${importedServices.length} services depuis Excel réussie.');
+          _filterAndSortServices(); // Applique le filtre initial après le chargement
+          _calculateSummaryData(); // Recalcule les données de résumé
         });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Importation de ${importedServices.length} services depuis Excel réussie.'),
+            backgroundColor: Colors.green,
+          ),
+        );
       } else {
         // Message plus clair si l'utilisateur annule ou si le fichier est vide
         ScaffoldMessenger.of(context).showSnackBar(
@@ -382,386 +493,467 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       );
     }
   }
+  
+  // Fonction pour exporter les services vers un fichier Excel
+  Future<void> _exportServicesToExcel() async {
+    if (_services.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aucune donnée à exporter.')),
+      );
+      return;
+    }
 
+    try {
+      final Excel excel = Excel.createExcel();
+      final Sheet sheet = excel['Services']; // Nom de la feuille Excel
+
+      // Ajouter les en-têtes
+      // CORRECTION : Utiliser CellValue.fromString() pour chaque en-tête
+      // sheet.appendRow([
+      //   CellValue.fromString('ID'),
+      //   CellValue.fromString('Nom Employé'),
+      //   CellValue.fromString('Date Début'),
+      //   CellValue.fromString('Heure Début'),
+      //   CellValue.fromString('Date Fin'),
+      //   CellValue.fromString('Heure Fin'),
+      //   CellValue.fromString('Durée (heures)'),
+      //   CellValue.fromString('Validé'),
+      //   CellValue.fromString('Absent'),
+      //   CellValue.fromString('Description'),
+      // ]);
+
+      // Ajouter les données des services
+      // for (var service in _services) {
+      //   // CORRECTION : Utiliser CellValue.fromString() pour chaque donnée
+      //   sheet.appendRow([
+      //     CellValue.fromString(service.id),
+      //     CellValue.fromString(service.employeeName),
+      //     CellValue.fromString(DateFormat('dd/MM/yyyy').format(service.startTime)),
+      //     CellValue.fromString(DateFormat('HH:mm').format(service.startTime)),
+      //     CellValue.fromString(DateFormat('dd/MM/yyyy').format(service.endTime)),
+      //     CellValue.fromString(DateFormat('HH:mm').format(service.endTime)),
+      //     CellValue.fromString(service.durationInHours.toStringAsFixed(2)), // Convertir en String avant de créer CellValue
+      //     CellValue.fromString(service.isValidated ? 'Oui' : 'Non'),
+      //     CellValue.fromString(service.isAbsent ? 'Oui' : 'Non'),
+      //     CellValue.fromString(service.description),
+      //   ]);
+      // }
+
+      // Obtenir les octets du fichier Excel
+      final List<int>? excelBytes = excel.save();
+
+      if (excelBytes != null) {
+        // Demander à l'utilisateur où enregistrer le fichier
+        String? outputFile = await FilePicker.platform.saveFile(
+          fileName: 'services_export_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx',
+          type: FileType.custom,
+          allowedExtensions: ['xlsx'],
+        );
+
+        if (outputFile != null) {
+          final File file = File(outputFile);
+          await file.writeAsBytes(excelBytes);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Services exportés avec succès vers: $outputFile'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          debugPrint('Services exportés avec succès vers: $outputFile');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Exportation annulée.')),
+          );
+          debugPrint('Exportation annulée.');
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur lors de la génération du fichier Excel.')),
+        );
+        debugPrint('Erreur lors de la génération du fichier Excel (bytes null).');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de l\'exportation du fichier Excel: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de l\'exportation du fichier Excel: $e')),
+      );
+    }
+  }
+    
+  // Méthode pour construire l'AppBar
+AppBar _buildAppBar(BuildContext context) {
+  return AppBar(
+    leading: Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Image.asset(
+        'assets/logo_app.png',
+        height: 40,
+        width: 40,
+      ),
+    ),
+    title: Text(
+      'Prise de services automatique',
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 20,
+        color: Theme.of(context).colorScheme.onPrimary,
+      ),
+    ),
+    centerTitle: true,
+    backgroundColor: Theme.of(context).primaryColor,
+    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+    actions: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: _dataLoaded
+            ? ElevatedButton.icon(
+                onPressed: _importServicesFromExcel,
+                icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
+                label: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              )
+            : ElevatedButton.icon(
+                onPressed: _importServicesFromExcel,
+                icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary),
+                label: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: ElevatedButton.icon(
+          onPressed: _exportServicesToExcel,
+          icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary),
+          label: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.onPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+        ),
+      ),
+
+      const SizedBox(width: 8),
+    ],
+  );
+}
+
+
+  // Méthode pour construire le sélecteur de date
+  Widget _buildDateRangeSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      color: Colors.grey[100],
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios, size: 18),
+            onPressed: () {
+              setState(() {
+                _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
+                _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
+              });
+            },
+            visualDensity: VisualDensity.compact,
+          ),
+          _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
+          const SizedBox(width: 8),
+          VerticalDivider(
+            color: Theme.of(context).colorScheme.primary, // Utilise la couleur du thème
+            thickness: 1.5,
+            indent: 5,
+            endIndent: 5,
+            width: 16,
+          ),
+          const SizedBox(width: 8),
+          _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
+          IconButton(
+            icon: const Icon(Icons.arrow_forward_ios, size: 18),
+            onPressed: () {
+              setState(() {
+                _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
+                _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
+              });
+            },
+            visualDensity: VisualDensity.compact,
+          ),
+          const Spacer(),
+          Text(
+            DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.secondary, // Couleur secondaire du thème
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Méthode d'aide pour les contrôles individuels de date
+  Widget _buildDateControl(DateTime date, ValueChanged<DateTime> onDateChanged) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.remove, size: 18),
+          onPressed: () => _changeDateByDay(date, -1, onDateChanged),
+          visualDensity: VisualDensity.compact,
+        ),
+        const SizedBox(width: 4),
+        GestureDetector(
+          onTap: () => _selectDate(context, date, onDateChanged),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).primaryColor, width: 1.5),
+              borderRadius: BorderRadius.circular(8.0),
+              color: Colors.white,
+            ),
+            child: Text(
+              DateFormat('dd/MM/yyyy').format(date),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        IconButton(
+          icon: const Icon(Icons.add, size: 18),
+          onPressed: () => _changeDateByDay(date, 1, onDateChanged),
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
+    );
+  }
+
+  // Méthode pour construire la barre de recherche
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          labelText: 'Rechercher par nom d\'employé',
+          hintText: 'Entrez le nom de l\'employé...',
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+        ),
+      ),
+    );
+  }
+
+  // Méthode pour construire les en-têtes de colonne
+  Widget _buildColumnHeaders() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: Text(
+                'Début',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.primary, // Utilise la couleur du thème
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: Text(
+                'Fin',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.primary, // Utilise la couleur du thème
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Center(
+              child: Text(
+                'Résultat',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.green.shade700, // Une couleur distincte pour le résultat
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Méthode pour construire une liste de services (colonne)
+  Widget _buildServiceColumn(List<Service> services, ScrollController controller, TimeCardType type) {
+    return Expanded(
+      flex: type == TimeCardType.result ? 1 : 2, // Flexibilité différente pour la colonne Résultat
+      child: ListView.builder(
+        controller: controller,
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        itemCount: services.length,
+        itemBuilder: (context, index) {
+          final service = services[index];
+          return TimeDetailCard(
+            service: service,
+            type: type,
+            onAbsentPressed: (newStatus) {
+              _handleAbsentToggle(service.id, newStatus);
+            },
+            onModifyTime: (currentTime) {
+              _handleModifyTime(service.id, currentTime, type); // Passe le type correct
+            },
+            onValidate: (newStatus) {
+              _handleValidate(service.id, newStatus);
+            },
+            onTap: () {
+              _scrollToService(service);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  // Méthode pour construire le pied de page
+  Widget _buildFooter() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Spacer(),
+          Text(
+            "© BMSoft 2025, tous droits réservés   ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.secondary, // Utilise la couleur secondaire du thème
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Méthode pour construire une puce de résumé flottante
+  Widget _buildSummaryChip(IconData icon, String label, String value, Color color) {
+    return Card(
+      color: color,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 6),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Méthode pour construire les widgets flottants de résumé
+  Widget _buildSummaryFloatingWidgets() {
+    return Positioned(
+      bottom: 30, // Ajustez la position verticale si nécessaire
+      right: 20, // Ajustez la position horizontale si nécessaire
+      child: Row( // Changé de Row à Column pour empiler verticalement
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          _buildSummaryChip(Icons.calendar_today, 'Mois', DateFormat('MMMM', 'fr_FR').format(_startDate), Colors.blueAccent),
+          const SizedBox(height: 6),
+          _buildSummaryChip(Icons.balance, 'Prévu', '${_totalScheduledHours.toStringAsFixed(1)}H', Colors.purpleAccent), // Nouvelle puce pour les heures prévues
+          const SizedBox(height: 6),
+          _buildSummaryChip(Icons.access_time, 'Travaillé', '${_totalWorkedHours.toStringAsFixed(1)}H', Colors.redAccent), // Ancien "Total"
+          const SizedBox(height: 6),
+          _buildSummaryChip(Icons.access_time, 'Restant', '${_remainingHours.toStringAsFixed(1)}H', Colors.orangeAccent),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Logo / Titre / Import
-      appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Image.asset(
-            'assets/logo_app.png',
-            height: 40,
-            width: 40,
-          ),
-        ),
-        title: const Text(
-          'Prise de services automatique',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            color: Colors.white, // Assure que le titre est blanc
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white, // Couleur des icônes et du texte par défaut dans l'AppBar
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0), // Ajoute un petit padding horizontal
-            child: _dataLoaded
-                ? ElevatedButton.icon(
-                    onPressed: _importServicesFromExcel,
-                    icon: const Icon(Icons.settings, color: Colors.blueGrey), // Icône pour changer
-                    label: const Text('Changer', style: TextStyle(color: Color.fromARGB(255, 35, 55, 65))),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white, // Fond blanc pour le bouton
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0), // Coins arrondis
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                  )
-                : ElevatedButton.icon(
-                    onPressed: _importServicesFromExcel,
-                    icon: const Icon(Icons.upload_file, color: Colors.blueGrey), // Icône pour l'importation
-                    label: const Text('Importer Vacations', style: TextStyle(color: Color.fromARGB(255, 35, 55, 65))),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white, // Fond blanc pour le bouton
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0), // Coins arrondis
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                  ),
-          ),
-          const SizedBox(width: 8), // Espace à droite des boutons
-        ],
-      ),
-      body: Column(
+      appBar: _buildAppBar(context),
+      body: Stack( // Utilisez un Stack pour positionner les widgets flottants
         children: <Widget>[
-          // Dates / Date
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            color: Colors.grey[100],
-            child: Row(
-              children: [
-                // Bouton flèche gauche (mois précédent)
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, size: 18),
-                  onPressed: () {
-                    _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
-                    _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
-                  },
-                  visualDensity: VisualDensity.compact,
-                ),
-                // Contrôles de la date de début
-                Row(
-                  mainAxisSize: MainAxisSize.min, // Utilise un minimum d'espace
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove, size: 18),
-                      onPressed: () {
-                        _changeDateByDay(_startDate, -1, (newDate) => _startDate = newDate);
-                      },
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    const SizedBox(width: 4), // Espace réduit
-                    GestureDetector(
-                      onTap: () => _selectDate(context, _startDate, (newDate) => _startDate = newDate),
-                      child: Container( // Ajout d'un Container pour la bordure et le padding
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).primaryColor, width: 1.5),
-                          borderRadius: BorderRadius.circular(8.0),
-                          color: Colors.white,
-                        ),
-                        child: Text(
-                          DateFormat('dd/MM/yyyy').format(_startDate),
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4), // Espace réduit
-                    IconButton(
-                      icon: const Icon(Icons.add, size: 18),
-                      onPressed: () {
-                        _changeDateByDay(_startDate, 1, (newDate) => _startDate = newDate);
-                      },
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(width: 8), // Espace entre les deux dates
-                const Text(
-                  '|',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 75, 1, 88)),
-                ),
-                const SizedBox(width: 8), // Espace entre les deux dates
-
-                // Contrôles de la date de fin
-                Row(
-                  mainAxisSize: MainAxisSize.min, // Utilise un minimum d'espace
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove, size: 18),
-                      onPressed: () {
-                        _changeDateByDay(_endDate, -1, (newDate) => _endDate = newDate);
-                      },
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    const SizedBox(width: 4), // Espace réduit
-                    GestureDetector(
-                      onTap: () => _selectDate(context, _endDate, (newDate) => _endDate = newDate),
-                      child: Container( // Ajout d'un Container pour la bordure et le padding
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).primaryColor, width: 1.5),
-                          borderRadius: BorderRadius.circular(8.0),
-                          color: Colors.white,
-                        ),
-                        child: Text(
-                          DateFormat('dd/MM/yyyy').format(_endDate),
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4), // Espace réduit
-                    IconButton(
-                      icon: const Icon(Icons.add, size: 18),
-                      onPressed: () {
-                        _changeDateByDay(_endDate, 1, (newDate) => _endDate = newDate);
-                      },
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ],
-                ),
-                // Bouton flèche droite (mois suivant)
-                IconButton(
-                  icon: const Icon(Icons.arrow_forward_ios, size: 18),
-                  onPressed: () {
-                    _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
-                    _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
-                  },
-                  visualDensity: VisualDensity.compact,
-                ),
-
-                const Spacer(), // Pousse l'heure actuelle à droite
-
-                // Affichage de la date et heure actuelles
-                Text(
-                  DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color.fromARGB(255, 27, 82, 107)),
-                ),
-              ],
-            ),
-          ),
-          // Recherche 
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Rechercher par nom d\'employé',
-                hintText: 'Entrez le nom de l\'employé...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-              ),
-            ),
-          ),
-          // Noms Colonnes
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              children: [
-                const Expanded(
-                  flex: 2,
-                  child: Center(child: Text('Début', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color.fromARGB(255, 45, 153, 241)))),
-                ),
-                const Expanded(
-                  flex: 2,
-                  child: Center(child: Text('Fin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color.fromARGB(255, 45, 153, 241)))),
-                ),
-                const Expanded(
-                  flex: 1,
-                  child: Center(child: Text('Résultat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color.fromARGB(255, 58, 146, 62)))),
-                ),
-              ],
-            ),
-          ),
-          
-          if(!_dataLoaded) ... [
-            const Spacer(),
-            Text("Veuillez importer un fichier Excel pour commencer",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Color.fromARGB(255, 143, 2, 2)),
-            ),
-          ],
-          // Contenu Colonne
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Colonne "Début"
-                Expanded(
-                  flex: 2,
-                  child: ListView.builder(
-                    controller: _debutScrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    itemCount: _filteredAndSortedDebutServices.length,
-                    itemBuilder: (context, index) {
-                      final service = _filteredAndSortedDebutServices[index];
-                      return TimeDetailCard(
-                        service: service,
-                        type: TimeCardType.debut,
-                        onAbsentPressed: (newStatus) {
-                          _handleAbsentToggle(service.id, newStatus);
-                        },
-                        onModifyTime: (currentTime) {
-                          _handleModifyTime(service.id, currentTime, TimeCardType.debut);
-                        },
-                        onValidate: (newStatus) {
-                          _handleValidate(service.id, newStatus);
-                        },
-                        onTap: () {
-                           _scrollToService(service);
-                        }
-                      );
-                    },
-                  ),
-                ),
-                // Colonne "Fin"
-                Expanded(
-                  flex: 2,
-                  child: ListView.builder(
-                    controller: _finScrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    itemCount: _filteredAndSortedFinServices.length,
-                    itemBuilder: (context, index) {
-                      final service = _filteredAndSortedFinServices[index];
-                      return TimeDetailCard(
-                        service: service,
-                        type: TimeCardType.fin,
-                        onModifyTime: (currentTime) {
-                          _handleModifyTime(service.id, currentTime, TimeCardType.fin);
-                        },
-                        onValidate: (newStatus) {
-                          _handleValidate(service.id, newStatus);
-                        },
-                        onAbsentPressed:  (newStatus) {
-                          _handleAbsentToggle(service.id, newStatus);
-                        },
-                        onTap: () {
-                           _scrollToService(service);
-                        }
-                      );
-                    },
-                  ),
-                ),
-                // Colonne "Résultat"
-                Expanded(
-                  flex: 1,
-                  child: ListView.builder(
-                    controller: _resultatScrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    itemCount: _filteredAndSortedDebutServices.length,
-                    itemBuilder: (context, index) {
-                      final service = _filteredAndSortedDebutServices[index];
-                      return TimeDetailCard(
-                        service: service,
-                        type: TimeCardType.result,
-                        onAbsentPressed: (newStatus) {
-                          _handleAbsentToggle(service.id, newStatus);
-                        },
-                        onValidate: (newStatus) {
-                          _handleValidate(service.id, newStatus);
-                        },
-                        onModifyTime: (currentTime) {
-                          _handleModifyTime(service.id, currentTime, TimeCardType.debut);
-                        },
-                        onTap: () => _scrollToService(service),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Padding(
-          //   padding: const EdgeInsets.all(16.0),
-          //   child: Row(
-          //     mainAxisAlignment: MainAxisAlignment.end,
-          //     children: [
-          //       Container(
-          //         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-          //         decoration: BoxDecoration(
-          //           color: Colors.blueAccent,
-          //           borderRadius: BorderRadius.circular(8.0),
-          //         ),
-          //         child: const Text('Juillet 2025', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          //       ),
-          //       const SizedBox(width: 10),
-          //       Container(
-          //         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-          //         decoration: BoxDecoration(
-          //           color: Colors.redAccent,
-          //           borderRadius: BorderRadius.circular(8.0),
-          //         ),
-          //         child: const Text('36H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          //       ),
-          //       const SizedBox(width: 10),
-          //       Container(
-          //         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-          //         decoration: BoxDecoration(
-          //           color: Colors.orangeAccent,
-          //           borderRadius: BorderRadius.circular(8.0),
-          //         ),
-          //         child: const Text('96H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          //       ),
-          //     ],
-          //   ),
-          // ),
-
-          // Footer
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+          Column( // Le contenu principal de l'application
+            children: <Widget>[
+              _buildDateRangeSelector(),
+              _buildSearchBar(),
+              _buildColumnHeaders(),
+              if (!_dataLoaded) ...[
                 const Spacer(),
-
-                // Groupe de contrôles de pagination (< 1 >)
-                // Row(
-                //   mainAxisSize: MainAxisSize.min,
-                //   children: [
-                //     IconButton(icon: const Icon(Icons.arrow_back_ios), onPressed: () {}),
-                //     Container(
-                //       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                //       decoration: BoxDecoration(
-                //         border: Border.all(color: Colors.blue),
-                //         borderRadius: BorderRadius.circular(5),
-                //       ),
-                //       child: const Text('1', style: TextStyle(color: Colors.blue)),
-                //     ),
-                //     IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () {}),
-                //   ],
-                // ),
-
-                //const Spacer(),
-
                 Text(
-                  "© BMSoft 2025, tous droits réservés   ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color.fromARGB(255, 3, 53, 190)),
+                  "Veuillez importer un fichier Excel pour commencer",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.error, // Utilise la couleur d'erreur du thème
+                  ),
+                  textAlign: TextAlign.center,
                 ),
+                const Spacer(),
               ],
-            ),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildServiceColumn(_filteredAndSortedDebutServices, _debutScrollController, TimeCardType.debut),
+                    _buildServiceColumn(_filteredAndSortedFinServices, _finScrollController, TimeCardType.fin),
+                    _buildServiceColumn(_filteredAndSortedDebutServices, _resultatScrollController, TimeCardType.result),
+                  ],
+                ),
+              ),
+              _buildFooter(),
+            ],
           ),
+          _buildSummaryFloatingWidgets(), // Les widgets flottants ajoutés ici
         ],
       ),
     );

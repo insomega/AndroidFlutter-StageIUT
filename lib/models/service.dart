@@ -42,6 +42,18 @@ class Service {
     required this.clientSvrLib,
   });
 
+  String get duration {
+    final Duration diff = endTime.difference(startTime);
+    final int hours = diff.inHours;
+    final int minutes = diff.inMinutes.remainder(60);
+    return '${hours}h ${minutes}min';
+  }
+
+  double get durationInHours {
+    final Duration diff = endTime.difference(startTime);
+    return diff.inMinutes / 60.0;
+  }
+  
   // Helper pour extraire la valeur réelle d'un CellValue ou d'un autre type.
   // Cette fonction va maintenant toujours retourner une String si c'est un CellValue,
   // et le type original si ce n'est pas un CellValue (ex: déjà String, int, DateTime).
@@ -62,7 +74,7 @@ class Service {
   // Méthode factory pour créer un Service à partir d'une Map (issue d'une ligne Excel)
   factory Service.fromExcelRow(Map<String, dynamic> data) {
     // Helper pour parser les dates en gérant les différents types de données de Excel.
-    DateTime _parseExcelDateValue(dynamic rawValue, String fieldName) {
+    DateTime parseExcelDateValue(dynamic rawValue, String fieldName) {
       if (rawValue == null) {
         debugPrint('Avertissement: La date pour $fieldName est vide ou nulle. Utilisation de DateTime.now().');
         return DateTime.now();
@@ -110,8 +122,8 @@ class Service {
       employeeSvrCode: _extractCellValue(data['SVR_CODE'])?.toString() ?? '',
       employeeSvrLib: _extractCellValue(data['SVR_LIB'])?.toString() ?? '',
       employeeTelPort: _extractCellValue(data['SVR_TELPOR'])?.toString() ?? '',
-      startTime: _parseExcelDateValue(data['VAC_START_HOUR'], 'VAC_START_HOUR'),
-      endTime: _parseExcelDateValue(data['VAC_END_HOUR'], 'VAC_END_HOUR'),
+      startTime: parseExcelDateValue(data['VAC_START_HOUR'], 'VAC_START_HOUR'),
+      endTime: parseExcelDateValue(data['VAC_END_HOUR'], 'VAC_END_HOUR'),
       locationCode: _extractCellValue(data['LIE_CODE'])?.toString() ?? '',
       locationLib: _extractCellValue(data['LIE_LIB'])?.toString() ?? '',
       clientLocationLine3: 'client BM-CL01',
