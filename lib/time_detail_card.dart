@@ -38,7 +38,7 @@ class TimeDetailCard extends StatelessWidget {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     final String hours = twoDigits(duration.inHours);
     final String minutes = twoDigits(duration.inMinutes.remainder(60));
-    return '$sign${hours}h${minutes} min';
+    return '$sign${hours}h$minutes min';
   }
 
   // Méthode d'aide pour construire la ligne d'en-tête (ID, Nom, Contact)
@@ -187,7 +187,6 @@ class TimeDetailCard extends StatelessWidget {
       ],
     );
   }
-
 
   // Méthode d'aide pour construire les boutons d'action (Modifier, Absent/Présent, Valider/Dévalider) 
   Widget _buildActionButtons(BuildContext context) {

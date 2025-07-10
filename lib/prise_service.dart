@@ -1,5 +1,7 @@
 // lib/prise_service.dart (Updated with Excel import functionality)
 
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mon_projet/time_detail_card.dart'; // Assurez-vous que ce fichier existe
@@ -11,6 +13,7 @@ import 'dart:typed_data'; // Pour Uint8List
 // Pour obtenir les répertoires temporaires/documents
 // Pour File
 import 'package:flutter/foundation.dart' show kIsWeb;
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html; // seulement utilisé si Web (aucune erreur sinon)
 
 
@@ -421,14 +424,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         final Excel excel = Excel.decodeBytes(bytes);
 
         // Supposons que les données sont dans la première feuille
-        final String? sheetName = excel.tables.keys.first;
-        if (sheetName == null) {
-          debugPrint('Aucune feuille trouvée dans le fichier Excel.');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erreur: Aucune feuille trouvée dans le fichier Excel.')),
-          );
-          return;
-        }
+        final String sheetName = excel.tables.keys.first;
 
         final sheet = excel.tables[sheetName];
         if (sheet == null || sheet.rows.isEmpty) {
