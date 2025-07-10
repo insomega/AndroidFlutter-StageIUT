@@ -8,8 +8,11 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' hide Border; // Importation pour la lecture et l'écriture Excel
 import 'dart:typed_data'; // Pour Uint8List
-import 'package:path_provider/path_provider.dart'; // Pour obtenir les répertoires temporaires/documents
-import 'dart:io'; // Pour File
+// Pour obtenir les répertoires temporaires/documents
+// Pour File
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:html' as html; // seulement utilisé si Web (aucune erreur sinon)
+
 
 // Extension pour faciliter la manipulation des dates (début/fin de journée)
 extension DateTimeExtension on DateTime {
@@ -135,31 +138,30 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   // Helper pour parser la durée (ex: "1h 30min") en heures totales
   // Cette fonction n'est pas utilisée directement dans le code actuel car
   // le modèle Service gère déjà la conversion de durée.
-  double _parseDurationToHours(String durationString) {
-    double totalHours = 0.0;
-    final parts = durationString.toLowerCase().split('h');
-
-    if (parts.isNotEmpty) {
-      // Gère la partie heures
-      final hourPart = parts[0].trim();
-      try {
-        totalHours += double.parse(hourPart.replaceAll(',', '.')); // Gère la virgule comme séparateur décimal
-      } catch (e) {
-        debugPrint('Error parsing hour part: $hourPart, $e');
-      }
-
-      // Gère la partie minutes si disponible
-      if (parts.length > 1 && parts[1].contains('min')) {
-        final minPart = parts[1].split('min')[0].trim();
-        try {
-          totalHours += int.parse(minPart) / 60.0;
-        } catch (e) {
-          debugPrint('Error parsing minute part: $minPart, $e');
-        }
-      }
-    }
-    return totalHours;
-  }
+  
+  // double _parseDurationToHours(String durationString) {
+  //   double totalHours = 0.0;
+  //   final parts = durationString.toLowerCase().split('h');
+  //   if (parts.isNotEmpty) {
+  //     // Gère la partie heures
+  //     final hourPart = parts[0].trim();
+  //     try {
+  //       totalHours += double.parse(hourPart.replaceAll(',', '.')); // Gère la virgule comme séparateur décimal
+  //     } catch (e) {
+  //       debugPrint('Error parsing hour part: $hourPart, $e');
+  //     
+  //     // Gère la partie minutes si disponible
+  //     if (parts.length > 1 && parts[1].contains('min')) {
+  //       final minPart = parts[1].split('min')[0].trim();
+  //       try {
+  //         totalHours += int.parse(minPart) / 60.0;
+  //       } catch (e) {
+  //         debugPrint('Error parsing minute part: $minPart, $e');
+  //       }
+  //     }
+  //   }
+  //   return totalHours;
+  // }
 
   // Calcule les données de résumé (total et restant)
   void _calculateSummaryData() {
@@ -228,9 +230,9 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   }
 
   // La colonne Résultat affiche les mêmes services que Début, mais avec une carte différente
-  List<Service> get _filteredAndSortedResultatServices {
-    return List.from(_filteredAndSortedDebutServices);
-  }
+  // List<Service> get _filteredAndSortedResultatServices {
+  //   return List.from(_filteredAndSortedDebutServices);
+  // }
 
   // Gère le basculement de l'état "Absent" d'un service
   void _handleAbsentToggle(String serviceId, bool newAbsentStatus) {
@@ -495,8 +497,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   }
   
   // Fonction pour exporter les services vers un fichier Excel
-  Future<void> _exportServicesToExcel() async {
-    if (_services.isEmpty) {
+  Future<void> exportToExcelWeb(List<Service> services) async {
+    if (services.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Aucune donnée à exporter.')),
       );
@@ -504,154 +506,149 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
 
     try {
-      final Excel excel = Excel.createExcel();
-      final Sheet sheet = excel['Services']; // Nom de la feuille Excel
+      final excel = Excel.createExcel();
+      //excel.delete('Sheet1'); // Supprime la feuille par défaut
+      final sheet = excel['Services'];
 
-      // Ajouter les en-têtes
-      // CORRECTION : Utiliser CellValue.fromString() pour chaque en-tête
-      // sheet.appendRow([
-      //   CellValue.fromString('ID'),
-      //   CellValue.fromString('Nom Employé'),
-      //   CellValue.fromString('Date Début'),
-      //   CellValue.fromString('Heure Début'),
-      //   CellValue.fromString('Date Fin'),
-      //   CellValue.fromString('Heure Fin'),
-      //   CellValue.fromString('Durée (heures)'),
-      //   CellValue.fromString('Validé'),
-      //   CellValue.fromString('Absent'),
-      //   CellValue.fromString('Description'),
-      // ]);
+      // En-têtes
+      sheet.appendRow([
+        TextCellValue('VAC_IDF'),
+        TextCellValue('SVR_LIB'),
+        TextCellValue('SVR_CODE'),
+        TextCellValue('SVR_LIB (Employé)'),
+        TextCellValue('SVR_TELPOR'),
+        TextCellValue('VAC_START_HOUR'),
+        TextCellValue('VAC_END_HOUR'),
+        TextCellValue('LIE_CODE'),
+        TextCellValue('LIE_LIB'),
+        TextCellValue('CLIENT'),
+        TextCellValue('SVR_CODE (Client)'),
+        TextCellValue('SVR_LIB (Client)'),
+        TextCellValue('Absent'),
+        TextCellValue('Validé'),
+      ]);
 
-      // Ajouter les données des services
-      // for (var service in _services) {
-      //   // CORRECTION : Utiliser CellValue.fromString() pour chaque donnée
-      //   sheet.appendRow([
-      //     CellValue.fromString(service.id),
-      //     CellValue.fromString(service.employeeName),
-      //     CellValue.fromString(DateFormat('dd/MM/yyyy').format(service.startTime)),
-      //     CellValue.fromString(DateFormat('HH:mm').format(service.startTime)),
-      //     CellValue.fromString(DateFormat('dd/MM/yyyy').format(service.endTime)),
-      //     CellValue.fromString(DateFormat('HH:mm').format(service.endTime)),
-      //     CellValue.fromString(service.durationInHours.toStringAsFixed(2)), // Convertir en String avant de créer CellValue
-      //     CellValue.fromString(service.isValidated ? 'Oui' : 'Non'),
-      //     CellValue.fromString(service.isAbsent ? 'Oui' : 'Non'),
-      //     CellValue.fromString(service.description),
-      //   ]);
-      // }
-
-      // Obtenir les octets du fichier Excel
-      final List<int>? excelBytes = excel.save();
-
-      if (excelBytes != null) {
-        // Demander à l'utilisateur où enregistrer le fichier
-        String? outputFile = await FilePicker.platform.saveFile(
-          fileName: 'services_export_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx',
-          type: FileType.custom,
-          allowedExtensions: ['xlsx'],
-        );
-
-        if (outputFile != null) {
-          final File file = File(outputFile);
-          await file.writeAsBytes(excelBytes);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Services exportés avec succès vers: $outputFile'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          debugPrint('Services exportés avec succès vers: $outputFile');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Exportation annulée.')),
-          );
-          debugPrint('Exportation annulée.');
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la génération du fichier Excel.')),
-        );
-        debugPrint('Erreur lors de la génération du fichier Excel (bytes null).');
+      for (var service in services) {
+        sheet.appendRow([
+          TextCellValue(service.id),
+          TextCellValue(service.employeeSvrLib),
+          TextCellValue(service.employeeSvrCode),
+          TextCellValue(service.employeeName),
+          TextCellValue(service.employeeTelPort),
+          TextCellValue(DateFormat('dd/MM/yyyy HH:mm').format(service.startTime)),
+          TextCellValue(DateFormat('dd/MM/yyyy HH:mm').format(service.endTime)),
+          TextCellValue(service.locationCode),
+          TextCellValue(service.locationLib),
+          TextCellValue(service.clientLocationLine3),
+          TextCellValue(service.clientSvrCode),
+          TextCellValue(service.clientSvrLib),
+          TextCellValue(service.isAbsent ? 'Oui' : 'Non'),
+          TextCellValue(service.isValidated ? 'Oui' : 'Non'),
+        ]);
       }
-    } catch (e) {
-      debugPrint('Erreur lors de l\'exportation du fichier Excel: $e');
+
+      excel.delete('Sheet1'); // Supprime la feuille par défaut
+
+      final List<int>? bytes = excel.save();
+      if (bytes == null) throw Exception('Erreur lors de la génération Excel');
+
+      final blob = html.Blob([Uint8List.fromList(bytes)]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      // final anchor = html.AnchorElement(href: url)
+      //   ..setAttribute('download', 'services_export_${DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now())}.xlsx')
+      //   ..click();
+      html.Url.revokeObjectUrl(url);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de l\'exportation du fichier Excel: $e')),
+        const SnackBar(content: Text('Exportation réussie (fichier téléchargé).'), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      debugPrint('Erreur lors de l\'export Web : $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur export Web : $e')),
       );
     }
   }
-    
+
+  void _onExportPressed() {
+    if (kIsWeb) {
+      exportToExcelWeb(_services);
+    } else {
+      //_exportServicesToExcel();
+    }
+  }
+
   // Méthode pour construire l'AppBar
-AppBar _buildAppBar(BuildContext context) {
-  return AppBar(
-    leading: Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Image.asset(
-        'assets/logo_app.png',
-        height: 40,
-        width: 40,
-      ),
-    ),
-    title: Text(
-      'Prise de services automatique',
-      style: TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 20,
-        color: Theme.of(context).colorScheme.onPrimary,
-      ),
-    ),
-    centerTitle: true,
-    backgroundColor: Theme.of(context).primaryColor,
-    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-    actions: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: _dataLoaded
-            ? ElevatedButton.icon(
-                onPressed: _importServicesFromExcel,
-                icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
-                label: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              )
-            : ElevatedButton.icon(
-                onPressed: _importServicesFromExcel,
-                icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary),
-                label: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              ),
-      ),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-        child: ElevatedButton.icon(
-          onPressed: _exportServicesToExcel,
-          icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary),
-          label: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.onPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
+  AppBar _buildAppBar(BuildContext context) {
+    return AppBar(
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Image.asset(
+          'assets/logo_app.png',
+          height: 40,
+          width: 40,
         ),
       ),
+      title: Text(
+        'Prise de services automatique',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+          color: Theme.of(context).colorScheme.onPrimary,
+        ),
+      ),
+      centerTitle: true,
+      backgroundColor: Theme.of(context).primaryColor,
+      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      actions: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: _dataLoaded
+              ? ElevatedButton.icon(
+                  onPressed: _importServicesFromExcel,
+                  icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
+                  label: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                )
+              : ElevatedButton.icon(
+                  onPressed: _importServicesFromExcel,
+                  icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary),
+                  label: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          child: ElevatedButton.icon(
+            onPressed: _onExportPressed,
+            icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary),
+            label: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ),
 
-      const SizedBox(width: 8),
-    ],
-  );
-}
-
+        const SizedBox(width: 8),
+      ],
+    );
+  }
 
   // Méthode pour construire le sélecteur de date
   Widget _buildDateRangeSelector() {

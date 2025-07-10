@@ -33,8 +33,8 @@ class MyApp extends StatelessWidget {
           onSecondary: Colors.white,                        // Couleur du texte/icône sur la couleur secondaire
           error: const Color.fromARGB(255, 143, 2, 2),      // Couleur pour les messages d'erreur
           onError: Colors.white,                            // Couleur du texte/icône sur la couleur d'erreur
-          background: Colors.white,                         // Couleur de fond générale de l'application
-          onBackground: Colors.black87,                     // Couleur du texte/icône sur le fond
+          //background: Colors.white,                         // Couleur de fond générale de l'application
+          //onBackground: Colors.black87,                     // Couleur du texte/icône sur le fond
           surface: Colors.white,                            // Couleur des surfaces (cartes, dialogues)
           onSurface: Colors.black87,                        // Couleur du texte/icône sur les surfaces
         ),

@@ -71,10 +71,16 @@ class TimeDetailCard extends StatelessWidget {
         if (type != TimeCardType.result)
           Expanded(
             flex: 2,
-            child: Text(
-              service.employeeTelPort,
-              textAlign: TextAlign.end,
-              style: Theme.of(context).textTheme.bodySmall,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const Icon(Icons.phone, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  "0${service.employeeTelPort}",
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
           ),
       ],
@@ -93,6 +99,7 @@ class TimeDetailCard extends StatelessWidget {
           Colors.red.shade600, // Couleur d'origine
         ),
         // Tag de l'heure (début ou fin)
+        Spacer(),
         _buildTimeTag(
           context,
           type == TimeCardType.debut
@@ -101,8 +108,9 @@ class TimeDetailCard extends StatelessWidget {
           Colors.red.shade600, // Couleur d'origine
         ),
         // Affichage de la durée calculée avec la couleur d'origine
-        Text(
-          _formatDuration(calculatedDuration),
+        Spacer(),
+        Icon(Icons.watch_later_outlined, size: 16, color: calculatedDuration.isNegative ? Colors.green : Colors.red),
+        Text(" ${_formatDuration(calculatedDuration)}",
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontSize: 12, // Taille de police d'origine
                 fontWeight: FontWeight.bold,
@@ -130,15 +138,56 @@ class TimeDetailCard extends StatelessWidget {
 
   // Méthode d'aide pour construire les lignes de localisation du client
   Widget _buildLocation(BuildContext context) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(service.locationCode, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800])),
-        Text(service.locationLib, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800])),
-        Text(service.clientLocationLine3, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800])),
+        // Colonne gauche : infos du service
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.person, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    service.locationCode,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800]),
+                  ),
+                ],
+              ),
+              Text(
+                service.locationLib,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800]),
+              ),
+              Text(
+                service.clientLocationLine3,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800]),
+              ),
+            ],
+          ),
+        ),
+
+        // Colonne droite : texte client fixe
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Row(
+                children: [
+                  Icon(Icons.location_city, size: 16, color: Colors.grey),
+                  SizedBox(width: 4),
+                  Text("BM-SECU-CL1 | Client"),
+                ],
+              ),
+              Text("Sécurité BMSoft n°1"),
+            ],
+          ),
+        ),
       ],
     );
   }
+
 
   // Méthode d'aide pour construire les boutons d'action (Modifier, Absent/Présent, Valider/Dévalider) 
   Widget _buildActionButtons(BuildContext context) {
