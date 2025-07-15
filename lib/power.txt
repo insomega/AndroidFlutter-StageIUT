@@ -1,0 +1,28 @@
+# 1. Supprimer l'ancien AVD "pixel_clean"
+$avdPath = "$env:USERPROFILE\.android\avd\pixel_clean.avd"
+$iniPath = "$env:USERPROFILE\.android\avd\pixel_clean.ini"
+
+if (Test-Path $avdPath) { Remove-Item -Recurse -Force $avdPath }
+if (Test-Path $iniPath) { Remove-Item -Force $iniPath }
+
+# 2. Créer un nouvel AVD propre avec system image x86_64
+& "D:\Android\Sdk\cmdline-tools\latest\bin\sdkmanager.bat" --install "system-images;android-33;google_apis;x86_64"
+
+& "D:\Android\Sdk\cmdline-tools\latest\bin\avdmanager.bat" create avd `
+ -n pixel_clean `
+ -k "system-images;android-33;google_apis;x86_64" `
+ -d "pixel_3" `
+ --force `
+ --sdcard 512M
+
+# 3. Vérifie que userdata.img a une bonne taille (plus de 1 Mo)
+$userdata = Get-Item "$env:USERPROFILE\.android\avd\pixel_clean.avd\userdata.img"
+Write-Host "Taille de userdata.img : $($userdata.Length / 1MB) Mo"
+
+# 4. Lancer l'émulateur avec options fiables
+& "D:\Android\Sdk\emulator\emulator.exe" `
+ -avd pixel_clean `
+ -no-snapshot `
+ -no-boot-anim `
+ -gpu swiftshader_indirect `
+ -verbose
