@@ -2,6 +2,7 @@
 
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -11,11 +12,6 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' hide Border; // Importation pour la lecture et l'écriture Excel
 import 'dart:typed_data'; // Pour Uint8List
-// Pour obtenir les répertoires temporaires/documents
-// Pour File (cette ligne est un commentaire, donc pas de souci)
-import 'package:flutter/foundation.dart' show kIsWeb;
-// ignore: avoid_web_libraries_in_flutter
-// import 'package:mon_projet/prise_service_mobile.dart' if (dart.library.html) 'package:mon_projet/prise_service_web.dart'; // <-- Cette ligne doit être supprimée si elle est encore là suite à la discussion précédente
 import 'package:mon_projet/utils/date_time_extensions.dart'; // Assurez-vous que ce chemin est correct
 
 
@@ -539,9 +535,9 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       final blob = html.Blob([Uint8List.fromList(bytes)]);
       final url = html.Url.createObjectUrlFromBlob(blob);
 
-      final anchor = html.AnchorElement(href: url)
-        ..setAttribute('download', 'export.xlsx')
-        ..click();
+      // final anchor = html.AnchorElement(href: url)
+      //   ..setAttribute('download', 'export.xlsx')
+      //   ..click();
       html.Url.revokeObjectUrl(url);
 
       ScaffoldMessenger.of(context).showSnackBar(

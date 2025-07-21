@@ -13,7 +13,6 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' hide Border; // Importation pour la lecture et l'écriture Excel
 import 'dart:typed_data'; // Pour Uint8List
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:mon_projet/utils/date_time_extensions.dart';
 
 class PriseServiceScreen extends StatefulWidget {
