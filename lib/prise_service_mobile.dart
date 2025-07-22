@@ -3,6 +3,7 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'dart:io'; // Pour File
+import 'dart:math';
 import 'package:path_provider/path_provider.dart'; // Pour getExternalStorageDirectory, etc.
 import 'package:open_filex/open_filex.dart'; // Pour ouvrir le fichier après l'exportation // Target of URI doesn't exist: 'package:open_filex/open_filex.dart'.
 import 'package:flutter/material.dart';
@@ -14,6 +15,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' hide Border; // Importation pour la lecture et l'écriture Excel
 import 'dart:typed_data'; // Pour Uint8List
 import 'package:mon_projet/utils/date_time_extensions.dart';
+//import 'dart:convert'; // For base64Encode
+
+// Constantes pour le redimensionnement adaptatif
+const double kReferenceScreenWidth = 1000.0; // Largeur d'écran de référence pour les calculs de taille (ex: largeur d'un Pixel 3a)
+const double kMinFontSize = 6.0; // Taille de police minimale absolue (pour lisibilité extrême)
+const double kMinIconSize = 12.0; // Taille d'icône minimale absolue
+const double kMinPadding = 2.0; // Padding minimal absolu
 
 class PriseServiceScreen extends StatefulWidget {
   const PriseServiceScreen({super.key});
@@ -125,34 +133,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
-  // Helper pour parser la durée (ex: "1h 30min") en heures totales
-  // Cette fonction n'est pas utilisée directement dans le code actuel car
-  // le modèle Service gère déjà la conversion de durée.
-  
-  // double _parseDurationToHours(String durationString) {
-  //   double totalHours = 0.0;
-  //   final parts = durationString.toLowerCase().split('h');
-  //   if (parts.isNotEmpty) {
-  //     // Gère la partie heures
-  //     final hourPart = parts[0].trim();
-  //     try {
-  //       totalHours += double.parse(hourPart.replaceAll(',', '.')); // Gère la virgule comme séparateur décimal
-  //     } catch (e) {
-  //       debugPrint('Error parsing hour part: $hourPart, $e');
-  //     
-  //     // Gère la partie minutes si disponible
-  //     if (parts.length > 1 && parts[1].contains('min')) {
-  //       final minPart = parts[1].split('min')[0].trim();
-  //       try {
-  //         totalHours += int.parse(minPart) / 60.0;
-  //       } catch (e) {
-  //         debugPrint('Error parsing minute part: $minPart, $e');
-  //       }
-  //     }
-  //   }
-  //   return totalHours;
-  // }
-
   // Calcule les données de résumé (total et restant)
   void _calculateSummaryData() {
     double currentTotalWorkedHours = 0.0;
@@ -218,11 +198,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     filteredList.sort((a, b) => a.endTime.compareTo(b.endTime)); // Tri par heure de fin
     return filteredList;
   }
-
-  // La colonne Résultat affiche les mêmes services que Début, mais avec une carte différente
-  // List<Service> get _filteredAndSortedResultatServices {
-  //   return List.from(_filteredAndSortedDebutServices);
-  // }
 
   // Gère le basculement de l'état "Absent" d'un service
   void _handleAbsentToggle(String serviceId, bool newAbsentStatus) {
@@ -398,16 +373,56 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   }
 
   // Fonction pour importer les services depuis un fichier Excel
+ // Fonction pour importer les services depuis un fichier Excel
   Future<void> _importServicesFromExcel() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx'], // Autorise uniquement les fichiers .xlsx
         allowMultiple: false,
+        // Il est souvent bon de forcer withData: true, mais si ça ne marche pas,
+        // lire par le chemin est la solution.
+        // withData: true, // Vous pouvez essayer d'ajouter ceci si vous voulez que 'bytes' ne soit pas nul
       );
 
-      if (result != null && result.files.single.bytes != null) {
-        final Uint8List bytes = result.files.single.bytes!;
+      debugPrint('*** DEBUG FILE PICKER RESULT ***');
+      debugPrint('Result: $result');
+      if (result != null) {
+        debugPrint('Result.files length: ${result.files.length}');
+        if (result.files.isNotEmpty) {
+          debugPrint('First file path: ${result.files.first.path}');
+          debugPrint('First file name: ${result.files.first.name}');
+          debugPrint('First file bytes is null: ${result.files.first.bytes == null}');
+          debugPrint('First file size: ${result.files.first.size} bytes');
+        }
+      }
+      debugPrint('*** END DEBUG ***');
+
+      // Modifiez la condition ici pour vérifier le chemin au lieu des bytes directement
+      if (result != null && result.files.single.path != null) {
+        final String? filePath = result.files.single.path;
+
+        if (filePath == null) {
+          // Au cas où le path serait aussi null, bien que les logs suggèrent qu'il ne l'est pas
+          debugPrint('Le chemin du fichier sélectionné est nul après la sélection.');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Impossible d\'accéder au fichier sélectionné (chemin manquant).')),
+          );
+          return;
+        }
+
+        final File file = File(filePath);
+        final Uint8List bytes = await file.readAsBytes(); // LIRE LES OCTETS DIRECTEMENT DEPUIS LE CHEMIN
+
+        // Vérifiez si les bytes sont réellement vides après la lecture
+        if (bytes.isEmpty) {
+          debugPrint('Le fichier sélectionné est vide après lecture des octets.');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Le fichier sélectionné est vide.')),
+          );
+          return;
+        }
+
         final Excel excel = Excel.decodeBytes(bytes);
 
         // Supposons que les données sont dans la première feuille
@@ -443,7 +458,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             importedServices.add(Service.fromExcelRow(rowData));
           } catch (e) {
             debugPrint('Erreur lors de la création du service à partir de la ligne Excel ${i + 1}: $rowData - $e');
-            // Optionnel: Afficher un SnackBar pour chaque erreur de ligne
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Erreur à la ligne ${i + 1}: $e')),
             );
@@ -454,8 +468,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           _services = importedServices;
           _dataLoaded = true;
           debugPrint('Importation de ${importedServices.length} services depuis Excel réussie.');
-          _filterAndSortServices(); // Applique le filtre initial après le chargement
-          _calculateSummaryData(); // Recalcule les données de résumé
+          _filterAndSortServices();
+          _calculateSummaryData();
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -465,11 +479,11 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           ),
         );
       } else {
-        // Message plus clair si l'utilisateur annule ou si le fichier est vide
+        // Message si l'utilisateur annule ou si le fichier est invalide / chemin non trouvé
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Aucun fichier sélectionné ou le fichier est vide.')),
+          const SnackBar(content: Text('Aucun fichier sélectionné ou fichier invalide.')),
         );
-        debugPrint('Aucun fichier sélectionné ou fichier vide.');
+        debugPrint('Aucun fichier sélectionné ou fichier invalide.');
       }
     } catch (e) {
       debugPrint('Erreur lors de l\'importation du fichier Excel: $e');
@@ -478,7 +492,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       );
     }
   }
-  
+    
   // Fonction pour exporter les services vers un fichier Excel sur mobile
   Future<void> _exportServicesToExcel(List<Service> services) async {
     if (services.isEmpty) {
@@ -561,87 +575,120 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     _exportServicesToExcel(_services); // Passez la liste '_services' comme argument.
   }
 
+
+
+
+
+
   // Méthode pour construire l'AppBar
   AppBar _buildAppBar(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Fonctions d'aide pour le redimensionnement
+    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+
     return AppBar(
+      toolbarHeight: responsivePadding(50.0), // Contrôler la hauteur de l'AppBar (Base 50.0)
       leading: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: EdgeInsets.all(responsivePadding(4.0)), // Base 4.0
         child: Image.asset(
           'assets/logo_app.png',
-          height: 40,
-          width: 40,
+          height: responsiveIconSize(25.0), // Base 25.0
+          width: responsiveIconSize(25.0), // Base 25.0
         ),
       ),
       title: Text(
         'Prise de services automatique',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 20,
+          fontSize: responsiveFontSize(16.0), // Base 16.0
           color: Theme.of(context).colorScheme.onPrimary,
         ),
+        overflow: TextOverflow.ellipsis, // Empêche le débordement du titre
       ),
       centerTitle: true,
       backgroundColor: Theme.of(context).primaryColor,
       foregroundColor: Theme.of(context).colorScheme.onPrimary,
       actions: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          padding: EdgeInsets.symmetric(horizontal: responsivePadding(2.0)), // Base 2.0
           child: _dataLoaded
               ? ElevatedButton.icon(
                   onPressed: _importServicesFromExcel,
-                  icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
-                  label: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                  icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsiveIconSize(18.0)), // Base 18.0
+                  label: FittedBox( // Assure que le texte du bouton s'ajuste
+                    fit: BoxFit.scaleDown,
+                    child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsiveFontSize(10.0))), // Base 10.0
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+                      borderRadius: BorderRadius.circular(responsivePadding(6.0)), // Base 6.0
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: responsivePadding(8.0), vertical: responsivePadding(4.0)), // Base 8.0, 4.0
+                    minimumSize: Size(responsivePadding(80.0), responsivePadding(30.0)), // Taille min pour le bouton
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Réduit la zone de tap
                   ),
                 )
               : ElevatedButton.icon(
                   onPressed: _importServicesFromExcel,
-                  icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary),
-                  label: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                  icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsiveIconSize(18.0)), // Base 18.0
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsiveFontSize(10.0))), // Base 10.0
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+                      borderRadius: BorderRadius.circular(responsivePadding(6.0)), // Base 6.0
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: responsivePadding(8.0), vertical: responsivePadding(4.0)), // Base 8.0, 4.0
+                    minimumSize: Size(responsivePadding(80.0), responsivePadding(30.0)), // Taille min pour le bouton
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          padding: EdgeInsets.symmetric(horizontal: responsivePadding(2.0)), // Base 2.0
           child: ElevatedButton.icon(
             onPressed: _onExportPressed,
-            icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary),
-            label: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+            icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsiveIconSize(18.0)), // Base 18.0
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsiveFontSize(10.0))), // Base 10.0
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius: BorderRadius.circular(responsivePadding(6.0)), // Base 6.0
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: responsivePadding(8.0), vertical: responsivePadding(4.0)), // Base 8.0, 4.0
+              minimumSize: Size(responsivePadding(80.0), responsivePadding(30.0)), // Taille min pour le bouton
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
         ),
-
-        const SizedBox(width: 8),
+        SizedBox(width: responsivePadding(6.0)), // Base 6.0
       ],
     );
   }
 
   // Méthode pour construire le sélecteur de date
   Widget _buildDateRangeSelector() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: EdgeInsets.symmetric(horizontal: responsivePadding(10.0), vertical: responsivePadding(6.0)), // Base 10.0, 6.0
       color: Colors.grey[100],
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios, size: 18),
+            icon: Icon(Icons.arrow_back_ios, size: responsiveIconSize(16.0)), // Base 16.0
             onPressed: () {
               setState(() {
                 _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
@@ -649,20 +696,22 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               });
             },
             visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero, // Retire le padding par défaut de l'IconButton
+            constraints: BoxConstraints(), // Retire les contraintes de taille par défaut
           ),
           _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
-          const SizedBox(width: 8),
+          SizedBox(width: responsivePadding(4.0)), // Base 4.0
           VerticalDivider(
-            color: Theme.of(context).colorScheme.primary, // Utilise la couleur du thème
+            color: Theme.of(context).colorScheme.primary,
             thickness: 1.5,
-            indent: 5,
-            endIndent: 5,
-            width: 16,
+            indent: responsivePadding(3.0),
+            endIndent: responsivePadding(3.0),
+            width: responsivePadding(10.0), // Base 10.0
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: responsivePadding(4.0)), // Base 4.0
           _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
           IconButton(
-            icon: const Icon(Icons.arrow_forward_ios, size: 18),
+            icon: Icon(Icons.arrow_forward_ios, size: responsiveIconSize(16.0)), // Base 16.0
             onPressed: () {
               setState(() {
                 _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
@@ -670,14 +719,19 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               });
             },
             visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
           ),
           const Spacer(),
-          Text(
-            DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.secondary, // Couleur secondaire du thème
+          Flexible( // Utiliser Flexible pour le texte de la date actuelle
+            child: Text(
+              DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
+              style: TextStyle(
+                fontSize: responsiveFontSize(11.0), // Base 11.0
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+              overflow: TextOverflow.ellipsis, // Tronque si trop long
             ),
           ),
         ],
@@ -687,35 +741,44 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode d'aide pour les contrôles individuels de date
   Widget _buildDateControl(DateTime date, ValueChanged<DateTime> onDateChanged) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          icon: const Icon(Icons.remove, size: 18),
+          icon: Icon(Icons.remove, size: responsiveIconSize(16.0)), // Base 16.0
           onPressed: () => _changeDateByDay(date, -1, onDateChanged),
           visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: BoxConstraints(),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: responsivePadding(3.0)), // Base 3.0
         GestureDetector(
           onTap: () => _selectDate(context, date, onDateChanged),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: EdgeInsets.symmetric(horizontal: responsivePadding(6.0), vertical: responsivePadding(3.0)), // Base 6.0, 3.0
             decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).primaryColor, width: 1.5),
-              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: Theme.of(context).primaryColor, width: 1.0),
+              borderRadius: BorderRadius.circular(responsivePadding(5.0)), // Base 5.0
               color: Colors.white,
             ),
             child: Text(
               DateFormat('dd/MM/yyyy').format(date),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+              style: TextStyle(fontSize: responsiveFontSize(12.0), fontWeight: FontWeight.bold, color: Colors.black87), // Base 12.0
             ),
           ),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: responsivePadding(3.0)), // Base 3.0
         IconButton(
-          icon: const Icon(Icons.add, size: 18),
+          icon: Icon(Icons.add, size: responsiveIconSize(16.0)), // Base 16.0
           onPressed: () => _changeDateByDay(date, 1, onDateChanged),
           visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: BoxConstraints(),
         ),
       ],
     );
@@ -723,27 +786,38 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire la barre de recherche
   Widget _buildSearchBar() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: EdgeInsets.symmetric(horizontal: responsivePadding(10.0), vertical: responsivePadding(6.0)), // Base 10.0, 6.0
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
           labelText: 'Rechercher par nom d\'employé',
           hintText: 'Entrez le nom de l\'employé...',
-          prefixIcon: const Icon(Icons.search),
+          prefixIcon: Icon(Icons.search, size: responsiveIconSize(16.0)), // Base 16.0
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
+            borderRadius: BorderRadius.circular(responsivePadding(6.0)), // Base 6.0
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+          contentPadding: EdgeInsets.symmetric(vertical: responsivePadding(8.0), horizontal: responsivePadding(5.0)), // Base 8.0, 10.0
+          isDense: true, // Réduit la hauteur interne du TextField
         ),
+        style: TextStyle(fontSize: responsiveFontSize(8.0)), // Base 12.0
       ),
     );
   }
 
   // Méthode pour construire les en-têtes de colonne
   Widget _buildColumnHeaders() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: EdgeInsets.symmetric(horizontal: responsivePadding(10.0), vertical: responsivePadding(6.0)), // Base 10.0, 6.0
       child: Row(
         children: [
           Expanded(
@@ -753,8 +827,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 'Début',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.primary, // Utilise la couleur du thème
+                  fontSize: responsiveFontSize(14.0), // Base 14.0
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
@@ -766,8 +840,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 'Fin',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.primary, // Utilise la couleur du thème
+                  fontSize: responsiveFontSize(14.0), // Base 14.0
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),
@@ -779,8 +853,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 'Résultat',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.green.shade700, // Une couleur distincte pour le résultat
+                  fontSize: responsiveFontSize(14.0), // Base 14.0
+                  color: Colors.green.shade700,
                 ),
               ),
             ),
@@ -789,14 +863,17 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       ),
     );
   }
-
   // Méthode pour construire une liste de services (colonne)
+  
   Widget _buildServiceColumn(List<Service> services, ScrollController controller, TimeCardType type) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+
     return Expanded(
       flex: type == TimeCardType.result ? 1 : 2, // Flexibilité différente pour la colonne Résultat
       child: ListView.builder(
         controller: controller,
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        padding: EdgeInsets.symmetric(horizontal: responsivePadding(5.0)), // Base 5.0
         itemCount: services.length,
         itemBuilder: (context, index) {
           final service = services[index];
@@ -823,18 +900,25 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire le pied de page
   Widget _buildFooter() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(responsivePadding(6.0)), // Base 6.0
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Spacer(),
-          Text(
-            "© BMSoft 2025, tous droits réservés   ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.secondary, // Utilise la couleur secondaire du thème
+          Flexible( // Utiliser Flexible pour s'assurer que le texte tient
+            child: Text(
+              "© BMSoft 2025, tous droits réservés    ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
+              style: TextStyle(
+                fontSize: responsiveFontSize(10.0), // Base 10.0
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -844,29 +928,36 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire une puce de résumé flottante
   Widget _buildSummaryChip(IconData icon, String label, String value, Color color) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+
     return Card(
       color: color,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(responsivePadding(8.0))), // Base 8.0
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+        padding: EdgeInsets.symmetric(horizontal: responsivePadding(6.0), vertical: responsivePadding(4.0)), // Base 6.0, 4.0
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.min, // Occupe le moins de largeur possible
           children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 6),
+            Icon(icon, color: Colors.white, size: responsiveIconSize(16.0)), // Base 16.0
+            SizedBox(width: responsivePadding(4.0)), // Base 4.0
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   label,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  style: TextStyle(color: Colors.white, fontSize: responsiveFontSize(10.0)), // Base 10.0
                 ),
                 Text(
                   value,
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: responsiveFontSize(12.0)), // Base 12.0
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),
@@ -878,18 +969,21 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire les widgets flottants de résumé
   Widget _buildSummaryFloatingWidgets() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+
     return Positioned(
-      bottom: 30, // Ajustez la position verticale si nécessaire
-      right: 20, // Ajustez la position horizontale si nécessaire
-      child: Row( // Changé de Row à Column pour empiler verticalement
+      bottom: responsivePadding(15.0), // Base 15.0
+      right: responsivePadding(10.0), // Base 10.0 - ajusté pour plus d'espace
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _buildSummaryChip(Icons.calendar_today, 'Mois', DateFormat('MMMM', 'fr_FR').format(_startDate), Colors.blueAccent),
-          const SizedBox(height: 6),
-          _buildSummaryChip(Icons.balance, 'Prévu', '${_totalScheduledHours.toStringAsFixed(1)}H', Colors.purpleAccent), // Nouvelle puce pour les heures prévues
-          const SizedBox(height: 6),
-          _buildSummaryChip(Icons.access_time, 'Travaillé', '${_totalWorkedHours.toStringAsFixed(1)}H', Colors.redAccent), // Ancien "Total"
-          const SizedBox(height: 6),
+          SizedBox(height: responsivePadding(5.0)), // Base 5.0
+          _buildSummaryChip(Icons.balance, 'Prévu', '${_totalScheduledHours.toStringAsFixed(1)}H', Colors.purpleAccent),
+          SizedBox(height: responsivePadding(5.0)), // Base 5.0
+          _buildSummaryChip(Icons.access_time, 'Travaillé', '${_totalWorkedHours.toStringAsFixed(1)}H', Colors.redAccent),
+          SizedBox(height: responsivePadding(5.0)), // Base 5.0
           _buildSummaryChip(Icons.access_time, 'Restant', '${_remainingHours.toStringAsFixed(1)}H', Colors.orangeAccent),
         ],
       ),
@@ -898,25 +992,32 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
+    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+
     return Scaffold(
       appBar: _buildAppBar(context),
-      body: Stack( // Utilisez un Stack pour positionner les widgets flottants
+      body: Stack(
         children: <Widget>[
-          Column( // Le contenu principal de l'application
+          Column(
             children: <Widget>[
               _buildDateRangeSelector(),
               _buildSearchBar(),
               _buildColumnHeaders(),
               if (!_dataLoaded) ...[
                 const Spacer(),
-                Text(
-                  "Veuillez importer un fichier Excel pour commencer",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.error, // Utilise la couleur d'erreur du thème
+                Padding( // Ajouter un padding autour du texte "Veuillez importer..."
+                  padding: EdgeInsets.all(responsivePadding(15.0)), // Base 15.0
+                  child: Text(
+                    "Veuillez importer un fichier Excel pour commencer",
+                    style: TextStyle(
+                      fontSize: responsiveFontSize(15.0), // Base 15.0
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
                 ),
                 const Spacer(),
               ],
@@ -933,7 +1034,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               _buildFooter(),
             ],
           ),
-          _buildSummaryFloatingWidgets(), // Les widgets flottants ajoutés ici
+          _buildSummaryFloatingWidgets(),
         ],
       ),
     );

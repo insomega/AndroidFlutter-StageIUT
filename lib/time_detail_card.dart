@@ -3,6 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mon_projet/models/service.dart'; // Importation mise à jour pour la classe Service
+import 'dart:math'; // Pour max
+
+// Constantes pour le redimensionnement adaptatif (copie de prise_service_mobile.dart pour autonomie)
+const double kReferenceScreenWidth = 1000.0; // Largeur d'écran de référence
+const double kMinFontSize = 8.0;
+const double kMinIconSize = 14.0;
+const double kMinPadding = 4.0;
 
 enum TimeCardType { debut, fin, result }
 
@@ -25,6 +32,22 @@ class TimeDetailCard extends StatelessWidget {
     this.onTap,
   });
 
+  // Fonctions d'aide pour le redimensionnement
+  double _responsiveFontSize(BuildContext context, double baseSize) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
+  }
+
+  double _responsiveIconSize(BuildContext context, double baseSize) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
+  }
+
+  double _responsivePadding(BuildContext context, double baseSize) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
+  }
+
   // Fonction utilitaire pour formater la durée (gère les négatifs)
   String _formatDuration(Duration duration) {
     String sign = '';
@@ -41,6 +64,9 @@ class TimeDetailCard extends StatelessWidget {
     return '$sign${hours}h$minutes min';
   }
 
+
+
+
   // Méthode d'aide pour construire la ligne d'en-tête (ID, Nom, Contact)
   Widget _buildHeader(BuildContext context) {
     return Row(
@@ -54,15 +80,21 @@ class TimeDetailCard extends StatelessWidget {
               // Code service de l'employé
               Text(
                 service.employeeSvrCode,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey,
+                    fontSize: _responsiveFontSize(context, 10.0) // Base 10.0
+                ),
               ),
               // Nom de l'employé
               Text(
                 service.employeeName,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: const Color.fromARGB(255, 91, 168, 231), // Couleur d'origine
+                      color: const Color.fromARGB(255, 91, 168, 231),
+                      fontSize: _responsiveFontSize(context, 14.0), // Base 14.0
                     ),
+                overflow: TextOverflow.ellipsis, // Gère le débordement
+                maxLines: 1,
               ),
             ],
           ),
@@ -74,11 +106,15 @@ class TimeDetailCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                const Icon(Icons.phone, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  "0${service.employeeTelPort}",
-                  style: Theme.of(context).textTheme.bodySmall,
+                Icon(Icons.phone, size: _responsiveIconSize(context, 15.0)), // Base 15.0
+                SizedBox(width: _responsivePadding(context, 3.0)), // Base 3.0
+                Flexible( // Rendre le texte flexible
+                  child: Text(
+                    "0${service.employeeTelPort}",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: _responsiveFontSize(context, 11.0)), // Base 11.0
+                    overflow: TextOverflow.ellipsis, // Gère le débordement
+                    maxLines: 1,
+                  ),
                 ),
               ],
             ),
@@ -90,48 +126,60 @@ class TimeDetailCard extends StatelessWidget {
   // Méthode d'aide pour construire la ligne de date, heure et durée
   Widget _buildTimeAndDuration(BuildContext context, DateTime displayTime, Duration calculatedDuration) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Tag de la date
         _buildTimeTag(
           context,
           'Date: ${DateFormat('dd/MM/yyyy').format(displayTime)}',
-          Colors.red.shade600, // Couleur d'origine
+          Colors.red.shade600,
         ),
-        // Tag de l'heure (début ou fin)
-        Spacer(),
+        SizedBox(width: _responsivePadding(context, 3.0)), // Espace entre les tags
         _buildTimeTag(
           context,
           type == TimeCardType.debut
               ? 'H.D: ${DateFormat('HH:mm').format(displayTime)}'
               : 'H.F: ${DateFormat('HH:mm').format(displayTime)}',
-          Colors.red.shade600, // Couleur d'origine
+          Colors.red.shade600,
         ),
-        // Affichage de la durée calculée avec la couleur d'origine
-        Spacer(),
-        Icon(Icons.watch_later_outlined, size: 16, color: calculatedDuration.isNegative ? Colors.green : Colors.red),
-        Text(" ${_formatDuration(calculatedDuration)}",
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: 12, // Taille de police d'origine
-                fontWeight: FontWeight.bold,
-                color: calculatedDuration.isNegative ? Colors.green : Colors.red, // Logique de couleur d'origine
+        const Spacer(), // Prend l'espace disponible
+        Expanded( // S'assure que la durée et l'icône tiennent
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end, // Aligne le contenu à droite
+            children: [
+              Icon(Icons.watch_later_outlined, size: _responsiveIconSize(context, 15.0)), // Base 15.0
+              Flexible( // Rend le texte flexible
+                child: Text(
+                  " ${_formatDuration(calculatedDuration)}",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: _responsiveFontSize(context, 11.0), // Base 11.0
+                        fontWeight: FontWeight.bold,
+                        color: calculatedDuration.isNegative ? Colors.green : Colors.red,
+                      ),
+                  overflow: TextOverflow.ellipsis, // Tronque avec "..." si le texte est trop long
+                  maxLines: 1,
+                ),
               ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  // Méthode d'aide pour créer les tags de date/heure stylisés
+  // Méthode d'aide pour créer les tags de date/heure stylisés 
   Widget _buildTimeTag(BuildContext context, String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: _responsivePadding(context, 4.0), vertical: _responsivePadding(context, 2.0)), // Base 4.0, 2.0
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(_responsivePadding(context, 3.0)), // Base 3.0
       ),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
+      child: FittedBox( // Assure que le texte tient dans le tag
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white, fontSize: _responsiveFontSize(context, 10.0)), // Base 10.0
+          maxLines: 1,
+        ),
       ),
     );
   }
@@ -141,46 +189,59 @@ class TimeDetailCard extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Colonne gauche : infos du service
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.person, size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    service.locationCode,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800]),
+                  Icon(Icons.person, size: _responsiveIconSize(context, 15.0), color: Colors.grey), // Base 15.0
+                  SizedBox(width: _responsivePadding(context, 3.0)), // Base 3.0
+                  Flexible(
+                    child: Text(
+                      service.locationCode,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800], fontSize: _responsiveFontSize(context, 11.0)), // Base 11.0
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
                 ],
               ),
               Text(
                 service.locationLib,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800]),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800], fontSize: _responsiveFontSize(context, 11.0)), // Base 11.0
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
               Text(
                 service.clientLocationLine3,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800]),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[800], fontSize: _responsiveFontSize(context, 11.0)), // Base 11.0
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ],
           ),
         ),
-
-        // Colonne droite : texte client fixe
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Row(
                 children: [
-                  Icon(Icons.location_city, size: 16, color: Colors.grey),
-                  SizedBox(width: 4),
-                  Text("BM-SECU-CL1 | Client"),
+                  Icon(Icons.location_city, size: _responsiveIconSize(context, 15.0), color: Colors.grey), // Base 15.0
+                  SizedBox(width: _responsivePadding(context, 3.0)), // Base 3.0
+                  Flexible(
+                    child: Text("BM-SECU-CL1 | Client", style: TextStyle(fontSize: _responsiveFontSize(context, 11.0)), // Base 11.0
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
                 ],
               ),
-              Text("Sécurité BMSoft n°1"),
+              Text("Sécurité BMSoft n°1", style: TextStyle(fontSize: _responsiveFontSize(context, 11.0)), // Base 11.0
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ],
           ),
         ),
@@ -188,64 +249,73 @@ class TimeDetailCard extends StatelessWidget {
     );
   }
 
-  // Méthode d'aide pour construire les boutons d'action (Modifier, Absent/Présent, Valider/Dévalider) 
+  // Méthode d'aide pour construire les boutons d'action (Modifier, Absent/Présent, Valider/Dévalider)
   Widget _buildActionButtons(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        // Bouton "Modifier", visible sauf pour le type 'result'
         if (type != TimeCardType.result)
           Expanded(
             child: ElevatedButton.icon(
               onPressed: onModifyTime != null ? () => onModifyTime!(type == TimeCardType.debut ? service.startTime : service.endTime) : null,
-              icon: const Icon(Icons.edit, size: 18),
-              label: const Text('Modifier', style: TextStyle(fontSize: 12)),
+              icon: Icon(Icons.edit, size: _responsiveIconSize(context, 16.0)), // Base 16.0
+              label: FittedBox( // Assure que le label tient
+                fit: BoxFit.scaleDown,
+                child: Text('Modifier', style: TextStyle(fontSize: _responsiveFontSize(context, 10.0))), // Base 10.0
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade600, // Couleur d'origine
+                backgroundColor: Colors.blue.shade600,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                padding: EdgeInsets.symmetric(horizontal: _responsivePadding(context, 5.0), vertical: _responsivePadding(context, 4.0)), // Base 5.0, 4.0
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_responsivePadding(context, 4.0))), // Base 4.0
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Réduit la zone de tap
               ),
             ),
           ),
-        if (type != TimeCardType.result) const SizedBox(width: 8),
+        if (type != TimeCardType.result) SizedBox(width: _responsivePadding(context, 5.0)), // Base 5.0
 
-        // Bouton "Présent/Absent"
         Expanded(
           child: ElevatedButton(
             onPressed: onAbsentPressed != null ? () => onAbsentPressed!(!service.isAbsent) : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: service.isAbsent
-                  ? Colors.red.shade700 // Couleur d'origine
-                  : Colors.blueGrey.shade600, // Couleur d'origine
+                  ? Colors.red.shade700
+                  : Colors.blueGrey.shade600,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              padding: EdgeInsets.symmetric(horizontal: _responsivePadding(context, 5.0), vertical: _responsivePadding(context, 4.0)), // Base 5.0, 4.0
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_responsivePadding(context, 4.0))), // Base 4.0
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: Text(
-              service.isAbsent ? 'Absent' : 'Présent',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+            child: FittedBox( // Assure que le label tient
+              fit: BoxFit.scaleDown,
+              child: Text(
+                service.isAbsent ? 'Absent' : 'Présent',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold, fontSize: _responsiveFontSize(context, 10.0)), // Base 10.0
+              ),
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: _responsivePadding(context, 5.0)), // Base 5.0
 
-        // Bouton "Valider/Dévalider"
         Expanded(
           child: ElevatedButton.icon(
             onPressed: onValidate != null && !service.isAbsent ? () => onValidate!(!service.isValidated) : null,
-            icon: Icon(service.isValidated ? Icons.undo : Icons.check, size: 18),
-            label: Text(
-              service.isValidated ? 'Dévalider' : 'Valider',
-              style: Theme.of(context).textTheme.labelSmall,
+            icon: Icon(service.isValidated ? Icons.undo : Icons.check, size: _responsiveIconSize(context, 16.0)), // Base 16.0
+            label: FittedBox( // Assure que le label tient
+              fit: BoxFit.scaleDown,
+              child: Text(
+                service.isValidated ? 'Dévalider' : 'Valider',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: _responsiveFontSize(context, 10.0)), // Base 10.0
+              ),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: service.isAbsent
-                  ? Colors.grey.shade400 // Couleur d'origine (désactivé si absent)
-                  : (service.isValidated ? Colors.orange.shade600 : Colors.green.shade600), // Couleurs d'origine
+                  ? Colors.grey.shade400
+                  : (service.isValidated ? Colors.orange.shade600 : Colors.green.shade600),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              padding: EdgeInsets.symmetric(horizontal: _responsivePadding(context, 5.0), vertical: _responsivePadding(context, 4.0)), // Base 5.0, 4.0
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_responsivePadding(context, 4.0))), // Base 4.0
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
         ),
@@ -257,41 +327,36 @@ class TimeDetailCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final DateTime displayTime = type == TimeCardType.debut ? service.startTime : service.endTime;
 
-    // Calcul de la durée dynamique
     Duration calculatedDuration;
     if (type == TimeCardType.debut) {
-      // Pour les cartes "Début", calculer la durée depuis l'heure de début jusqu'à l'heure actuelle
       calculatedDuration = DateTime.now().difference(service.startTime);
     } else {
-      // Pour les cartes "Fin", calculer la durée depuis l'heure de fin jusqu'à l'heure actuelle
       calculatedDuration = DateTime.now().difference(service.endTime);
     }
 
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        // Couleur de la carte si le service est absent (rouge clair)
-        color: service.isAbsent ? Colors.red.shade100 : null, // Couleur d'origine
-        margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+        color: service.isAbsent ? Colors.red.shade100 : null,
+        margin: EdgeInsets.symmetric(horizontal: _responsivePadding(context, 5.0), vertical: _responsivePadding(context, 7.0)), // Base 5.0, 7.0
         elevation: 2.0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          side: BorderSide(color: Colors.grey.shade200, width: 1.0), // Couleur d'origine
+          borderRadius: BorderRadius.circular(_responsivePadding(context, 5.0)), // Base 5.0
+          side: BorderSide(color: Colors.grey.shade200, width: 1.0),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: EdgeInsets.all(_responsivePadding(context, 8.0)), // Base 8.0
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildHeader(context),
-              const SizedBox(height: 8),
-              // Les détails de temps et de localisation ne sont pas affichés pour le type 'result'
+              SizedBox(height: _responsivePadding(context, 5.0)), // Base 5.0
               if (type != TimeCardType.result) ...[
                 _buildTimeAndDuration(context, displayTime, calculatedDuration),
-                const SizedBox(height: 8),
+                SizedBox(height: _responsivePadding(context, 5.0)), // Base 5.0
                 _buildLocation(context),
-                const SizedBox(height: 12),
+                SizedBox(height: _responsivePadding(context, 7.0)), // Base 7.0
               ],
               _buildActionButtons(context),
             ],
