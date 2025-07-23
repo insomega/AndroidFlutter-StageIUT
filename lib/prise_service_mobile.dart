@@ -4,6 +4,7 @@
 
 import 'dart:io'; // Pour File
 import 'dart:math';
+// ignore: unused_import
 import 'package:path_provider/path_provider.dart'; // Pour getExternalStorageDirectory, etc.
 import 'package:open_filex/open_filex.dart'; // Pour ouvrir le fichier après l'exportation // Target of URI doesn't exist: 'package:open_filex/open_filex.dart'.
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ import 'package:mon_projet/utils/date_time_extensions.dart';
 
 // Constantes pour le redimensionnement adaptatif
 const double kReferenceScreenWidth = 1000.0; // Largeur d'écran de référence pour les calculs de taille (ex: largeur d'un Pixel 3a)
-const double kMinFontSize = 6.0; // Taille de police minimale absolue (pour lisibilité extrême)
+const double kMinFontSize = 10.0; // Taille de police minimale absolue (pour lisibilité extrême)
 const double kMinIconSize = 12.0; // Taille d'icône minimale absolue
 const double kMinPadding = 2.0; // Padding minimal absolu
 
@@ -494,8 +495,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   }
     
   // Fonction pour exporter les services vers un fichier Excel sur mobile
-  Future<void> _exportServicesToExcel(List<Service> services) async {
-    if (services.isEmpty) {
+  Future<void> _exportServicesToExcel(List<Service> servicesToExport) async { // Renommée 'services' en 'servicesToExport' pour clarté
+    if (servicesToExport.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Aucune donnée à exporter.')),
       );
@@ -525,10 +526,10 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       ]);
 
       // Données (même logique que pour le web)
-      for (var service in services) {
+      for (var service in servicesToExport) { // Utilise servicesToExport
         sheet.appendRow([
           TextCellValue(service.id),
-          TextCellValue(service.employeeSvrLib),
+          TextCellValue(service.employeeSvrLib), // Utilisez ?? '' pour les String?
           TextCellValue(service.employeeSvrCode),
           TextCellValue(service.employeeName),
           TextCellValue(service.employeeTelPort),
@@ -548,34 +549,45 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       final List<int>? bytes = excel.save();
       if (bytes == null) throw Exception('Erreur lors de la génération Excel');
 
-      // Spécifique au mobile : enregistrer le fichier
-      final String? directory = (await getExternalStorageDirectory())?.path; // Pour Android
-      // Ou getApplicationDocumentsDirectory() pour iOS/Android interne
-      if (directory == null) throw Exception('Impossible de trouver le répertoire de stockage.');
+      // *** MODIFICATION IMPORTANTE ICI : Utilisation de FilePicker pour choisir le répertoire ***
+      final String? directoryPath = await FilePicker.platform.getDirectoryPath(); // Ouvre la fenêtre de dialogue
+      if (directoryPath == null) {
+        // L'utilisateur a annulé la sélection du répertoire
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Exportation annulée par l\'utilisateur.'), backgroundColor: Colors.orange),
+        );
+        return;
+      }
 
-      final String fileName = 'services_export_${DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now())}.xlsx';
-      final File file = File('$directory/$fileName');
+      //final String fileName = 'services_export_${DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now())}.xlsx';
+      final String fileName = 'services_export.xlsx';
+      final File file = File('$directoryPath/$fileName'); // Utilise le chemin choisi par l'utilisateur
       await file.writeAsBytes(bytes, flush: true);
 
       // Optionnel : Ouvrir le fichier
-      await OpenFilex.open(file.path); // Undefined name 'OpenFilex'.
+      // Assurez-vous que le package 'open_filex' est bien ajouté dans pubspec.yaml
+      // et importé. Pour Android, vous pourriez avoir besoin de permissions.
+      await OpenFilex.open(file.path);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Exportation réussie (fichier enregistré).'), backgroundColor: Colors.green),
+        SnackBar(
+          content: Text('Exportation réussie ! Fichier enregistré à : ${file.path}'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 7), // Affiche le message plus longtemps
+        ),
       );
     } catch (e) {
       debugPrint('Erreur lors de l\'export mobile : $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur export mobile : $e')),
+        SnackBar(content: Text('Erreur lors de l\'exportation : $e')),
       );
     }
   }
 
   void _onExportPressed() {
-    _exportServicesToExcel(_services); // Passez la liste '_services' comme argument.
+    // Par exemple, si vous voulez exporter les services filtrés affichés à l'écran :
+    _exportServicesToExcel(_services); // Ou _allServices si vous voulez tout exporter
   }
-
-
 
 
 
@@ -674,6 +686,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       ],
     );
   }
+
 
   // Méthode pour construire le sélecteur de date
   Widget _buildDateRangeSelector() {
@@ -805,7 +818,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           contentPadding: EdgeInsets.symmetric(vertical: responsivePadding(8.0), horizontal: responsivePadding(5.0)), // Base 8.0, 10.0
           isDense: true, // Réduit la hauteur interne du TextField
         ),
-        style: TextStyle(fontSize: responsiveFontSize(8.0)), // Base 12.0
+        style: TextStyle(fontSize: responsiveFontSize(12.0)), // Base 12.0
       ),
     );
   }
