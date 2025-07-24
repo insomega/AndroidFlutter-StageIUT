@@ -374,7 +374,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   }
 
   // Fonction pour importer les services depuis un fichier Excel
- // Fonction pour importer les services depuis un fichier Excel
   Future<void> _importServicesFromExcel() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -687,7 +686,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-
   // Méthode pour construire le sélecteur de date
   Widget _buildDateRangeSelector() {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -695,63 +693,137 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
     double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: responsivePadding(10.0), vertical: responsivePadding(6.0)), // Base 10.0, 6.0
-      color: Colors.grey[100],
-      child: Row(
-        children: [
-          IconButton(
-            icon: Icon(Icons.arrow_back_ios, size: responsiveIconSize(16.0)), // Base 16.0
-            onPressed: () {
-              setState(() {
-                _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
-                _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
-              });
-            },
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero, // Retire le padding par défaut de l'IconButton
-            constraints: BoxConstraints(), // Retire les contraintes de taille par défaut
-          ),
-          _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
-          SizedBox(width: responsivePadding(4.0)), // Base 4.0
-          VerticalDivider(
-            color: Theme.of(context).colorScheme.primary,
-            thickness: 1.5,
-            indent: responsivePadding(3.0),
-            endIndent: responsivePadding(3.0),
-            width: responsivePadding(10.0), // Base 10.0
-          ),
-          SizedBox(width: responsivePadding(4.0)), // Base 4.0
-          _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
-          IconButton(
-            icon: Icon(Icons.arrow_forward_ios, size: responsiveIconSize(16.0)), // Base 16.0
-            onPressed: () {
-              setState(() {
-                _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
-                _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
-              });
-            },
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            constraints: BoxConstraints(),
-          ),
-          const Spacer(),
-          Flexible( // Utiliser Flexible pour le texte de la date actuelle
-            child: Text(
-              DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
-              style: TextStyle(
-                fontSize: responsiveFontSize(11.0), // Base 11.0
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-              overflow: TextOverflow.ellipsis, // Tronque si trop long
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    final orientation = MediaQuery.of(context).orientation;
 
+    if (orientation == Orientation.portrait) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: responsivePadding(10.0), vertical: responsivePadding(6.0)),
+        color: Colors.grey[100],
+        child: Column( // La colonne principale pour le mode portrait
+          mainAxisSize: MainAxisSize.min, // S'adapte au contenu
+          children: [
+            // Ligne supérieure pour les contrôles de date (avant/arrière, dates, séparateur)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center, // Centre le contenu horizontalement
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back_ios, size: responsiveIconSize(16.0)),
+                  onPressed: () {
+                    setState(() {
+                      _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
+                      _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
+                    });
+                  },
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
+                SizedBox(width: responsivePadding(4.0)),
+                // Un simple Text ou un Container coloré peut remplacer VerticalDivider
+                // si vous voulez un séparateur horizontal pour la date
+                Container(
+                  width: responsivePadding(1.5), // Épaisseur du séparateur vertical
+                  height: responsiveFontSize(20.0), // Hauteur du séparateur
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                SizedBox(width: responsivePadding(4.0)),
+                _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
+                IconButton(
+                  icon: Icon(Icons.arrow_forward_ios, size: responsiveIconSize(16.0)),
+                  onPressed: () {
+                    setState(() {
+                      _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
+                      _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
+                    });
+                  },
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            SizedBox(height: responsivePadding(8.0)), // Espace vertical entre la ligne de contrôle et la date actuelle
+
+            // Ligne inférieure pour la date actuelle
+            Align(
+              alignment: Alignment.center,
+              // ATTENTION : J'AI RETIRÉ Flexible ICI, CAR Align N'EST PAS UN WIDGET DE TYPE Flex.
+              child: Text(
+                DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
+                style: TextStyle(
+                  fontSize: responsiveFontSize(11.0),
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+                overflow: TextOverflow.ellipsis, // Le TextOverflow.ellipsis gère toujours le débordement horizontal
+              ),
+            ),
+            // Le Spacer n'est pas nécessaire ici dans un Column si le contenu est déjà `mainAxisSize.min`
+          ],
+        ),
+      );
+    }
+    else {
+      // Le code pour le mode paysage reste inchangé, comme vous l'avez déjà.
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: responsivePadding(10.0), vertical: responsivePadding(6.0)), // Base 10.0, 6.0
+        color: Colors.grey[100],
+        child: Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.arrow_back_ios, size: responsiveIconSize(16.0)), // Base 16.0
+              onPressed: () {
+                setState(() {
+                  _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
+                  _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
+                });
+              },
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero, // Retire le padding par défaut de l'IconButton
+              constraints: BoxConstraints(), // Retire les contraintes de taille par défaut
+            ),
+            _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
+            SizedBox(width: responsivePadding(4.0)), // Base 4.0
+            VerticalDivider(
+              color: Theme.of(context).colorScheme.primary,
+              thickness: 1.5,
+              indent: responsivePadding(3.0),
+              endIndent: responsivePadding(3.0),
+              width: responsivePadding(10.0), // Base 10.0
+            ),
+            SizedBox(width: responsivePadding(4.0)), // Base 4.0
+            _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
+            IconButton(
+              icon: Icon(Icons.arrow_forward_ios, size: responsiveIconSize(16.0)), // Base 16.0
+              onPressed: () {
+                setState(() {
+                  _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
+                  _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
+                });
+              },
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints(),
+            ),
+            const Spacer(),
+            Flexible( // Utiliser Flexible pour le texte de la date actuelle
+              child: Text(
+                DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
+                style: TextStyle(
+                  fontSize: responsiveFontSize(11.0), // Base 11.0
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+                overflow: TextOverflow.ellipsis, // Tronque si trop long
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+    
   // Méthode d'aide pour les contrôles individuels de date
   Widget _buildDateControl(DateTime date, ValueChanged<DateTime> onDateChanged) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -805,24 +877,25 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: responsivePadding(10.0), vertical: responsivePadding(6.0)), // Base 10.0, 6.0
+      padding: EdgeInsets.symmetric(horizontal: responsivePadding(9.0), vertical: responsivePadding(4.0)), // Base 10.0, **Réduit 6.0 à 4.0**
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
           labelText: 'Rechercher par nom d\'employé',
           hintText: 'Entrez le nom de l\'employé...',
-          prefixIcon: Icon(Icons.search, size: responsiveIconSize(16.0)), // Base 16.0
+          prefixIcon: Icon(Icons.search, size: responsiveIconSize(12.0)), // Base **Réduit 16.0 à 15.0**
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(responsivePadding(6.0)), // Base 6.0
+            borderRadius: BorderRadius.circular(responsivePadding(6.0)),
           ),
-          contentPadding: EdgeInsets.symmetric(vertical: responsivePadding(8.0), horizontal: responsivePadding(5.0)), // Base 8.0, 10.0
-          isDense: true, // Réduit la hauteur interne du TextField
+          // **Réduisez davantage ces paddings**
+          contentPadding: EdgeInsets.symmetric(vertical: responsivePadding(6.0), horizontal: responsivePadding(6.0)), // Base **Réduit 8.0 à 6.0**, **Réduit 5.0 à 8.0**
+          isDense: true, // Très important pour réduire la hauteur
         ),
-        style: TextStyle(fontSize: responsiveFontSize(12.0)), // Base 12.0
+        style: TextStyle(fontSize: responsiveFontSize(10.0)), // Base **Réduit 12.0 à 11.0**
       ),
     );
   }
-
+  
   // Méthode pour construire les en-têtes de colonne
   Widget _buildColumnHeaders() {
     final screenWidth = MediaQuery.of(context).size.width;
