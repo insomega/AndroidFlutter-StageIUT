@@ -339,35 +339,46 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Fait défiler les différentes colonnes pour afficher le service spécifié
   void _scrollToService(Service serviceToScrollTo) {
-    const double itemHeight = 200.0; // Hauteur estimée d'une carte
+    // Il n'y a plus besoin de ces listes filtrées et triées ici.
+    // Il faut utiliser _filteredServices qui est la liste utilisée par les ListViews.
+    final List<Service> currentFilteredServices = _services;
 
-    // Trouver l'index du service dans la liste filtrée et triée de la colonne Début
-    final int debutIndex = _filteredAndSortedDebutServices.indexWhere((s) => s.id == serviceToScrollTo.id);
-    if (debutIndex != -1) {
-      _debutScrollController.animateTo(
-        debutIndex * itemHeight,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    }
+    // Hauteur estimée d'une carte (assurez-vous que cette valeur est proche de la réalité)
+    // Idéalement, calculez la hauteur réelle ou utilisez un package comme scrollable_positioned_list
+    // pour un défilement basé sur l'index sans hauteur fixe.
+    // Pour l'instant, on garde votre constante, mais soyez conscient de ses limites.
+    const double itemHeight = 200.0;
 
-    // Trouver l'index du service dans la liste filtrée et triée de la colonne Fin
-    final int finIndex = _filteredAndSortedFinServices.indexWhere((s) => s.id == serviceToScrollTo.id);
-    if (finIndex != -1) {
-      _finScrollController.animateTo(
-        finIndex * itemHeight,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    }
+    // Trouver l'index du service dans la liste des services filtrés actuellement affichée
+    final int serviceIndex = currentFilteredServices.indexWhere((s) => s.id == serviceToScrollTo.id);
 
-    // Le défilement de la colonne Résultat suit l'ordre de la colonne Début
-    if (debutIndex != -1) {
-      _resultatScrollController.animateTo(
-        debutIndex * itemHeight,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
+    if (serviceIndex != -1) {
+      // Défilement de la colonne Début si elle est activée
+      if (_showDebutColumn && _debutScrollController.hasClients) {
+        _debutScrollController.animateTo(
+          serviceIndex * itemHeight,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+
+      // Défilement de la colonne Fin si elle est activée
+      if (_showFinColumn && _finScrollController.hasClients) {
+        _finScrollController.animateTo(
+          serviceIndex * itemHeight,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+
+      // Défilement de la colonne Résultat si elle est activée
+      if (_showResultColumn && _resultatScrollController.hasClients) {
+        _resultatScrollController.animateTo(
+          serviceIndex * itemHeight,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
     }
   }
 
@@ -676,30 +687,56 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     final orientation = MediaQuery.of(context).orientation;
 
     // Fonction d'aide interne pour les boutons de colonne
-    Widget _buildColumnToggleButton(String label, bool isVisible, ValueChanged<bool> onChanged) {
+    Widget buildColumnToggleButton(String label, bool isVisible, ValueChanged<bool> onChanged) {
       return Padding(
-        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 3.0)), // Espacement entre les boutons D/F/R
-        child: ElevatedButton(
-          onPressed: () => onChanged(!isVisible),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isVisible ? Theme.of(context).primaryColor : Colors.grey[400],
-            foregroundColor: Colors.white,
-            minimumSize: Size(responsive_utils.responsivePadding(context, 25.0), responsive_utils.responsivePadding(context, 25.0)), // Taille réduite
-            padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0), vertical: responsive_utils.responsivePadding(context, 2.0)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 4.0)),
+        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)), // Espacement entre les boutons
+        child: InkWell( // Utilisez InkWell pour un effet de ripple et un GestureDetector
+          onTap: () => onChanged(!isVisible),
+          borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0)), // Bordures arrondies
+          child: Container(
+            width: responsive_utils.responsivePadding(context, 35.0), // Largeur fixe
+            // **MODIFICATION ICI : Augmenter la hauteur du bouton**
+            height: responsive_utils.responsivePadding(context, 40.0), // Augmenté de 35.0 à 40.0 pour plus d'espace
+            decoration: BoxDecoration(
+              color: isVisible ? Theme.of(context).primaryColor : Colors.grey[400],
+              borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0)),
+              boxShadow: isVisible ? [
+                BoxShadow(
+                  color: Theme.of(context).primaryColor.withOpacity(0.3),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ] : null,
             ),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          child: Text(
-            label,
-            style: TextStyle(fontSize: responsive_utils.responsiveFontSize(context, 10.0), fontWeight: FontWeight.bold),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isVisible ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.white,
+                  // Revenir à une taille d'icône légèrement plus grande ou celle d'origine
+                  size: responsive_utils.responsiveIconSize(context, 16.0), // Rétabli à 16.0 ou selon votre préférence
+                ),
+                SizedBox(height: responsive_utils.responsivePadding(context, 1.0)), // Garder un petit espace
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    // Revenir à une taille de police légèrement plus grande ou celle d'origine
+                    fontSize: responsive_utils.responsiveFontSize(context, 8.0), // Rétabli à 8.0 ou selon votre préférence
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis, // Tronque le texte si trop long
+                  maxLines: 1,
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    // Contenu des contrôles de date (sans les boutons D,F,R ni le Spacer)
+    // Contenu des contrôles de date
     Widget dateControls = Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -740,21 +777,21 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       ],
     );
 
-    // Les boutons D,F,R sont maintenant dans une variable séparée
+    // Les boutons D,F,R
     Widget columnToggleButtons = Row(
       mainAxisSize: MainAxisSize.min, // S'assure que la Row prend juste la taille nécessaire
       children: [
-        _buildColumnToggleButton('D', _showDebutColumn, (newStatus) {
+        buildColumnToggleButton('D', _showDebutColumn, (newStatus) {
           setState(() {
             _showDebutColumn = newStatus;
           });
         }),
-        _buildColumnToggleButton('F', _showFinColumn, (newStatus) {
+        buildColumnToggleButton('F', _showFinColumn, (newStatus) {
           setState(() {
             _showFinColumn = newStatus;
           });
         }),
-        _buildColumnToggleButton('R', _showResultColumn, (newStatus) {
+        buildColumnToggleButton('R', _showResultColumn, (newStatus) {
           setState(() {
             _showResultColumn = newStatus;
           });
@@ -763,7 +800,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 10.0), vertical: responsive_utils.responsivePadding(context, 6.0)),
+      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 10.0), vertical: responsive_utils.responsivePadding(context, 4.0)), // Ajusté pour éviter l'overflow vertical
       color: Colors.grey[100],
       child: orientation == Orientation.portrait
           ? Column(
@@ -771,7 +808,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               children: [
                 dateControls, // Les contrôles de date seuls
                 SizedBox(height: responsive_utils.responsivePadding(context, 8.0)),
-                Row( // Nouvelle Row pour le texte de la date actuelle et les boutons D,F,R
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween, // Aligne à gauche/droite
                   children: [
                     Expanded( // Le texte prend l'espace disponible à gauche
@@ -782,7 +819,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.secondary,
                         ),
-                        overflow: TextOverflow.ellipsis,
+                        overflow: TextOverflow.ellipsis, // Tronque le texte si trop long
+                        maxLines: 1, // Assure que le texte ne prend qu'une seule ligne
                       ),
                     ),
                     columnToggleButtons, // Les boutons D,F,R à droite
@@ -958,16 +996,20 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   // Méthode pour construire le pied de page
   Widget _buildFooter() {
     return Padding(
-      padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 6.0)),
+      // Réduire légèrement le padding vertical
+      padding: EdgeInsets.symmetric(
+        horizontal: responsive_utils.responsivePadding(context, 6.0),
+        vertical: responsive_utils.responsivePadding(context, 4.0), // Réduit de 6.0 à 4.0
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Spacer(),
-          Flexible( // Utiliser Flexible pour s'assurer que le texte tient
+          Flexible(
             child: Text(
               "© BMSoft 2025, tous droits réservés    ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
               style: TextStyle(
-                fontSize: responsive_utils.responsiveFontSize(context, 10.0),
+                fontSize: responsive_utils.responsiveFontSize(context, 9.0), // Réduit de 10.0 à 9.0
                 fontWeight: FontWeight.w500,
                 color: Theme.of(context).colorScheme.secondary,
               ),
