@@ -3,10 +3,9 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'dart:io'; // Pour File
-import 'dart:math';
 // ignore: unused_import
 import 'package:path_provider/path_provider.dart'; // Pour getExternalStorageDirectory, etc.
-import 'package:open_filex/open_filex.dart'; // Pour ouvrir le fichier après l'exportation // Target of URI doesn't exist: 'package:open_filex/open_filex.dart'.
+import 'package:open_filex/open_filex.dart'; // Pour ouvrir le fichier après l'exportation
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mon_projet/time_detail_card.dart'; // Assurez-vous que ce fichier existe
@@ -16,13 +15,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' hide Border; // Importation pour la lecture et l'écriture Excel
 import 'dart:typed_data'; // Pour Uint8List
 import 'package:mon_projet/utils/date_time_extensions.dart';
-//import 'dart:convert'; // For base64Encode
-
-// Constantes pour le redimensionnement adaptatif
-const double kReferenceScreenWidth = 1000.0; // Largeur d'écran de référence pour les calculs de taille (ex: largeur d'un Pixel 3a)
-const double kMinFontSize = 10.0; // Taille de police minimale absolue (pour lisibilité extrême)
-const double kMinIconSize = 12.0; // Taille d'icône minimale absolue
-const double kMinPadding = 2.0; // Padding minimal absolu
+import 'package:mon_projet/utils/responsive_utils.dart' as responsive_utils; // NOUVEL IMPORT
 
 class PriseServiceScreen extends StatefulWidget {
   const PriseServiceScreen({super.key});
@@ -34,7 +27,7 @@ class PriseServiceScreen extends StatefulWidget {
 class _PriseServiceScreenState extends State<PriseServiceScreen> {
   DateTime _currentDisplayDate = DateTime.now();
   DateTime _startDate = DateTime(2025, 7, 1); // Date de début de période par défaut
-  DateTime _endDate = DateTime(2025, 7, 31); // Date de fin de période par défaut
+  DateTime _endDate = DateTime(2025, 7, 31); // Date de fin de période par default
 
   Timer? _timer;
 
@@ -51,6 +44,11 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   double _totalWorkedHours = 0.0; // Heures totales travaillées
   double _remainingHours = 0.0; // Heures restantes (prévues - travaillées)
   double _totalScheduledHours = 0.0; // Heures totales prévues
+
+  // NOUVELLES VARIABLES D'ÉTAT POUR LA VISIBILITÉ DES COLONNES
+  bool _showDebutColumn = true;
+  bool _showFinColumn = true;
+  bool _showResultColumn = true;
 
   @override
   void initState() {
@@ -117,7 +115,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) updateState) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: initialDate,
+      initialDate: initialDate, // Date initiale basée sur l'heure actuelle du service
       firstDate: DateTime(2000), // Date de début possible
       lastDate: DateTime(2030), // Date de fin possible
       helpText: 'Sélectionner une date',
@@ -380,9 +378,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         type: FileType.custom,
         allowedExtensions: ['xlsx'], // Autorise uniquement les fichiers .xlsx
         allowMultiple: false,
-        // Il est souvent bon de forcer withData: true, mais si ça ne marche pas,
-        // lire par le chemin est la solution.
-        // withData: true, // Vous pouvez essayer d'ajouter ceci si vous voulez que 'bytes' ne soit pas nul
       );
 
       debugPrint('*** DEBUG FILE PICKER RESULT ***');
@@ -403,7 +398,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         final String? filePath = result.files.single.path;
 
         if (filePath == null) {
-          // Au cas où le path serait aussi null, bien que les logs suggèrent qu'il ne l'est pas
           debugPrint('Le chemin du fichier sélectionné est nul après la sélection.');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Impossible d\'accéder au fichier sélectionné (chemin manquant).')),
@@ -492,7 +486,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       );
     }
   }
-    
+
   // Fonction pour exporter les services vers un fichier Excel sur mobile
   Future<void> _exportServicesToExcel(List<Service> servicesToExport) async { // Renommée 'services' en 'servicesToExport' pour clarté
     if (servicesToExport.isEmpty) {
@@ -558,14 +552,11 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         return;
       }
 
-      //final String fileName = 'services_export_${DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now())}.xlsx';
       final String fileName = 'services_export.xlsx';
       final File file = File('$directoryPath/$fileName'); // Utilise le chemin choisi par l'utilisateur
       await file.writeAsBytes(bytes, flush: true);
 
       // Optionnel : Ouvrir le fichier
-      // Assurez-vous que le package 'open_filex' est bien ajouté dans pubspec.yaml
-      // et importé. Pour Android, vous pourriez avoir besoin de permissions.
       await OpenFilex.open(file.path);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -584,8 +575,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   }
 
   void _onExportPressed() {
-    // Par exemple, si vous voulez exporter les services filtrés affichés à l'écran :
-    _exportServicesToExcel(_services); // Ou _allServices si vous voulez tout exporter
+    _exportServicesToExcel(_services); // Exporte tous les services chargés
   }
 
 
@@ -593,277 +583,268 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire l'AppBar
   AppBar _buildAppBar(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    // Fonctions d'aide pour le redimensionnement
-    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
-
+    // Les fonctions de redimensionnement ne sont plus définies ici,
+    // mais appelées via responsive_utils.
     return AppBar(
-      toolbarHeight: responsivePadding(50.0), // Contrôler la hauteur de l'AppBar (Base 50.0)
+      toolbarHeight: responsive_utils.responsivePadding(context, 50.0),
       leading: Padding(
-        padding: EdgeInsets.all(responsivePadding(4.0)), // Base 4.0
+        padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 4.0)),
         child: Image.asset(
           'assets/logo_app.png',
-          height: responsiveIconSize(25.0), // Base 25.0
-          width: responsiveIconSize(25.0), // Base 25.0
+          height: responsive_utils.responsiveIconSize(context, 25.0),
+          width: responsive_utils.responsiveIconSize(context, 25.0),
         ),
       ),
       title: Text(
         'Prise de services automatique',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: responsiveFontSize(16.0), // Base 16.0
+          fontSize: responsive_utils.responsiveFontSize(context, 16.0),
           color: Theme.of(context).colorScheme.onPrimary,
         ),
-        overflow: TextOverflow.ellipsis, // Empêche le débordement du titre
+        overflow: TextOverflow.ellipsis,
       ),
       centerTitle: true,
       backgroundColor: Theme.of(context).primaryColor,
       foregroundColor: Theme.of(context).colorScheme.onPrimary,
       actions: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: responsivePadding(2.0)), // Base 2.0
+          padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
           child: _dataLoaded
               ? ElevatedButton.icon(
                   onPressed: _importServicesFromExcel,
-                  icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsiveIconSize(18.0)), // Base 18.0
-                  label: FittedBox( // Assure que le texte du bouton s'ajuste
+                  icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 18.0)),
+                  label: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsiveFontSize(10.0))), // Base 10.0
+                    child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 10.0))),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(responsivePadding(6.0)), // Base 6.0
+                      borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: responsivePadding(8.0), vertical: responsivePadding(4.0)), // Base 8.0, 4.0
-                    minimumSize: Size(responsivePadding(80.0), responsivePadding(30.0)), // Taille min pour le bouton
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Réduit la zone de tap
+                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 8.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
+                    minimumSize: Size(responsive_utils.responsivePadding(context, 80.0), responsive_utils.responsivePadding(context, 30.0)),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 )
               : ElevatedButton.icon(
                   onPressed: _importServicesFromExcel,
-                  icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsiveIconSize(18.0)), // Base 18.0
+                  icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 18.0)),
                   label: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsiveFontSize(10.0))), // Base 10.0
+                    child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 10.0))),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(responsivePadding(6.0)), // Base 6.0
+                      borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: responsivePadding(8.0), vertical: responsivePadding(4.0)), // Base 8.0, 4.0
-                    minimumSize: Size(responsivePadding(80.0), responsivePadding(30.0)), // Taille min pour le bouton
+                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 8.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
+                    minimumSize: Size(responsive_utils.responsivePadding(context, 80.0), responsive_utils.responsivePadding(context, 30.0)),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: responsivePadding(2.0)), // Base 2.0
+          padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
           child: ElevatedButton.icon(
             onPressed: _onExportPressed,
-            icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsiveIconSize(18.0)), // Base 18.0
+            icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 18.0)),
             label: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsiveFontSize(10.0))), // Base 10.0
+              child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 10.0))),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(responsivePadding(6.0)), // Base 6.0
+                borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
               ),
-              padding: EdgeInsets.symmetric(horizontal: responsivePadding(8.0), vertical: responsivePadding(4.0)), // Base 8.0, 4.0
-              minimumSize: Size(responsivePadding(80.0), responsivePadding(30.0)), // Taille min pour le bouton
+              padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 8.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
+              minimumSize: Size(responsive_utils.responsivePadding(context, 80.0), responsive_utils.responsivePadding(context, 30.0)),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
         ),
-        SizedBox(width: responsivePadding(6.0)), // Base 6.0
+        SizedBox(width: responsive_utils.responsivePadding(context, 6.0)),
       ],
     );
   }
 
-  // Méthode pour construire le sélecteur de date
+  // Méthode pour construire le sélecteur de date (maintenant avec les boutons D,F,R)
   Widget _buildDateRangeSelector() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
-
     final orientation = MediaQuery.of(context).orientation;
 
-    if (orientation == Orientation.portrait) {
-      return Container(
-        padding: EdgeInsets.symmetric(horizontal: responsivePadding(10.0), vertical: responsivePadding(6.0)),
-        color: Colors.grey[100],
-        child: Column( // La colonne principale pour le mode portrait
-          mainAxisSize: MainAxisSize.min, // S'adapte au contenu
-          children: [
-            // Ligne supérieure pour les contrôles de date (avant/arrière, dates, séparateur)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center, // Centre le contenu horizontalement
+    // Fonction d'aide interne pour les boutons de colonne
+    Widget _buildColumnToggleButton(String label, bool isVisible, ValueChanged<bool> onChanged) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 3.0)), // Espacement entre les boutons D/F/R
+        child: ElevatedButton(
+          onPressed: () => onChanged(!isVisible),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isVisible ? Theme.of(context).primaryColor : Colors.grey[400],
+            foregroundColor: Colors.white,
+            minimumSize: Size(responsive_utils.responsivePadding(context, 25.0), responsive_utils.responsivePadding(context, 25.0)), // Taille réduite
+            padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0), vertical: responsive_utils.responsivePadding(context, 2.0)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 4.0)),
+            ),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(fontSize: responsive_utils.responsiveFontSize(context, 10.0), fontWeight: FontWeight.bold),
+          ),
+        ),
+      );
+    }
+
+    // Contenu des contrôles de date (sans les boutons D,F,R ni le Spacer)
+    Widget dateControls = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: Icon(Icons.arrow_back_ios, size: responsive_utils.responsiveIconSize(context, 16.0)),
+          onPressed: () {
+            setState(() {
+              _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
+              _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
+            });
+          },
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+        _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
+        SizedBox(width: responsive_utils.responsivePadding(context, 4.0)),
+        // Séparateur vertical
+        Container(
+          width: responsive_utils.responsivePadding(context, 1.5), // Épaisseur du séparateur vertical
+          height: responsive_utils.responsiveFontSize(context, 20.0), // Hauteur du séparateur
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        SizedBox(width: responsive_utils.responsivePadding(context, 4.0)),
+        _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
+        IconButton(
+          icon: Icon(Icons.arrow_forward_ios, size: responsive_utils.responsiveIconSize(context, 16.0)),
+          onPressed: () {
+            setState(() {
+              _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
+              _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
+            });
+          },
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+      ],
+    );
+
+    // Les boutons D,F,R sont maintenant dans une variable séparée
+    Widget columnToggleButtons = Row(
+      mainAxisSize: MainAxisSize.min, // S'assure que la Row prend juste la taille nécessaire
+      children: [
+        _buildColumnToggleButton('D', _showDebutColumn, (newStatus) {
+          setState(() {
+            _showDebutColumn = newStatus;
+          });
+        }),
+        _buildColumnToggleButton('F', _showFinColumn, (newStatus) {
+          setState(() {
+            _showFinColumn = newStatus;
+          });
+        }),
+        _buildColumnToggleButton('R', _showResultColumn, (newStatus) {
+          setState(() {
+            _showResultColumn = newStatus;
+          });
+        }),
+      ],
+    );
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 10.0), vertical: responsive_utils.responsivePadding(context, 6.0)),
+      color: Colors.grey[100],
+      child: orientation == Orientation.portrait
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back_ios, size: responsiveIconSize(16.0)),
-                  onPressed: () {
-                    setState(() {
-                      _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
-                      _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
-                    });
-                  },
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
-                SizedBox(width: responsivePadding(4.0)),
-                // Un simple Text ou un Container coloré peut remplacer VerticalDivider
-                // si vous voulez un séparateur horizontal pour la date
-                Container(
-                  width: responsivePadding(1.5), // Épaisseur du séparateur vertical
-                  height: responsiveFontSize(20.0), // Hauteur du séparateur
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                SizedBox(width: responsivePadding(4.0)),
-                _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
-                IconButton(
-                  icon: Icon(Icons.arrow_forward_ios, size: responsiveIconSize(16.0)),
-                  onPressed: () {
-                    setState(() {
-                      _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
-                      _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
-                    });
-                  },
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                dateControls, // Les contrôles de date seuls
+                SizedBox(height: responsive_utils.responsivePadding(context, 8.0)),
+                Row( // Nouvelle Row pour le texte de la date actuelle et les boutons D,F,R
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween, // Aligne à gauche/droite
+                  children: [
+                    Expanded( // Le texte prend l'espace disponible à gauche
+                      child: Text(
+                        DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
+                        style: TextStyle(
+                          fontSize: responsive_utils.responsiveFontSize(context, 11.0),
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    columnToggleButtons, // Les boutons D,F,R à droite
+                  ],
                 ),
               ],
-            ),
-            SizedBox(height: responsivePadding(8.0)), // Espace vertical entre la ligne de contrôle et la date actuelle
-
-            // Ligne inférieure pour la date actuelle
-            Align(
-              alignment: Alignment.center,
-              // ATTENTION : J'AI RETIRÉ Flexible ICI, CAR Align N'EST PAS UN WIDGET DE TYPE Flex.
-              child: Text(
-                DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
-                style: TextStyle(
-                  fontSize: responsiveFontSize(11.0),
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.secondary,
+            )
+          : Row( // Pour le mode paysage
+              children: [
+                dateControls, // Les contrôles de date seuls
+                const Spacer(), // Pousse le texte de la date et les boutons à droite
+                Text( // Le texte de la date actuelle
+                  DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
+                  style: TextStyle(
+                    fontSize: responsive_utils.responsiveFontSize(context, 11.0),
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                overflow: TextOverflow.ellipsis, // Le TextOverflow.ellipsis gère toujours le débordement horizontal
-              ),
+                SizedBox(width: responsive_utils.responsivePadding(context, 10.0)), // Espace entre le texte et les boutons
+                columnToggleButtons, // Les boutons D,F,R
+              ],
             ),
-            // Le Spacer n'est pas nécessaire ici dans un Column si le contenu est déjà `mainAxisSize.min`
-          ],
-        ),
-      );
-    }
-    else {
-      // Le code pour le mode paysage reste inchangé, comme vous l'avez déjà.
-      return Container(
-        padding: EdgeInsets.symmetric(horizontal: responsivePadding(10.0), vertical: responsivePadding(6.0)), // Base 10.0, 6.0
-        color: Colors.grey[100],
-        child: Row(
-          children: [
-            IconButton(
-              icon: Icon(Icons.arrow_back_ios, size: responsiveIconSize(16.0)), // Base 16.0
-              onPressed: () {
-                setState(() {
-                  _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
-                  _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
-                });
-              },
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero, // Retire le padding par défaut de l'IconButton
-              constraints: BoxConstraints(), // Retire les contraintes de taille par défaut
-            ),
-            _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
-            SizedBox(width: responsivePadding(4.0)), // Base 4.0
-            VerticalDivider(
-              color: Theme.of(context).colorScheme.primary,
-              thickness: 1.5,
-              indent: responsivePadding(3.0),
-              endIndent: responsivePadding(3.0),
-              width: responsivePadding(10.0), // Base 10.0
-            ),
-            SizedBox(width: responsivePadding(4.0)), // Base 4.0
-            _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
-            IconButton(
-              icon: Icon(Icons.arrow_forward_ios, size: responsiveIconSize(16.0)), // Base 16.0
-              onPressed: () {
-                setState(() {
-                  _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
-                  _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
-                });
-              },
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints(),
-            ),
-            const Spacer(),
-            Flexible( // Utiliser Flexible pour le texte de la date actuelle
-              child: Text(
-                DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
-                style: TextStyle(
-                  fontSize: responsiveFontSize(11.0), // Base 11.0
-                  fontWeight: FontWeight.w500,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-                overflow: TextOverflow.ellipsis, // Tronque si trop long
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    );
   }
-    
+
   // Méthode d'aide pour les contrôles individuels de date
   Widget _buildDateControl(DateTime date, ValueChanged<DateTime> onDateChanged) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          icon: Icon(Icons.remove, size: responsiveIconSize(16.0)), // Base 16.0
+          icon: Icon(Icons.remove, size: responsive_utils.responsiveIconSize(context, 16.0)),
           onPressed: () => _changeDateByDay(date, -1, onDateChanged),
           visualDensity: VisualDensity.compact,
           padding: EdgeInsets.zero,
-          constraints: BoxConstraints(),
+          constraints: const BoxConstraints(),
         ),
-        SizedBox(width: responsivePadding(3.0)), // Base 3.0
+        SizedBox(width: responsive_utils.responsivePadding(context, 3.0)),
         GestureDetector(
           onTap: () => _selectDate(context, date, onDateChanged),
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: responsivePadding(6.0), vertical: responsivePadding(3.0)), // Base 6.0, 3.0
+            padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 3.0)),
             decoration: BoxDecoration(
               border: Border.all(color: Theme.of(context).primaryColor, width: 1.0),
-              borderRadius: BorderRadius.circular(responsivePadding(5.0)), // Base 5.0
+              borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 5.0)),
               color: Colors.white,
             ),
             child: Text(
               DateFormat('dd/MM/yyyy').format(date),
-              style: TextStyle(fontSize: responsiveFontSize(12.0), fontWeight: FontWeight.bold, color: Colors.black87), // Base 12.0
+              style: TextStyle(fontSize: responsive_utils.responsiveFontSize(context, 12.0), fontWeight: FontWeight.bold, color: Colors.black87),
             ),
           ),
         ),
-        SizedBox(width: responsivePadding(3.0)), // Base 3.0
+        SizedBox(width: responsive_utils.responsivePadding(context, 3.0)),
         IconButton(
-          icon: Icon(Icons.add, size: responsiveIconSize(16.0)), // Base 16.0
+          icon: Icon(Icons.add, size: responsive_utils.responsiveIconSize(context, 16.0)),
           onPressed: () => _changeDateByDay(date, 1, onDateChanged),
           visualDensity: VisualDensity.compact,
           padding: EdgeInsets.zero,
-          constraints: BoxConstraints(),
+          constraints: const BoxConstraints(),
         ),
       ],
     );
@@ -871,95 +852,85 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire la barre de recherche
   Widget _buildSearchBar() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
-
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: responsivePadding(9.0), vertical: responsivePadding(4.0)), // Base 10.0, **Réduit 6.0 à 4.0**
+      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 9.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
           labelText: 'Rechercher par nom d\'employé',
           hintText: 'Entrez le nom de l\'employé...',
-          prefixIcon: Icon(Icons.search, size: responsiveIconSize(12.0)), // Base **Réduit 16.0 à 15.0**
+          prefixIcon: Icon(Icons.search, size: responsive_utils.responsiveIconSize(context, 12.0)),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(responsivePadding(6.0)),
+            borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
           ),
-          // **Réduisez davantage ces paddings**
-          contentPadding: EdgeInsets.symmetric(vertical: responsivePadding(6.0), horizontal: responsivePadding(6.0)), // Base **Réduit 8.0 à 6.0**, **Réduit 5.0 à 8.0**
-          isDense: true, // Très important pour réduire la hauteur
+          contentPadding: EdgeInsets.symmetric(vertical: responsive_utils.responsivePadding(context, 6.0), horizontal: responsive_utils.responsivePadding(context, 6.0)),
+          isDense: true,
         ),
-        style: TextStyle(fontSize: responsiveFontSize(10.0)), // Base **Réduit 12.0 à 11.0**
+        style: TextStyle(fontSize: responsive_utils.responsiveFontSize(context, 10.0)),
       ),
     );
   }
-  
-  // Méthode pour construire les en-têtes de colonne
-  Widget _buildColumnHeaders() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
 
+  // Méthode pour construire les en-têtes de colonne (maintenant conditionnels)
+  Widget _buildColumnHeaders() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: responsivePadding(10.0), vertical: responsivePadding(6.0)), // Base 10.0, 6.0
+      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 10.0), vertical: responsive_utils.responsivePadding(context, 6.0)),
       child: Row(
         children: [
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: Text(
-                'Début',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: responsiveFontSize(14.0), // Base 14.0
-                  color: Theme.of(context).colorScheme.primary,
+          if (_showDebutColumn) // Condition pour la colonne "Début"
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: Text(
+                  'Début',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: responsive_utils.responsiveFontSize(context, 14.0),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: Text(
-                'Fin',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: responsiveFontSize(14.0), // Base 14.0
-                  color: Theme.of(context).colorScheme.primary,
+          if (_showFinColumn) // Condition pour la colonne "Fin"
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: Text(
+                  'Fin',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: responsive_utils.responsiveFontSize(context, 14.0),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: Text(
-                'Résultat',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: responsiveFontSize(14.0), // Base 14.0
-                  color: Colors.green.shade700,
+          if (_showResultColumn) // Condition pour la colonne "Résultat"
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Text(
+                  'Résultat',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: responsive_utils.responsiveFontSize(context, 14.0),
+                    color: Colors.green.shade700,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
-  // Méthode pour construire une liste de services (colonne)
-  
-  Widget _buildServiceColumn(List<Service> services, ScrollController controller, TimeCardType type) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
 
+  // Méthode pour construire une liste de services (colonne)
+  Widget _buildServiceColumn(List<Service> services, ScrollController controller, TimeCardType type) {
     return Expanded(
       flex: type == TimeCardType.result ? 1 : 2, // Flexibilité différente pour la colonne Résultat
       child: ListView.builder(
         controller: controller,
-        padding: EdgeInsets.symmetric(horizontal: responsivePadding(5.0)), // Base 5.0
+        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 5.0)),
         itemCount: services.length,
         itemBuilder: (context, index) {
           final service = services[index];
@@ -986,12 +957,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire le pied de page
   Widget _buildFooter() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
-
     return Padding(
-      padding: EdgeInsets.all(responsivePadding(6.0)), // Base 6.0
+      padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 6.0)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -1000,7 +967,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             child: Text(
               "© BMSoft 2025, tous droits réservés    ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
               style: TextStyle(
-                fontSize: responsiveFontSize(10.0), // Base 10.0
+                fontSize: responsive_utils.responsiveFontSize(context, 10.0),
                 fontWeight: FontWeight.w500,
                 color: Theme.of(context).colorScheme.secondary,
               ),
@@ -1014,34 +981,29 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire une puce de résumé flottante
   Widget _buildSummaryChip(IconData icon, String label, String value, Color color) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsiveIconSize(double baseSize) => max(kMinIconSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
-
     return Card(
       color: color,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(responsivePadding(8.0))), // Base 8.0
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0))),
       elevation: 4,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: responsivePadding(6.0), vertical: responsivePadding(4.0)), // Base 6.0, 4.0
+        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
         child: Row(
           mainAxisSize: MainAxisSize.min, // Occupe le moins de largeur possible
           children: [
-            Icon(icon, color: Colors.white, size: responsiveIconSize(16.0)), // Base 16.0
-            SizedBox(width: responsivePadding(4.0)), // Base 4.0
+            Icon(icon, color: Colors.white, size: responsive_utils.responsiveIconSize(context, 16.0)),
+            SizedBox(width: responsive_utils.responsivePadding(context, 4.0)),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   label,
-                  style: TextStyle(color: Colors.white, fontSize: responsiveFontSize(10.0)), // Base 10.0
+                  style: TextStyle(color: Colors.white, fontSize: responsive_utils.responsiveFontSize(context, 10.0)),
                 ),
                 Text(
                   value,
                   style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: responsiveFontSize(12.0)), // Base 12.0
+                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: responsive_utils.responsiveFontSize(context, 12.0)),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
@@ -1055,21 +1017,18 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire les widgets flottants de résumé
   Widget _buildSummaryFloatingWidgets() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
-
     return Positioned(
-      bottom: responsivePadding(15.0), // Base 15.0
-      right: responsivePadding(10.0), // Base 10.0 - ajusté pour plus d'espace
+      bottom: responsive_utils.responsivePadding(context, 15.0),
+      right: responsive_utils.responsivePadding(context, 10.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _buildSummaryChip(Icons.calendar_today, 'Mois', DateFormat('MMMM', 'fr_FR').format(_startDate), Colors.blueAccent),
-          SizedBox(height: responsivePadding(5.0)), // Base 5.0
+          SizedBox(width: responsive_utils.responsivePadding(context, 5.0)), // Utilisez 'width' pour Row
           _buildSummaryChip(Icons.balance, 'Prévu', '${_totalScheduledHours.toStringAsFixed(1)}H', Colors.purpleAccent),
-          SizedBox(height: responsivePadding(5.0)), // Base 5.0
+          SizedBox(width: responsive_utils.responsivePadding(context, 5.0)), // Utilisez 'width' pour Row
           _buildSummaryChip(Icons.access_time, 'Travaillé', '${_totalWorkedHours.toStringAsFixed(1)}H', Colors.redAccent),
-          SizedBox(height: responsivePadding(5.0)), // Base 5.0
+          SizedBox(width: responsive_utils.responsivePadding(context, 5.0)), // Utilisez 'width' pour Row
           _buildSummaryChip(Icons.access_time, 'Restant', '${_remainingHours.toStringAsFixed(1)}H', Colors.orangeAccent),
         ],
       ),
@@ -1078,10 +1037,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double responsiveFontSize(double baseSize) => max(kMinFontSize, baseSize * (screenWidth / kReferenceScreenWidth));
-    double responsivePadding(double baseSize) => max(kMinPadding, baseSize * (screenWidth / kReferenceScreenWidth));
-
     return Scaffold(
       appBar: _buildAppBar(context),
       body: Stack(
@@ -1093,12 +1048,12 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               _buildColumnHeaders(),
               if (!_dataLoaded) ...[
                 const Spacer(),
-                Padding( // Ajouter un padding autour du texte "Veuillez importer..."
-                  padding: EdgeInsets.all(responsivePadding(15.0)), // Base 15.0
+                Padding(
+                  padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 15.0)),
                   child: Text(
                     "Veuillez importer un fichier Excel pour commencer",
                     style: TextStyle(
-                      fontSize: responsiveFontSize(15.0), // Base 15.0
+                      fontSize: responsive_utils.responsiveFontSize(context, 15.0),
                       fontWeight: FontWeight.w500,
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -1111,9 +1066,12 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildServiceColumn(_filteredAndSortedDebutServices, _debutScrollController, TimeCardType.debut),
-                    _buildServiceColumn(_filteredAndSortedFinServices, _finScrollController, TimeCardType.fin),
-                    _buildServiceColumn(_filteredAndSortedDebutServices, _resultatScrollController, TimeCardType.result),
+                    if (_showDebutColumn) // Conditionnel
+                      _buildServiceColumn(_filteredAndSortedDebutServices, _debutScrollController, TimeCardType.debut),
+                    if (_showFinColumn) // Conditionnel
+                      _buildServiceColumn(_filteredAndSortedFinServices, _finScrollController, TimeCardType.fin),
+                    if (_showResultColumn) // Conditionnel
+                      _buildServiceColumn(_filteredAndSortedDebutServices, _resultatScrollController, TimeCardType.result),
                   ],
                 ),
               ),

@@ -318,7 +318,7 @@ class TimeDetailCard extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                service.isAbsent ? 'Absent' : 'Présent',
+                service.isAbsent ? 'Absent' : 'Absent',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold, fontSize: helpers.responsiveFontSize(context, 10.0)),
               ),
             ),
