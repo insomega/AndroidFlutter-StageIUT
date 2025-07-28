@@ -45,7 +45,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   bool _showFinColumn = true;
   bool _showResultColumn = true;
 
-
   @override
   void initState() {
     super.initState();
@@ -165,11 +164,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Getter pour les services filtrés et triés pour la colonne "Résultat" (ajusté)
   List<Service> get _filteredAndSortedResultServices {
-    // Pour l'instant, la colonne "Résultat" affiche les mêmes services que "Début".
-    // Vous pouvez ajuster cette logique si "Résultat" doit être différent.
     return _filteredAndSortedDebutServices;
   }
-
 
   // Gère le basculement de l'état "Absent" d'un service
   void _handleAbsentToggle(String serviceId, bool newAbsentStatus) {
@@ -285,7 +281,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             debugPrint('Service $serviceId - Nouvelle heure de fin: ${DateFormat('dd/MM HH:mm').format(updatedDateTime)}');
           }
         });
-        // Afficher un SnackBar de succès (optionnel, mais bonne pratique)
+        // Afficher un SnackBar de succès
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Heure ${type == TimeCardType.debut ? "de début" : "de fin"} mise à jour avec succès.'),
@@ -354,7 +350,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         final Uint8List bytes = result.files.single.bytes!;
         final Excel excel = Excel.decodeBytes(bytes);
 
-        // Supposons que les données sont dans la première feuille
         final String sheetName = excel.tables.keys.first;
 
         final sheet = excel.tables[sheetName];
@@ -387,7 +382,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             importedServices.add(Service.fromExcelRow(rowData));
           } catch (e) {
             debugPrint('Erreur lors de la création du service à partir de la ligne Excel ${i + 1}: $rowData - $e');
-            // Optionnel: Afficher un SnackBar pour chaque erreur de ligne
+            // Afficher un SnackBar pour chaque erreur de ligne
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Erreur à la ligne ${i + 1}: $e')),
             );
@@ -515,112 +510,184 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     _resultatScrollController.addListener(() => sync(_resultatScrollController, [_debutScrollController, _finScrollController]));
   }
 
-  // Méthode pour construire l'AppBar
+  // Méthode pour construire l'AppBar (barre d'application) de l'interface.
+  // Elle est responsable de l'affichage du titre, du logo, et des boutons d'action.
   AppBar _buildAppBar(BuildContext context) {
+    // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
 
     return AppBar(
-      toolbarHeight: responsive_utils.responsiveHeight(screenWidth, 80.0), // Hauteur responsive The function 'responsiveHeight' isn't defined.
+      // Définit la hauteur de la barre d'outils de l'AppBar, ajustée de manière réactive.
+      toolbarHeight: responsive_utils.responsiveHeight(screenWidth, 80.0),
+      // Widget 'leading' pour le début de l'AppBar (généralement le logo ou un bouton de menu).
       leading: Padding(
+        // Ajoute un padding réactif autour du logo.
         padding: EdgeInsets.all(responsive_utils.responsivePadding(screenWidth, 8.0)),
         child: Image.asset(
-          'assets/logo_app.png',
+          'assets/logo_app.png', // Chemin de l'image du logo.
+          // Ajuste la hauteur et la largeur du logo de manière réactive.
           height: responsive_utils.responsiveIconSize(screenWidth, 40.0),
           width: responsive_utils.responsiveIconSize(screenWidth, 40.0),
         ),
       ),
+      // Titre principal de l'AppBar.
       title: Text(
         'Prise de services automatique',
         style: TextStyle(
           fontWeight: FontWeight.bold,
+          // Ajuste la taille de la police de manière réactive.
           fontSize: responsive_utils.responsiveFontSize(screenWidth, 20.0),
+          // Définit la couleur du texte basée sur le thème actuel.
           color: Theme.of(context).colorScheme.onPrimary,
         ),
       ),
+      // Centre le titre dans l'AppBar.
       centerTitle: true,
+      // Définit la couleur d'arrière-plan de l'AppBar basée sur le thème.
       backgroundColor: Theme.of(context).primaryColor,
+      // Définit la couleur du premier plan (texte, icônes) de l'AppBar basée sur le thème.
       foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      // Liste des actions (boutons) à afficher à la fin de l'AppBar.
       actions: [
         Padding(
+          // Ajoute un padding horizontal réactif autour des boutons d'action.
           padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 4.0)),
+          // Affiche un bouton différent selon que les données sont déjà chargées (_dataLoaded).
           child: _dataLoaded
               ? ElevatedButton.icon(
-                  onPressed: _importServicesFromExcel,
-                  icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(screenWidth, 18.0)),
+                  // Si les données sont chargées, ce bouton permet de "Changer fichier".
+                  onPressed: _importServicesFromExcel, // Appel de la méthode pour importer les services.
+                  icon: Icon(
+                    Icons.settings,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: responsive_utils.responsiveIconSize(screenWidth, 18.0), // Taille de l'icône réactive.
+                  ),
                   label: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0))),
+                    fit: BoxFit.scaleDown, // Ajuste le texte à la taille disponible.
+                    child: Text(
+                      'Changer fichier',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0), // Taille de la police réactive.
+                      ),
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                    backgroundColor: Theme.of(context).colorScheme.onPrimary, // Couleur d'arrière-plan du bouton.
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
+                      borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)), // Bordure arrondie réactive.
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 12.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
-                    minimumSize: Size(responsive_utils.responsiveWidth(screenWidth, 140.0), responsive_utils.responsiveHeight(screenWidth, 40.0)),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: responsive_utils.responsivePadding(screenWidth, 12.0),
+                      vertical: responsive_utils.responsivePadding(screenWidth, 8.0),
+                    ), // Padding interne réactif.
+                    minimumSize: Size(
+                      responsive_utils.responsiveWidth(screenWidth, 140.0),
+                      responsive_utils.responsiveHeight(screenWidth, 40.0),
+                    ), // Taille minimale réactive du bouton.
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Optimise la zone de tap.
                   ),
                 )
               : ElevatedButton.icon(
-                  onPressed: _importServicesFromExcel,
-                  icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(screenWidth, 18.0)),
+                  // Si les données ne sont PAS chargées, ce bouton invite à "Importer services".
+                  onPressed: _importServicesFromExcel, // Appel de la méthode pour importer les services.
+                  icon: Icon(
+                    Icons.upload_file,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: responsive_utils.responsiveIconSize(screenWidth, 18.0), // Taille de l'icône réactive.
+                  ),
                   label: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0))),
+                    fit: BoxFit.scaleDown, // Ajuste le texte à la taille disponible.
+                    child: Text(
+                      'Importer services',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0), // Taille de la police réactive.
+                      ),
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                    backgroundColor: Theme.of(context).colorScheme.onPrimary, // Couleur d'arrière-plan du bouton.
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
+                      borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)), // Bordure arrondie réactive.
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 12.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
-                    minimumSize: Size(responsive_utils.responsiveWidth(screenWidth, 140.0), responsive_utils.responsiveHeight(screenWidth, 40.0)),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: responsive_utils.responsivePadding(screenWidth, 12.0),
+                      vertical: responsive_utils.responsivePadding(screenWidth, 8.0),
+                    ), // Padding interne réactif.
+                    minimumSize: Size(
+                      responsive_utils.responsiveWidth(screenWidth, 140.0),
+                      responsive_utils.responsiveHeight(screenWidth, 40.0),
+                    ), // Taille minimale réactive du bouton.
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Optimise la zone de tap.
                   ),
                 ),
         ),
         Padding(
+          // Ajoute un padding horizontal réactif autour du bouton "Exporter services".
           padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 4.0)),
           child: ElevatedButton.icon(
-            onPressed: _onExportPressed,
-            icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(screenWidth, 18.0)),
+            onPressed: _onExportPressed, // Appel de la méthode pour exporter les services.
+            icon: Icon(
+              Icons.download,
+              color: Theme.of(context).colorScheme.primary,
+              size: responsive_utils.responsiveIconSize(screenWidth, 18.0), // Taille de l'icône réactive.
+            ),
             label: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0))),
+              fit: BoxFit.scaleDown, // Ajuste le texte à la taille disponible.
+              child: Text(
+                'Exporter services',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0), // Taille de la police réactive.
+                ),
+              ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.onPrimary,
+              backgroundColor: Theme.of(context).colorScheme.onPrimary, // Couleur d'arrière-plan du bouton.
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
+                borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)), // Bordure arrondie réactive.
               ),
-              padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 12.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
-              minimumSize: Size(responsive_utils.responsiveWidth(screenWidth, 140.0), responsive_utils.responsiveHeight(screenWidth, 40.0)),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: EdgeInsets.symmetric(
+                horizontal: responsive_utils.responsivePadding(screenWidth, 12.0),
+                vertical: responsive_utils.responsivePadding(screenWidth, 8.0),
+              ), // Padding interne réactif.
+              minimumSize: Size(
+                responsive_utils.responsiveWidth(screenWidth, 140.0),
+                responsive_utils.responsiveHeight(screenWidth, 40.0),
+              ), // Taille minimale réactive du bouton.
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Optimise la zone de tap.
             ),
           ),
         ),
+        // Ajoute un espace horizontal réactif à la fin des actions.
         SizedBox(width: responsive_utils.responsivePadding(screenWidth, 8.0)),
       ],
     );
   }
 
-  // Méthode pour construire le sélecteur de date (maintenant avec les boutons D,F,R)
+  // Méthode pour construire le sélecteur de date, incluant les boutons D, F, R pour la visibilité des colonnes.
   Widget _buildDateRangeSelector() {
+    // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Fonction d'aide interne pour les boutons de colonne (D, F, R)
+    // Fonction d'aide interne pour construire les boutons de basculement de colonne (D, F, R).
     Widget buildColumnToggleButton(String label, bool isVisible, ValueChanged<bool> onChanged) {
       return Padding(
+        // Ajoute un padding horizontal réactif autour de chaque bouton de colonne.
         padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 2.0)),
         child: InkWell(
-          onTap: () => onChanged(!isVisible),
-          borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
+          onTap: () => onChanged(!isVisible), // Inverse l'état de visibilité lors du tap.
+          borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)), // Bordure arrondie réactive.
           child: Container(
+            // Définit la largeur et la hauteur du bouton de manière réactive.
             width: responsive_utils.responsiveWidth(screenWidth, 70.0),
             height: responsive_utils.responsiveHeight(screenWidth, 35.0),
             decoration: BoxDecoration(
+              // Change la couleur du bouton en fonction de son état de visibilité.
               color: isVisible ? Theme.of(context).primaryColor : Colors.grey[400],
-              borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
+              borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)), // Bordure arrondie réactive.
+              // Ajoute une ombre si le bouton est visible (actif).
               boxShadow: isVisible ? [
                 BoxShadow(
                   color: Theme.of(context).primaryColor.withOpacity(0.3),
@@ -634,19 +701,20 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Icon(
+                  // Affiche une icône d'œil ouvert ou fermé selon la visibilité.
                   isVisible ? Icons.visibility : Icons.visibility_off,
                   color: Colors.white,
-                  size: responsive_utils.responsiveIconSize(screenWidth, 16.0),
+                  size: responsive_utils.responsiveIconSize(screenWidth, 16.0), // Taille de l'icône réactive.
                 ),
-                SizedBox(width: responsive_utils.responsivePadding(screenWidth, 2.0)),
+                SizedBox(width: responsive_utils.responsivePadding(screenWidth, 2.0)), // Espace entre l'icône et le texte.
                 Text(
-                  label,
+                  label, // Texte du bouton (D, F, R).
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 10.0),
+                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 10.0), // Taille de la police réactive.
                     fontWeight: FontWeight.bold,
                   ),
-                  overflow: TextOverflow.ellipsis,
+                  overflow: TextOverflow.ellipsis, // Gère le dépassement de texte.
                   maxLines: 1,
                 ),
               ],
@@ -656,10 +724,12 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       );
     }
 
-    // Contenu des contrôles de date (boutons de navigation et sélecteurs de date)
+    // Contenu principal des contrôles de date, incluant les boutons de navigation (précédent/suivant)
+    // et les sélecteurs de date de début et de fin.
     Widget dateControls = Row(
-      mainAxisSize: MainAxisSize.min, // Utiliser min pour ne prendre que l'espace nécessaire
+      mainAxisSize: MainAxisSize.min, // La ligne prend juste l'espace nécessaire.
       children: [
+        // Bouton pour reculer d'un mois les dates de début et de fin.
         IconButton(
           icon: Icon(Icons.arrow_back_ios, size: responsive_utils.responsiveIconSize(screenWidth, 16.0)),
           onPressed: () {
@@ -668,19 +738,23 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
             });
           },
-          visualDensity: VisualDensity.compact,
+          visualDensity: VisualDensity.compact, // Rend le bouton plus compact.
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
         ),
+        // Appelle la méthode d'aide pour construire le contrôle de la date de début.
         _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
-        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)),
+        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)), // Espace.
+        // Séparateur visuel entre les deux sélecteurs de date.
         Container(
           width: responsive_utils.responsivePadding(screenWidth, 1.5),
           height: responsive_utils.responsiveHeight(screenWidth, 20.0),
           color: Theme.of(context).colorScheme.primary,
         ),
-        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)),
+        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)), // Espace.
+        // Appelle la méthode d'aide pour construire le contrôle de la date de fin.
         _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
+        // Bouton pour avancer d'un mois les dates de début et de fin.
         IconButton(
           icon: Icon(Icons.arrow_forward_ios, size: responsive_utils.responsiveIconSize(screenWidth, 16.0)),
           onPressed: () {
@@ -689,27 +763,30 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
             });
           },
-          visualDensity: VisualDensity.compact,
+          visualDensity: VisualDensity.compact, // Rend le bouton plus compact.
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
         ),
       ],
     );
 
-    // Les boutons D,F,R (pour activer/désactiver les colonnes Début, Fin, Résultat)
+    // Les boutons D, F, R pour activer/désactiver la visibilité des colonnes "Début", "Fin", "Résultat".
     Widget columnToggleButtons = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Bouton pour basculer la visibilité de la colonne 'Début'.
         buildColumnToggleButton('D', _showDebutColumn, (newStatus) {
           setState(() {
             _showDebutColumn = newStatus;
           });
         }),
+        // Bouton pour basculer la visibilité de la colonne 'Fin'.
         buildColumnToggleButton('F', _showFinColumn, (newStatus) {
           setState(() {
             _showFinColumn = newStatus;
           });
         }),
+        // Bouton pour basculer la visibilité de la colonne 'Résultat'.
         buildColumnToggleButton('R', _showResultColumn, (newStatus) {
           setState(() {
             _showResultColumn = newStatus;
@@ -719,62 +796,73 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
 
     return Container(
+      // Padding réactif pour le conteneur du sélecteur de date.
       padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 16.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
-      color: Colors.grey[100],
+      color: Colors.grey[100], // Couleur d'arrière-plan claire.
       child: Row(
         children: [
-          dateControls, // Les contrôles de date
-          const Spacer(), // Pousse le texte de la date et les boutons à droite
+          dateControls, // Affiche les contrôles de date.
+          const Spacer(), // Prend tout l'espace disponible pour pousser les éléments suivants à droite.
+          // Affiche la date et l'heure actuelles formatées en français.
           Text(
             DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
             style: TextStyle(
-              fontSize: responsive_utils.responsiveFontSize(screenWidth, 11.0),
+              fontSize: responsive_utils.responsiveFontSize(screenWidth, 11.0), // Taille de la police réactive.
               fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.secondary,
+              color: Theme.of(context).colorScheme.secondary, // Couleur basée sur le thème.
             ),
-            overflow: TextOverflow.ellipsis,
+            overflow: TextOverflow.ellipsis, // Gère le dépassement de texte.
           ),
-          SizedBox(width: responsive_utils.responsivePadding(screenWidth, 10.0)),
-          columnToggleButtons, // Les boutons D,F,R
+          SizedBox(width: responsive_utils.responsivePadding(screenWidth, 10.0)), // Espace.
+          columnToggleButtons, // Affiche les boutons D, F, R.
         ],
       ),
     );
   }
 
-  // Méthode d'aide pour les contrôles individuels de date (boutons +/- et sélecteur de date)
+  // Méthode d'aide pour construire un contrôle individuel de date (boutons +/- et zone de sélection).
   Widget _buildDateControl(DateTime date, ValueChanged<DateTime> onDateChanged) {
+    // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.min, // La ligne prend juste l'espace nécessaire.
       children: [
+        // Bouton pour décrémenter la date d'un jour.
         IconButton(
           icon: Icon(Icons.remove, size: responsive_utils.responsiveIconSize(screenWidth, 18.0)),
-          onPressed: () => _changeDateByDay(date, -1, onDateChanged),
+          onPressed: () => _changeDateByDay(date, -1, onDateChanged), // Appelle la méthode pour changer la date.
           visualDensity: VisualDensity.compact,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
         ),
-        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)),
+        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)), // Espace.
+        // Zone tappable pour ouvrir le sélecteur de date.
         GestureDetector(
-          onTap: () => _selectDate(context, date, onDateChanged),
+          onTap: () => _selectDate(context, date, onDateChanged), // Appelle la méthode pour sélectionner une date.
           child: Container(
+            // Padding réactif à l'intérieur de la zone de date.
             padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 10.0), vertical: responsive_utils.responsivePadding(screenWidth, 5.0)),
             decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).primaryColor, width: 1.5),
-              borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
-              color: Colors.white,
+              border: Border.all(color: Theme.of(context).primaryColor, width: 1.5), // Bordure colorée basée sur le thème.
+              borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)), // Bordure arrondie réactive.
+              color: Colors.white, // Fond blanc.
             ),
             child: Text(
-              DateFormat('dd/MM/yyyy').format(date),
-              style: TextStyle(fontSize: responsive_utils.responsiveFontSize(screenWidth, 14.0), fontWeight: FontWeight.bold, color: Colors.black87),
+              DateFormat('dd/MM/yyyy').format(date), // Affiche la date formatée.
+              style: TextStyle(
+                  fontSize: responsive_utils.responsiveFontSize(screenWidth, 14.0), // Taille de la police réactive.
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87
+              ),
             ),
           ),
         ),
-        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)),
+        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)), // Espace.
+        // Bouton pour incrémenter la date d'un jour.
         IconButton(
           icon: Icon(Icons.add, size: responsive_utils.responsiveIconSize(screenWidth, 18.0)),
-          onPressed: () => _changeDateByDay(date, 1, onDateChanged),
+          onPressed: () => _changeDateByDay(date, 1, onDateChanged), // Appelle la méthode pour changer la date.
           visualDensity: VisualDensity.compact,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
@@ -783,74 +871,83 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode pour construire la barre de recherche
+  // Méthode pour construire la barre de recherche des employés.
   Widget _buildSearchBar() {
+    // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
+      // Ajoute un padding symétrique réactif autour de la barre de recherche.
       padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 16.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
       child: TextField(
-        controller: _searchController,
+        controller: _searchController, // Contrôleur pour gérer le texte de recherche.
         decoration: InputDecoration(
-          labelText: 'Rechercher par nom d\'employé',
-          hintText: 'Entrez le nom de l\'employé...',
-          prefixIcon: Icon(Icons.search, size: responsive_utils.responsiveIconSize(screenWidth, 20.0)),
+          labelText: 'Rechercher par nom d\'employé', // Libellé flottant.
+          hintText: 'Entrez le nom de l\'employé...', // Texte d'indication.
+          prefixIcon: Icon(Icons.search, size: responsive_utils.responsiveIconSize(screenWidth, 20.0)), // Icône de recherche.
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
+            borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)), // Bordure arrondie réactive.
           ),
+          // Padding interne réactif pour le champ de texte.
           contentPadding: EdgeInsets.symmetric(vertical: responsive_utils.responsivePadding(screenWidth, 10.0), horizontal: responsive_utils.responsivePadding(screenWidth, 15.0)),
         ),
-        style: TextStyle(fontSize: responsive_utils.responsiveFontSize(screenWidth, 14.0)),
+        style: TextStyle(fontSize: responsive_utils.responsiveFontSize(screenWidth, 14.0)), // Taille de la police réactive.
       ),
     );
   }
 
-  // Méthode pour construire les en-têtes de colonne (maintenant conditionnels)
+  // Méthode pour construire les en-têtes de colonne (Début, Fin, Résultat).
+  // Les en-têtes sont affichés de manière conditionnelle en fonction de l'état des variables _showXColumn.
   Widget _buildColumnHeaders() {
+    // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
+      // Ajoute un padding symétrique réactif autour des en-têtes.
       padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 16.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
       child: Row(
         children: [
+          // En-tête de la colonne "Début", affiché si _showDebutColumn est vrai.
           if (_showDebutColumn)
             Expanded(
-              flex: 2,
+              flex: 2, // Prend 2 parts d'espace disponible.
               child: Center(
                 child: Text(
                   'Début',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 16.0),
-                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 16.0), // Taille de la police réactive.
+                    color: Theme.of(context).colorScheme.primary, // Couleur basée sur le thème.
                   ),
                 ),
               ),
             ),
+          // En-tête de la colonne "Fin", affiché si _showFinColumn est vrai.
           if (_showFinColumn)
             Expanded(
-              flex: 2,
+              flex: 2, // Prend 2 parts d'espace disponible.
               child: Center(
                 child: Text(
                   'Fin',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 16.0),
-                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 16.0), // Taille de la police réactive.
+                    color: Theme.of(context).colorScheme.primary, // Couleur basée sur le thème.
                   ),
                 ),
               ),
             ),
+          // En-tête de la colonne "Résultat", affiché si _showResultColumn est vrai.
           if (_showResultColumn)
             Expanded(
-              flex: 1,
+              flex: 1, // Prend 1 part d'espace disponible (plus petite car le contenu est souvent plus court).
               child: Center(
                 child: Text(
                   'Résultat',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 16.0),
-                    color: Colors.green.shade700,
+                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 16.0), // Taille de la police réactive.
+                    color: Colors.green.shade700, // Couleur verte spécifique pour le résultat.
                   ),
                 ),
               ),
@@ -860,39 +957,42 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode pour construire une liste de services (colonne)
+  // Méthode pour construire une liste de services, formant une colonne (Début, Fin, ou Résultat).
   Widget _buildServiceColumn(List<Service> services, ScrollController controller, TimeCardType type) {
+    // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Condition pour afficher ou masquer la colonne
+    // Condition pour afficher ou masquer la colonne entière.
+    // Si le type de colonne correspond à une colonne masquée (selon _showXColumn), retourne un SizedBox.shrink() pour ne rien afficher.
     if ((type == TimeCardType.debut && !_showDebutColumn) ||
         (type == TimeCardType.fin && !_showFinColumn) ||
         (type == TimeCardType.result && !_showResultColumn)) {
-      return const SizedBox.shrink(); // Ne rien afficher si la colonne est masquée
+      return const SizedBox.shrink(); // Ne rend rien si la colonne doit être masquée.
     }
 
     return Expanded(
+      // La colonne "Résultat" prend moins d'espace que les colonnes "Début" et "Fin".
       flex: type == TimeCardType.result ? 1 : 2,
       child: ListView.builder(
-        controller: controller,
-        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 8.0)),
-        itemCount: services.length,
+        controller: controller, // Contrôleur de défilement pour synchroniser le défilement des colonnes.
+        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 8.0)), // Padding réactif pour la liste.
+        itemCount: services.length, // Nombre total d'éléments dans la liste.
         itemBuilder: (context, index) {
-          final service = services[index];
+          final service = services[index]; // Récupère le service actuel.
           return TimeDetailCard(
-            service: service,
-            type: type,
+            service: service, // Passe l'objet service à la carte de détail.
+            type: type, // Passe le type de carte (début, fin, résultat).
             onAbsentPressed: (newStatus) {
-              _handleAbsentToggle(service.id, newStatus);
+              _handleAbsentToggle(service.id, newStatus); // Gère le basculement de l'état "absent".
             },
             onModifyTime: (currentTime) {
-              _handleModifyTime(service.id, currentTime, type);
+              _handleModifyTime(service.id, currentTime, type); // Gère la modification de l'heure.
             },
             onValidate: (newStatus) {
-              _handleValidate(service.id, newStatus);
+              _handleValidate(service.id, newStatus); // Gère la validation du service.
             },
             onTap: () {
-              _scrollToService(service);
+              _scrollToService(service); // Fait défiler les autres colonnes pour correspondre à cette carte.
             },
           );
         },
@@ -900,27 +1000,30 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode pour construire le pied de page
+  // Méthode pour construire le pied de page de l'application.
   Widget _buildFooter() {
+    // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
+      // Ajoute un padding symétrique réactif autour du pied de page.
       padding: EdgeInsets.symmetric(
         horizontal: responsive_utils.responsivePadding(screenWidth, 8.0),
         vertical: responsive_utils.responsivePadding(screenWidth, 8.0),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center, // Centre le contenu horizontalement.
         children: [
           Flexible(
             child: Text(
+              // Affiche le copyright et la date/heure actuelle formatée en français.
               "© BMSoft 2025, tous droits réservés    ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
               style: TextStyle(
-                fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0),
+                fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0), // Taille de la police réactive.
                 fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.secondary,
+                color: Theme.of(context).colorScheme.secondary, // Couleur basée sur le thème.
               ),
-              overflow: TextOverflow.visible,
+              overflow: TextOverflow.visible, // Permet au texte de déborder si nécessaire.
             ),
           ),
         ],
@@ -929,40 +1032,46 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   }
 
   @override
+  // Méthode principale pour construire l'interface utilisateur de ce widget.
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(context),
+      appBar: _buildAppBar(context), // Utilise la méthode _buildAppBar pour la barre supérieure.
       body: Stack(
         children: <Widget>[
           Column(
             children: <Widget>[
-              _buildDateRangeSelector(),
-              _buildSearchBar(),
-              _buildColumnHeaders(),
+              _buildDateRangeSelector(), // Affiche le sélecteur de plage de dates.
+              _buildSearchBar(), // Affiche la barre de recherche.
+              _buildColumnHeaders(), // Affiche les en-têtes de colonne (Début, Fin, Résultat).
+              // Conditionnel : Si aucune donnée n'est chargée, affiche un message d'instruction.
               if (!_dataLoaded) ...[
-                const Spacer(),
+                const Spacer(), // Prend de l'espace pour centrer le message verticalement.
                 Text(
                   "Veuillez importer un fichier Excel pour commencer",
                   style: TextStyle(
-                    fontSize: responsive_utils.responsiveFontSize(MediaQuery.of(context).size.width, 20.0),
+                    fontSize: responsive_utils.responsiveFontSize(MediaQuery.of(context).size.width, 20.0), // Taille de la police réactive.
                     fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.error,
+                    color: Theme.of(context).colorScheme.error, // Couleur d'erreur du thème.
                   ),
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.center, // Centre le texte.
                 ),
-                const Spacer(),
+                const Spacer(), // Prend de l'espace pour centrer le message verticalement.
               ],
+              // Partie principale de la disposition, contenant les colonnes de services.
               Expanded(
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start, // Aligne les colonnes en haut.
                   children: [
+                    // Affiche la colonne des services de début filtrés et triés.
                     _buildServiceColumn(_filteredAndSortedDebutServices, _debutScrollController, TimeCardType.debut),
+                    // Affiche la colonne des services de fin filtrés et triés.
                     _buildServiceColumn(_filteredAndSortedFinServices, _finScrollController, TimeCardType.fin),
+                    // Affiche la colonne des services de résultat filtrés et triés.
                     _buildServiceColumn(_filteredAndSortedResultServices, _resultatScrollController, TimeCardType.result),
                   ],
                 ),
               ),
-              _buildFooter(),
+              _buildFooter(), // Affiche le pied de page de l'application.
             ],
           ),
         ],

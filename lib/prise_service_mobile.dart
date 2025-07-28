@@ -364,7 +364,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       );
 
       // Messages de débogage pour le résultat du sélecteur de fichiers
-      debugPrint('*** DEBUG FILE PICKER RESULT ***');
+      debugPrint(' DEBUG FILE PICKER RESULT ');
       debugPrint('Result: $result');
       if (result != null) {
         debugPrint('Result.files length: ${result.files.length}');
@@ -375,7 +375,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           debugPrint('First file size: ${result.files.first.size} bytes');
         }
       }
-      debugPrint('*** END DEBUG ***');
+      debugPrint(' END DEBUG ');
 
       // Vérifie si un fichier a été sélectionné et si son chemin n'est pas nul
       if (result != null && result.files.single.path != null) {
@@ -532,7 +532,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       final List<int>? bytes = excel.save(); // Sauvegarde le classeur Excel en tant que liste d'octets
       if (bytes == null) throw Exception('Erreur lors de la génération Excel'); // Lance une exception si la sauvegarde échoue
 
-      // *** MODIFICATION IMPORTANTE ICI : Utilisation de FilePicker pour choisir le répertoire de sauvegarde ***
+      // MODIFICATION IMPORTANTE ICI : Utilisation de FilePicker pour choisir le répertoire de sauvegarde
       final String? directoryPath = await FilePicker.platform.getDirectoryPath(); // Ouvre une fenêtre de dialogue pour que l'utilisateur choisisse un répertoire
       if (directoryPath == null) {
         // L'utilisateur a annulé la sélection du répertoire
@@ -570,6 +570,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   void _onExportPressed() {
     _exportServicesToExcel(_services); // Exporte tous les services actuellement chargés
   }
+
 
 
   // Méthode pour construire l'AppBar
@@ -741,7 +742,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                         borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
                       ),
                       padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Ajusté
-                      minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // **Légèrement réduit**
+                      minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // Légèrement réduit
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   )
@@ -759,7 +760,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                         borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
                       ),
                       padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Ajusté
-                      minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // **Légèrement réduit**
+                      minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // Légèrement réduit
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
@@ -779,7 +780,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                   borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
                 ),
                 padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Ajusté
-                minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // **Légèrement réduit**
+                minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // Légèrement réduit
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
@@ -803,7 +804,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           onTap: () => onChanged(!isVisible), // Inverse la visibilité au tap
           borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0)), // Bordures arrondies
           child: Container(
-            width: responsive_utils.responsivePadding(context, 70.0), // **Augmenter la largeur** pour accueillir icône + texte côte à côte
+            width: responsive_utils.responsivePadding(context, 70.0), // Augmenter la largeur pour accueillir icône + texte côte à côte
             height: responsive_utils.responsivePadding(context, 35.0), // Revenir à une hauteur plus standard pour un bouton avec texte à côté
             decoration: BoxDecoration(
               // Change la couleur de fond en fonction de la visibilité
@@ -828,7 +829,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                   color: Colors.white,
                   size: responsive_utils.responsiveIconSize(context, 16.0), // Taille de l'icône
                 ),
-                SizedBox(width: responsive_utils.responsivePadding(context, 2.0)), // **Espacement horizontal** entre l'icône et le texte
+                SizedBox(width: responsive_utils.responsivePadding(context, 2.0)), // Espacement horizontal entre l'icône et le texte
                 Text(
                   label,
                   style: TextStyle(
@@ -1132,7 +1133,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center, // Centrer le contenu de la Row
         children: [
-          // const Spacer(), // **SUPPRIMEZ CETTE LIGNE** (commenté car la demande était de le supprimer)
+          // const Spacer(), // SUPPRIMEZ CETTE LIGNE (commenté car la demande était de le supprimer)
           Flexible(
             child: Text(
               // Affiche le copyright et la date/heure actuelle formatée
