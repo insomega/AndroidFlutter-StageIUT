@@ -594,92 +594,199 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire l'AppBar
   AppBar _buildAppBar(BuildContext context) {
-    // Les fonctions de redimensionnement ne sont plus définies ici,
-    // mais appelées via responsive_utils.
-    return AppBar(
-      toolbarHeight: responsive_utils.responsivePadding(context, 50.0),
-      leading: Padding(
-        padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 4.0)),
-        child: Image.asset(
-          'assets/logo_app.png',
-          height: responsive_utils.responsiveIconSize(context, 25.0),
-          width: responsive_utils.responsiveIconSize(context, 25.0),
+    final orientation = MediaQuery.of(context).orientation;
+
+    if (orientation == Orientation.portrait) {
+      // Pour l'orientation Portrait
+      return AppBar(
+        toolbarHeight: responsive_utils.responsivePadding(context, 80.0), // Hauteur standard pour le titre et le logo
+        leading: Padding(
+          padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 4.0)),
+          child: Image.asset(
+            'assets/logo_app.png',
+            height: responsive_utils.responsiveIconSize(context, 40.0),
+            width: responsive_utils.responsiveIconSize(context, 40.0),
+          ),
         ),
-      ),
-      title: Text(
-        'Prise de services automatique',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: responsive_utils.responsiveFontSize(context, 16.0),
-          color: Theme.of(context).colorScheme.onPrimary,
+        title: Text(
+          'Prise de services automatique',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: responsive_utils.responsiveFontSize(context, 16.0), // Taille peut rester celle-ci si l'espace est suffisant
+            color: Theme.of(context).colorScheme.onPrimary,
+          ),
+          // Plus besoin de overflow.ellipsis ici car le titre aura plus d'espace
         ),
-        overflow: TextOverflow.ellipsis,
-      ),
-      centerTitle: true,
-      backgroundColor: Theme.of(context).primaryColor,
-      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-      actions: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
-          child: _dataLoaded
-              ? ElevatedButton.icon(
-                  onPressed: _importServicesFromExcel,
-                  icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 18.0)),
-                  label: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 10.0))),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 8.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
-                    minimumSize: Size(responsive_utils.responsivePadding(context, 80.0), responsive_utils.responsivePadding(context, 30.0)),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                )
-              : ElevatedButton.icon(
-                  onPressed: _importServicesFromExcel,
-                  icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 18.0)),
-                  label: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 10.0))),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 8.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
-                    minimumSize: Size(responsive_utils.responsivePadding(context, 80.0), responsive_utils.responsivePadding(context, 30.0)),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        centerTitle: true,
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        // Les actions sont déplacées vers le 'bottom' pour l'orientation portrait
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(responsive_utils.responsivePadding(context, 45.0)), // Hauteur pour les boutons d'action
+          child: Container(
+            color: Theme.of(context).primaryColor, // Couleur de fond pour cette bande inférieure
+            padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 8.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center, // Centrer les boutons
+              children: [
+                // Bouton Changer/Importer fichier
+                Expanded( // Permet aux boutons de prendre de l'espace
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+                    child: _dataLoaded
+                        ? ElevatedButton.icon(
+                            onPressed: _importServicesFromExcel,
+                            icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Légèrement réduit
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), // Légèrement réduit
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Padding réduit
+                              minimumSize: Size.fromHeight(responsive_utils.responsivePadding(context, 35.0)), // Hauteur suffisante
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: _importServicesFromExcel,
+                            icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Légèrement réduit
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), // Légèrement réduit
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Padding réduit
+                              minimumSize: Size.fromHeight(responsive_utils.responsivePadding(context, 35.0)), // Hauteur suffisante
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
                   ),
                 ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
-          child: ElevatedButton.icon(
-            onPressed: _onExportPressed,
-            icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 18.0)),
-            label: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 10.0))),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 8.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
-              minimumSize: Size(responsive_utils.responsivePadding(context, 80.0), responsive_utils.responsivePadding(context, 30.0)),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                SizedBox(width: responsive_utils.responsivePadding(context, 6.0)), // Espacement entre les boutons
+
+                // Bouton Exporter services
+                Expanded( // Permet aux boutons de prendre de l'espace
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+                    child: ElevatedButton.icon(
+                      onPressed: _onExportPressed,
+                      icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Légèrement réduit
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), // Légèrement réduit
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Padding réduit
+                        minimumSize: Size.fromHeight(responsive_utils.responsivePadding(context, 35.0)), // Hauteur suffisante
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        SizedBox(width: responsive_utils.responsivePadding(context, 6.0)),
-      ],
-    );
+      );
+    } else {
+      // Pour l'orientation Paysage (votre code existant, ajusté pour la taille des boutons)
+      return AppBar(
+        toolbarHeight: responsive_utils.responsivePadding(context, 50.0),
+        leading: Padding(
+          padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 4.0)),
+          child: Image.asset(
+            'assets/logo_app.png',
+            height: responsive_utils.responsiveIconSize(context, 25.0),
+            width: responsive_utils.responsiveIconSize(context, 25.0),
+          ),
+        ),
+        title: Text(
+          'Prise de services automatique',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: responsive_utils.responsiveFontSize(context, 16.0),
+            color: Theme.of(context).colorScheme.onPrimary,
+          ),
+          overflow: TextOverflow.ellipsis, // Garder l'ellipsis en paysage si ça risque de déborder
+        ),
+        centerTitle: true,
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        actions: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+            child: _dataLoaded
+                ? ElevatedButton.icon(
+                    onPressed: _importServicesFromExcel,
+                    icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Ajusté
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), // Ajusté
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Ajusté
+                      minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // **Légèrement réduit**
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  )
+                : ElevatedButton.icon(
+                    onPressed: _importServicesFromExcel,
+                    icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Ajusté
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), // Ajusté
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Ajusté
+                      minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // **Légèrement réduit**
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+            child: ElevatedButton.icon(
+              onPressed: _onExportPressed,
+              icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Ajusté
+              label: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), // Ajusté
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Ajusté
+                minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // **Légèrement réduit**
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ),
+          SizedBox(width: responsive_utils.responsivePadding(context, 6.0)),
+        ],
+      );
+    }
   }
 
   // Méthode pour construire le sélecteur de date (maintenant avec les boutons D,F,R)
@@ -690,13 +797,12 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     Widget buildColumnToggleButton(String label, bool isVisible, ValueChanged<bool> onChanged) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)), // Espacement entre les boutons
-        child: InkWell( // Utilisez InkWell pour un effet de ripple et un GestureDetector
+        child: InkWell(
           onTap: () => onChanged(!isVisible),
           borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0)), // Bordures arrondies
           child: Container(
-            width: responsive_utils.responsivePadding(context, 35.0), // Largeur fixe
-            // **MODIFICATION ICI : Augmenter la hauteur du bouton**
-            height: responsive_utils.responsivePadding(context, 40.0), // Augmenté de 35.0 à 40.0 pour plus d'espace
+            width: responsive_utils.responsivePadding(context, 70.0), // **Augmenter la largeur** pour accueillir icône + texte côte à côte
+            height: responsive_utils.responsivePadding(context, 35.0), // Revenir à une hauteur plus standard pour un bouton avec texte à côté
             decoration: BoxDecoration(
               color: isVisible ? Theme.of(context).primaryColor : Colors.grey[400],
               borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0)),
@@ -708,22 +814,21 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 ),
               ] : null,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center, // Centrer horizontalement
+              crossAxisAlignment: CrossAxisAlignment.center, // Centrer verticalement
               children: [
                 Icon(
                   isVisible ? Icons.visibility : Icons.visibility_off,
                   color: Colors.white,
-                  // Revenir à une taille d'icône légèrement plus grande ou celle d'origine
-                  size: responsive_utils.responsiveIconSize(context, 16.0), // Rétabli à 16.0 ou selon votre préférence
+                  size: responsive_utils.responsiveIconSize(context, 16.0), // Taille de l'icône
                 ),
-                SizedBox(height: responsive_utils.responsivePadding(context, 1.0)), // Garder un petit espace
+                SizedBox(width: responsive_utils.responsivePadding(context, 2.0)), // **Espacement horizontal** entre l'icône et le texte
                 Text(
                   label,
                   style: TextStyle(
                     color: Colors.white,
-                    // Revenir à une taille de police légèrement plus grande ou celle d'origine
-                    fontSize: responsive_utils.responsiveFontSize(context, 8.0), // Rétabli à 8.0 ou selon votre préférence
+                    fontSize: responsive_utils.responsiveFontSize(context, 10.0), // Taille du texte, peut être légèrement plus grande
                     fontWeight: FontWeight.bold,
                   ),
                   overflow: TextOverflow.ellipsis, // Tronque le texte si trop long
@@ -996,24 +1101,24 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   // Méthode pour construire le pied de page
   Widget _buildFooter() {
     return Padding(
-      // Réduire légèrement le padding vertical
       padding: EdgeInsets.symmetric(
         horizontal: responsive_utils.responsivePadding(context, 6.0),
-        vertical: responsive_utils.responsivePadding(context, 4.0), // Réduit de 6.0 à 4.0
+        vertical: responsive_utils.responsivePadding(context, 4.0),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center, // Centrer le contenu de la Row
         children: [
-          const Spacer(),
+          // const Spacer(), // **SUPPRIMEZ CETTE LIGNE**
           Flexible(
             child: Text(
+              // Si le texte est toujours tronqué ici, vous devrez réduire sa taille
               "© BMSoft 2025, tous droits réservés    ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
               style: TextStyle(
-                fontSize: responsive_utils.responsiveFontSize(context, 9.0), // Réduit de 10.0 à 9.0
+                fontSize: responsive_utils.responsiveFontSize(context, 9.0), // Peut-être réduire à 8.0 ou 7.0 si ça déborde encore
                 fontWeight: FontWeight.w500,
                 color: Theme.of(context).colorScheme.secondary,
               ),
-              overflow: TextOverflow.ellipsis,
+              overflow: TextOverflow.visible, // Assurez-vous que l'overflow n'est pas ellipsis ici, ou utilisez FittedBox
             ),
           ),
         ],
@@ -1060,7 +1165,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   // Méthode pour construire les widgets flottants de résumé
   Widget _buildSummaryFloatingWidgets() {
     return Positioned(
-      bottom: responsive_utils.responsivePadding(context, 15.0),
+      bottom: responsive_utils.responsivePadding(context, 30.0),
       right: responsive_utils.responsivePadding(context, 10.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -1120,7 +1225,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               _buildFooter(),
             ],
           ),
-          _buildSummaryFloatingWidgets(),
+          //_buildSummaryFloatingWidgets(),
         ],
       ),
     );
