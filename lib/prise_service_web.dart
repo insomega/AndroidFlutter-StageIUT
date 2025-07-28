@@ -1,4 +1,4 @@
-// lib/prise_service_web.dart (Updated with Excel import functionality)
+// lib/prise_service_web.dart
 
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
@@ -13,6 +13,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' hide Border; // Importation pour la lecture et l'écriture Excel
 import 'dart:typed_data'; // Pour Uint8List
 import 'package:mon_projet/utils/date_time_extensions.dart'; // Assurez-vous que ce chemin est correct
+import 'package:mon_projet/utils/responsive_utils_web.dart' as responsive_utils;
 
 
 class PriseServiceScreen extends StatefulWidget {
@@ -39,9 +40,11 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   List<Service> _services = []; // Liste des services chargés
   bool _dataLoaded = false; // Indicateur si les données ont été chargées
 
-  double _totalWorkedHours = 0.0; // Heures totales travaillées
-  double _remainingHours = 0.0; // Heures restantes (prévues - travaillées)
-  double _totalScheduledHours = 0.0; // Heures totales prévues
+  // Visibilité des colonnes (ajouté)
+  bool _showDebutColumn = true;
+  bool _showFinColumn = true;
+  bool _showResultColumn = true;
+
 
   @override
   void initState() {
@@ -53,7 +56,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
     _searchController.addListener(_onSearchChanged); // Écoute les changements dans la barre de recherche
     Intl.defaultLocale = 'fr_FR'; // Assure la locale française pour les dates
-    _calculateSummaryData(); // Calcul initial des données de résumé
+
+    _syncScrollControllers(); // Initialise la synchronisation des scroll controllers
   }
 
   // Met à jour la chaîne de recherche et déclenche un rafraîchissement de l'UI
@@ -87,7 +91,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     setState(() {
       updateState(dateToChange.add(Duration(days: daysToAdd)));
       _filterAndSortServices(); // Rafraîchit après changement de date
-      _calculateSummaryData(); // Recalcule les données de résumé
     });
   }
 
@@ -100,7 +103,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         dateToChange.day,
       ));
       _filterAndSortServices(); // Rafraîchit après changement de date
-      _calculateSummaryData(); // Recalcule les données de résumé
     });
   }
 
@@ -120,66 +122,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       setState(() {
         updateState(picked);
         _filterAndSortServices(); // Rafraîchit après changement de date
-        _calculateSummaryData(); // Recalcule les données de résumé
       });
     }
-  }
-
-  // Helper pour parser la durée (ex: "1h 30min") en heures totales
-  // Cette fonction n'est pas utilisée directement dans le code actuel car
-  // le modèle Service gère déjà la conversion de durée.
-  
-  // double _parseDurationToHours(String durationString) {
-  //   double totalHours = 0.0;
-  //   final parts = durationString.toLowerCase().split('h');
-  //   if (parts.isNotEmpty) {
-  //     // Gère la partie heures
-  //     final hourPart = parts[0].trim();
-  //     try {
-  //       totalHours += double.parse(hourPart.replaceAll(',', '.')); // Gère la virgule comme séparateur décimal
-  //     } catch (e) {
-  //       debugPrint('Error parsing hour part: $hourPart, $e');
-  //     
-  //     // Gère la partie minutes si disponible
-  //     if (parts.length > 1 && parts[1].contains('min')) {
-  //       final minPart = parts[1].split('min')[0].trim();
-  //       try {
-  //         totalHours += int.parse(minPart) / 60.0;
-  //       } catch (e) {
-  //         debugPrint('Error parsing minute part: $minPart, $e');
-  //       }
-  //     }
-  //   }
-  //   return totalHours;
-  // }
-
-  // Calcule les données de résumé (total et restant)
-  void _calculateSummaryData() {
-    double currentTotalWorkedHours = 0.0;
-    double currentTotalScheduledHours = 0.0;
-
-    // Itérer sur tous les services pour calculer les heures prévues et travaillées
-    for (var service in _services) {
-      // Vérifie si le service est dans la plage de dates actuelle
-      bool isInDateRange = service.startTime.isAfter(_startDate.startOfDay()) &&
-          service.startTime.isBefore(_endDate.endOfDay());
-
-      if (isInDateRange) {
-        // Ajoute la durée de tous les services à _totalScheduledHours
-        currentTotalScheduledHours += service.durationInHours;
-
-        // Ajoute la durée des services validés et non absents à _totalWorkedHours
-        if (service.isValidated && !service.isAbsent) {
-          currentTotalWorkedHours += service.durationInHours;
-        }
-      }
-    }
-
-    setState(() {
-      _totalWorkedHours = currentTotalWorkedHours;
-      _totalScheduledHours = currentTotalScheduledHours;
-      _remainingHours = _totalScheduledHours - _totalWorkedHours;
-    });
   }
 
   // Méthode pour déclencher le filtrage et le tri des services
@@ -219,10 +163,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     return filteredList;
   }
 
-  // La colonne Résultat affiche les mêmes services que Début, mais avec une carte différente
-  // List<Service> get _filteredAndSortedResultatServices {
-  //   return List.from(_filteredAndSortedDebutServices);
-  // }
+  // Getter pour les services filtrés et triés pour la colonne "Résultat" (ajusté)
+  List<Service> get _filteredAndSortedResultServices {
+    // Pour l'instant, la colonne "Résultat" affiche les mêmes services que "Début".
+    // Vous pouvez ajuster cette logique si "Résultat" doit être différent.
+    return _filteredAndSortedDebutServices;
+  }
+
 
   // Gère le basculement de l'état "Absent" d'un service
   void _handleAbsentToggle(String serviceId, bool newAbsentStatus) {
@@ -238,7 +185,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           _services[serviceIndex] = _services[serviceIndex].copyWith(isAbsent: newAbsentStatus);
           debugPrint('Service $serviceId - Absent: $newAbsentStatus');
         }
-        _calculateSummaryData(); // Recalcule les données de résumé
       }
     });
   }
@@ -250,7 +196,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       if (serviceIndex != -1) {
         _services[serviceIndex] = _services[serviceIndex].copyWith(isValidated: newValidateStatus);
         debugPrint('Service $serviceId - Validated: $newValidateStatus');
-        _calculateSummaryData(); // Recalcule les données de résumé
       }
     });
   }
@@ -339,7 +284,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             _services[serviceIndex] = currentService.copyWith(endTime: updatedDateTime);
             debugPrint('Service $serviceId - Nouvelle heure de fin: ${DateFormat('dd/MM HH:mm').format(updatedDateTime)}');
           }
-          _calculateSummaryData(); // Recalcule les données de résumé
         });
         // Afficher un SnackBar de succès (optionnel, mais bonne pratique)
         ScaffoldMessenger.of(context).showSnackBar(
@@ -455,7 +399,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           _dataLoaded = true;
           debugPrint('Importation de ${importedServices.length} services depuis Excel réussie.');
           _filterAndSortServices(); // Applique le filtre initial après le chargement
-          _calculateSummaryData(); // Recalcule les données de résumé
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -478,7 +421,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       );
     }
   }
-  
+
   // Fonction pour exporter les services vers un fichier Excel
   Future<void> exportToExcel(List<Service> services, BuildContext context) async {
     if (services.isEmpty) {
@@ -535,9 +478,10 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       final blob = html.Blob([Uint8List.fromList(bytes)]);
       final url = html.Url.createObjectUrlFromBlob(blob);
 
-      // final anchor = html.AnchorElement(href: url)
-      //   ..setAttribute('download', 'export.xlsx')
-      //   ..click();
+      // ignore: unused_local_variable
+      final anchor = html.AnchorElement(href: url)
+        ..setAttribute('download', 'export_services.xlsx') // Nom de fichier clair
+        ..click();
       html.Url.revokeObjectUrl(url);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -551,25 +495,45 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   }
 
   void _onExportPressed() {
-    exportToExcel(_services, context); // Appelez la fonction avec le bon nom et passez 'context'
+    exportToExcel(_services, context);
+  }
+
+  // Méthode pour synchroniser les contrôleurs de défilement (ajoutée/restaurée)
+  void _syncScrollControllers() {
+    // Empêcher la récursion en retirant et ajoutant les listeners
+    void sync(ScrollController source, List<ScrollController> targets) {
+      if (!source.hasClients) return;
+      for (var target in targets) {
+        if (target.hasClients && target.offset != source.offset) {
+          target.jumpTo(source.offset);
+        }
+      }
+    }
+
+    _debutScrollController.addListener(() => sync(_debutScrollController, [_finScrollController, _resultatScrollController]));
+    _finScrollController.addListener(() => sync(_finScrollController, [_debutScrollController, _resultatScrollController]));
+    _resultatScrollController.addListener(() => sync(_resultatScrollController, [_debutScrollController, _finScrollController]));
   }
 
   // Méthode pour construire l'AppBar
   AppBar _buildAppBar(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return AppBar(
+      toolbarHeight: responsive_utils.responsiveHeight(screenWidth, 80.0), // Hauteur responsive The function 'responsiveHeight' isn't defined.
       leading: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: EdgeInsets.all(responsive_utils.responsivePadding(screenWidth, 8.0)),
         child: Image.asset(
           'assets/logo_app.png',
-          height: 40,
-          width: 40,
+          height: responsive_utils.responsiveIconSize(screenWidth, 40.0),
+          width: responsive_utils.responsiveIconSize(screenWidth, 40.0),
         ),
       ),
       title: Text(
         'Prise de services automatique',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 20,
+          fontSize: responsive_utils.responsiveFontSize(screenWidth, 20.0),
           color: Theme.of(context).colorScheme.onPrimary,
         ),
       ),
@@ -578,137 +542,242 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       foregroundColor: Theme.of(context).colorScheme.onPrimary,
       actions: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 4.0)),
           child: _dataLoaded
               ? ElevatedButton.icon(
                   onPressed: _importServicesFromExcel,
-                  icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
-                  label: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                  icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(screenWidth, 18.0)),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0))),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+                      borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 12.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
+                    minimumSize: Size(responsive_utils.responsiveWidth(screenWidth, 140.0), responsive_utils.responsiveHeight(screenWidth, 40.0)),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 )
               : ElevatedButton.icon(
                   onPressed: _importServicesFromExcel,
-                  icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary),
-                  label: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                  icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(screenWidth, 18.0)),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0))),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+                      borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 12.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
+                    minimumSize: Size(responsive_utils.responsiveWidth(screenWidth, 140.0), responsive_utils.responsiveHeight(screenWidth, 40.0)),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 4.0)),
           child: ElevatedButton.icon(
             onPressed: _onExportPressed,
-            icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary),
-            label: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+            icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(screenWidth, 18.0)),
+            label: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0))),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 12.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
+              minimumSize: Size(responsive_utils.responsiveWidth(screenWidth, 140.0), responsive_utils.responsiveHeight(screenWidth, 40.0)),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
         ),
-
-        const SizedBox(width: 8),
+        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 8.0)),
       ],
     );
   }
 
-  // Méthode pour construire le sélecteur de date
+  // Méthode pour construire le sélecteur de date (maintenant avec les boutons D,F,R)
   Widget _buildDateRangeSelector() {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Fonction d'aide interne pour les boutons de colonne (D, F, R)
+    Widget buildColumnToggleButton(String label, bool isVisible, ValueChanged<bool> onChanged) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 2.0)),
+        child: InkWell(
+          onTap: () => onChanged(!isVisible),
+          borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
+          child: Container(
+            width: responsive_utils.responsiveWidth(screenWidth, 70.0),
+            height: responsive_utils.responsiveHeight(screenWidth, 35.0),
+            decoration: BoxDecoration(
+              color: isVisible ? Theme.of(context).primaryColor : Colors.grey[400],
+              borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
+              boxShadow: isVisible ? [
+                BoxShadow(
+                  color: Theme.of(context).primaryColor.withOpacity(0.3),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ] : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(
+                  isVisible ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.white,
+                  size: responsive_utils.responsiveIconSize(screenWidth, 16.0),
+                ),
+                SizedBox(width: responsive_utils.responsivePadding(screenWidth, 2.0)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 10.0),
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Contenu des contrôles de date (boutons de navigation et sélecteurs de date)
+    Widget dateControls = Row(
+      mainAxisSize: MainAxisSize.min, // Utiliser min pour ne prendre que l'espace nécessaire
+      children: [
+        IconButton(
+          icon: Icon(Icons.arrow_back_ios, size: responsive_utils.responsiveIconSize(screenWidth, 16.0)),
+          onPressed: () {
+            setState(() {
+              _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
+              _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
+            });
+          },
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+        _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
+        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)),
+        Container(
+          width: responsive_utils.responsivePadding(screenWidth, 1.5),
+          height: responsive_utils.responsiveHeight(screenWidth, 20.0),
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)),
+        _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
+        IconButton(
+          icon: Icon(Icons.arrow_forward_ios, size: responsive_utils.responsiveIconSize(screenWidth, 16.0)),
+          onPressed: () {
+            setState(() {
+              _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
+              _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
+            });
+          },
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+      ],
+    );
+
+    // Les boutons D,F,R (pour activer/désactiver les colonnes Début, Fin, Résultat)
+    Widget columnToggleButtons = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        buildColumnToggleButton('D', _showDebutColumn, (newStatus) {
+          setState(() {
+            _showDebutColumn = newStatus;
+          });
+        }),
+        buildColumnToggleButton('F', _showFinColumn, (newStatus) {
+          setState(() {
+            _showFinColumn = newStatus;
+          });
+        }),
+        buildColumnToggleButton('R', _showResultColumn, (newStatus) {
+          setState(() {
+            _showResultColumn = newStatus;
+          });
+        }),
+      ],
+    );
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 16.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
       color: Colors.grey[100],
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios, size: 18),
-            onPressed: () {
-              setState(() {
-                _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
-                _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
-              });
-            },
-            visualDensity: VisualDensity.compact,
-          ),
-          _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
-          const SizedBox(width: 8),
-          VerticalDivider(
-            color: Theme.of(context).colorScheme.primary, // Utilise la couleur du thème
-            thickness: 1.5,
-            indent: 5,
-            endIndent: 5,
-            width: 16,
-          ),
-          const SizedBox(width: 8),
-          _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
-          IconButton(
-            icon: const Icon(Icons.arrow_forward_ios, size: 18),
-            onPressed: () {
-              setState(() {
-                _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
-                _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
-              });
-            },
-            visualDensity: VisualDensity.compact,
-          ),
-          const Spacer(),
+          dateControls, // Les contrôles de date
+          const Spacer(), // Pousse le texte de la date et les boutons à droite
           Text(
             DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
             style: TextStyle(
-              fontSize: 14,
+              fontSize: responsive_utils.responsiveFontSize(screenWidth, 11.0),
               fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.secondary, // Couleur secondaire du thème
+              color: Theme.of(context).colorScheme.secondary,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
+          SizedBox(width: responsive_utils.responsivePadding(screenWidth, 10.0)),
+          columnToggleButtons, // Les boutons D,F,R
         ],
       ),
     );
   }
 
-  // Méthode d'aide pour les contrôles individuels de date
+  // Méthode d'aide pour les contrôles individuels de date (boutons +/- et sélecteur de date)
   Widget _buildDateControl(DateTime date, ValueChanged<DateTime> onDateChanged) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          icon: const Icon(Icons.remove, size: 18),
+          icon: Icon(Icons.remove, size: responsive_utils.responsiveIconSize(screenWidth, 18.0)),
           onPressed: () => _changeDateByDay(date, -1, onDateChanged),
           visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)),
         GestureDetector(
           onTap: () => _selectDate(context, date, onDateChanged),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 10.0), vertical: responsive_utils.responsivePadding(screenWidth, 5.0)),
             decoration: BoxDecoration(
               border: Border.all(color: Theme.of(context).primaryColor, width: 1.5),
-              borderRadius: BorderRadius.circular(8.0),
+              borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
               color: Colors.white,
             ),
             child: Text(
               DateFormat('dd/MM/yyyy').format(date),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+              style: TextStyle(fontSize: responsive_utils.responsiveFontSize(screenWidth, 14.0), fontWeight: FontWeight.bold, color: Colors.black87),
             ),
           ),
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: responsive_utils.responsivePadding(screenWidth, 4.0)),
         IconButton(
-          icon: const Icon(Icons.add, size: 18),
+          icon: Icon(Icons.add, size: responsive_utils.responsiveIconSize(screenWidth, 18.0)),
           onPressed: () => _changeDateByDay(date, 1, onDateChanged),
           visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
         ),
       ],
     );
@@ -716,68 +785,76 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire la barre de recherche
   Widget _buildSearchBar() {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 16.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
           labelText: 'Rechercher par nom d\'employé',
           hintText: 'Entrez le nom de l\'employé...',
-          prefixIcon: const Icon(Icons.search),
+          prefixIcon: Icon(Icons.search, size: responsive_utils.responsiveIconSize(screenWidth, 20.0)),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
+            borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(screenWidth, 8.0)),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+          contentPadding: EdgeInsets.symmetric(vertical: responsive_utils.responsivePadding(screenWidth, 10.0), horizontal: responsive_utils.responsivePadding(screenWidth, 15.0)),
         ),
+        style: TextStyle(fontSize: responsive_utils.responsiveFontSize(screenWidth, 14.0)),
       ),
     );
   }
 
-  // Méthode pour construire les en-têtes de colonne
+  // Méthode pour construire les en-têtes de colonne (maintenant conditionnels)
   Widget _buildColumnHeaders() {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 16.0), vertical: responsive_utils.responsivePadding(screenWidth, 8.0)),
       child: Row(
         children: [
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: Text(
-                'Début',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.primary, // Utilise la couleur du thème
+          if (_showDebutColumn)
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: Text(
+                  'Début',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 16.0),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: Text(
-                'Fin',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.primary, // Utilise la couleur du thème
+          if (_showFinColumn)
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: Text(
+                  'Fin',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 16.0),
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: Text(
-                'Résultat',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.green.shade700, // Une couleur distincte pour le résultat
+          if (_showResultColumn)
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Text(
+                  'Résultat',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: responsive_utils.responsiveFontSize(screenWidth, 16.0),
+                    color: Colors.green.shade700,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -785,11 +862,20 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire une liste de services (colonne)
   Widget _buildServiceColumn(List<Service> services, ScrollController controller, TimeCardType type) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Condition pour afficher ou masquer la colonne
+    if ((type == TimeCardType.debut && !_showDebutColumn) ||
+        (type == TimeCardType.fin && !_showFinColumn) ||
+        (type == TimeCardType.result && !_showResultColumn)) {
+      return const SizedBox.shrink(); // Ne rien afficher si la colonne est masquée
+    }
+
     return Expanded(
-      flex: type == TimeCardType.result ? 1 : 2, // Flexibilité différente pour la colonne Résultat
+      flex: type == TimeCardType.result ? 1 : 2,
       child: ListView.builder(
         controller: controller,
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(screenWidth, 8.0)),
         itemCount: services.length,
         itemBuilder: (context, index) {
           final service = services[index];
@@ -800,7 +886,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               _handleAbsentToggle(service.id, newStatus);
             },
             onModifyTime: (currentTime) {
-              _handleModifyTime(service.id, currentTime, type); // Passe le type correct
+              _handleModifyTime(service.id, currentTime, type);
             },
             onValidate: (newStatus) {
               _handleValidate(service.id, newStatus);
@@ -816,74 +902,27 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire le pied de page
   Widget _buildFooter() {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: responsive_utils.responsivePadding(screenWidth, 8.0),
+        vertical: responsive_utils.responsivePadding(screenWidth, 8.0),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Spacer(),
-          Text(
-            "© BMSoft 2025, tous droits réservés   ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.secondary, // Utilise la couleur secondaire du thème
+          Flexible(
+            child: Text(
+              "© BMSoft 2025, tous droits réservés    ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
+              style: TextStyle(
+                fontSize: responsive_utils.responsiveFontSize(screenWidth, 12.0),
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+              overflow: TextOverflow.visible,
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // Méthode pour construire une puce de résumé flottante
-  Widget _buildSummaryChip(IconData icon, String label, String value, Color color) {
-    return Card(
-      color: color,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 6),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Méthode pour construire les widgets flottants de résumé
-  Widget _buildSummaryFloatingWidgets() {
-    return Positioned(
-      bottom: 30, // Ajustez la position verticale si nécessaire
-      right: 20, // Ajustez la position horizontale si nécessaire
-      child: Row( // Changé de Row à Column pour empiler verticalement
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _buildSummaryChip(Icons.calendar_today, 'Mois', DateFormat('MMMM', 'fr_FR').format(_startDate), Colors.blueAccent),
-          const SizedBox(height: 6),
-          _buildSummaryChip(Icons.balance, 'Prévu', '${_totalScheduledHours.toStringAsFixed(1)}H', Colors.purpleAccent), // Nouvelle puce pour les heures prévues
-          const SizedBox(height: 6),
-          _buildSummaryChip(Icons.access_time, 'Travaillé', '${_totalWorkedHours.toStringAsFixed(1)}H', Colors.redAccent), // Ancien "Total"
-          const SizedBox(height: 6),
-          _buildSummaryChip(Icons.access_time, 'Restant', '${_remainingHours.toStringAsFixed(1)}H', Colors.orangeAccent),
         ],
       ),
     );
@@ -893,9 +932,9 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(context),
-      body: Stack( // Utilisez un Stack pour positionner les widgets flottants
+      body: Stack(
         children: <Widget>[
-          Column( // Le contenu principal de l'application
+          Column(
             children: <Widget>[
               _buildDateRangeSelector(),
               _buildSearchBar(),
@@ -905,9 +944,9 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 Text(
                   "Veuillez importer un fichier Excel pour commencer",
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: responsive_utils.responsiveFontSize(MediaQuery.of(context).size.width, 20.0),
                     fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.error, // Utilise la couleur d'erreur du thème
+                    color: Theme.of(context).colorScheme.error,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -919,14 +958,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                   children: [
                     _buildServiceColumn(_filteredAndSortedDebutServices, _debutScrollController, TimeCardType.debut),
                     _buildServiceColumn(_filteredAndSortedFinServices, _finScrollController, TimeCardType.fin),
-                    _buildServiceColumn(_filteredAndSortedDebutServices, _resultatScrollController, TimeCardType.result),
+                    _buildServiceColumn(_filteredAndSortedResultServices, _resultatScrollController, TimeCardType.result),
                   ],
                 ),
               ),
               _buildFooter(),
             ],
           ),
-          _buildSummaryFloatingWidgets(), // Les widgets flottants ajoutés ici
         ],
       ),
     );

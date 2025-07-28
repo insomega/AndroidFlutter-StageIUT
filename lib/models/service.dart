@@ -1,30 +1,33 @@
 // lib/models/service.dart
 
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:excel/excel.dart'; // Importation nécessaire pour CellValue types
+import 'package:flutter/material.dart'; // Importe Flutter pour `debugPrint`.
+import 'package:intl/intl.dart'; // Importe `intl` pour le formatage des dates.
+import 'package:excel/excel.dart'; // Importation nécessaire pour les types `CellValue` du package Excel.
 
+// Représente un service avec toutes ses informations détaillées,
+// incluant l'employé, les heures, la localisation et le statut.
 class Service {
-  final String id; // Correspond à VAC_IDF
-  final String employeeName; // Correspond à USR_LIB (la personne qui a créé/géré le service)
-  final String employeeSvrCode; // Correspond à SVR_CODE (pour l'employé)
-  final String employeeSvrLib; // Correspond à SVR_LIB (pour l'employé, ex: "SVR_NOM 86710 TEXT ERIC")
-  final String employeeTelPort; // Correspond à SVR_TELPOR
+  final String id; // ID du service (correspond à VAC_IDF dans les données).
+  final String employeeName; // Nom de l'employé (correspond à USR_LIB).
+  final String employeeSvrCode; // Code de service de l'employé (SVR_CODE).
+  final String employeeSvrLib; // Libellé de service de l'employé (SVR_LIB).
+  final String employeeTelPort; // Numéro de téléphone portable de l'employé (SVR_TELPOR).
 
-  final DateTime startTime; // Correspond à VAC_START_HOUR
-  DateTime endTime; // Correspond à VAC_END_HOUR (peut être modifié)
-  bool isAbsent;
-  bool isValidated;
+  final DateTime startTime; // Heure de début du service (VAC_START_HOUR).
+  DateTime endTime; // Heure de fin du service (VAC_END_HOUR), peut être modifiée.
+  bool isAbsent; // Indique si l'employé est absent pour ce service.
+  bool isValidated; // Indique si le service a été validé.
 
-  // Informations de localisation/client, communes aux deux cartes
-  final String locationCode; // Correspond à LIE_CODE
-  final String locationLib; // Correspond à LIE_LIB
-  final String clientLocationLine3; // Le texte statique "client BM-CL01"
+  // Informations de localisation/client, communes aux deux types de cartes.
+  final String locationCode; // Code du lieu (LIE_CODE).
+  final String locationLib; // Libellé du lieu (LIE_LIB).
+  final String clientLocationLine3; // Texte statique "client BM-CL01".
 
-  // Informations spécifiques au client pour la carte "Fin"
-  final String clientSvrCode; // SVR_CODE quand il s'agit du client (ex: BM-SAL04, 142320, PIERRICK)
-  final String clientSvrLib; // SVR_LIB quand il s'agit du client (ex: BONBON Délicieux, MELCHIORRE GERALD, SVR_NOM 86710 TEXT ERIC)
+  // Informations spécifiques au client pour la carte "Fin".
+  final String clientSvrCode; // Code de service du client (SVR_CODE).
+  final String clientSvrLib; // Libellé de service du client (SVR_LIB).
 
+  // Constructeur de la classe `Service`.
   Service({
     required this.id,
     required this.employeeName,
@@ -33,8 +36,8 @@ class Service {
     required this.employeeTelPort,
     required this.startTime,
     required this.endTime,
-    this.isAbsent = false,
-    this.isValidated = false,
+    this.isAbsent = false, // Valeur par défaut : non absent.
+    this.isValidated = false, // Valeur par défaut : non validé.
     required this.locationCode,
     required this.locationLib,
     required this.clientLocationLine3,
@@ -42,83 +45,77 @@ class Service {
     required this.clientSvrLib,
   });
 
+  // Getter pour obtenir la durée du service formatée en heures et minutes.
   String get duration {
-    final Duration diff = endTime.difference(startTime);
-    final int hours = diff.inHours;
-    final int minutes = diff.inMinutes.remainder(60);
-    return '${hours}h ${minutes}min';
+    final Duration diff = endTime.difference(startTime); // Calcule la différence entre l'heure de fin et de début.
+    final int hours = diff.inHours; // Nombre total d'heures.
+    final int minutes = diff.inMinutes.remainder(60); // Minutes restantes après avoir soustrait les heures.
+    return '${hours}h ${minutes}min'; // Retourne la durée formatée.
   }
 
+  // Getter pour obtenir la durée du service en heures sous forme décimale.
   double get durationInHours {
-    final Duration diff = endTime.difference(startTime);
-    return diff.inMinutes / 60.0;
+    final Duration diff = endTime.difference(startTime); // Calcule la différence.
+    return diff.inMinutes / 60.0; // Convertit les minutes totales en heures décimales.
   }
-  
-  // Helper pour extraire la valeur réelle d'un CellValue ou d'un autre type.
-  // Cette fonction va maintenant toujours retourner une String si c'est un CellValue,
-  // et le type original si ce n'est pas un CellValue (ex: déjà String, int, DateTime).
+
+  // Méthode d'aide statique pour extraire la valeur réelle d'un `CellValue` ou d'un autre type.
+  // Si l'objet est un `CellValue`, il est converti en `String`. Sinon, il est retourné tel quel.
   static dynamic _extractCellValue(dynamic valueObject) {
     if (valueObject == null) {
-      return null;
+      return null; // Retourne null si l'objet est null.
     }
-    // Si l'objet est une instance de CellValue (ou l'une de ses sous-classes),
-    // nous utilisons sa représentation en chaîne.
     if (valueObject is CellValue) {
-      return valueObject.toString();
+      return valueObject.toString(); // Convertit CellValue en String.
     }
-    // Si ce n'est pas un CellValue (par exemple, c'est déjà un DateTime, String, int, double),
-    // nous le retournons tel quel.
-    return valueObject;
+    return valueObject; // Retourne l'objet tel quel si ce n'est pas un CellValue.
   }
 
-  // Méthode factory pour créer un Service à partir d'une Map (issue d'une ligne Excel)
+  // Méthode factory pour créer une instance de `Service` à partir d'une `Map` de données (souvent issue d'une ligne Excel).
   factory Service.fromExcelRow(Map<String, dynamic> data) {
-    // Helper pour parser les dates en gérant les différents types de données de Excel.
+    /// Helper interne pour parser les valeurs de date provenant d'Excel, gérant différents formats (String, numérique).
     DateTime parseExcelDateValue(dynamic rawValue, String fieldName) {
       if (rawValue == null) {
         debugPrint('Avertissement: La date pour $fieldName est vide ou nulle. Utilisation de DateTime.now().');
-        return DateTime.now();
+        return DateTime.now(); // Retourne l'heure actuelle si la valeur est nulle.
       }
 
-      // Extrait la valeur réelle en utilisant la fonction _extractCellValue.
-      // On s'attend maintenant à ce que _extractCellValue retourne une String ou un num.
-      final dynamic actualValue = _extractCellValue(rawValue);
+      final dynamic actualValue = _extractCellValue(rawValue); // Extrait la valeur réelle.
 
       if (actualValue is String) {
         try {
-          // Tente d'abord de parser le format ISO 8601 (ex: "2025-07-02T20:00:00.000Z")
-          return DateTime.parse(actualValue);
+          return DateTime.parse(actualValue); // Tente de parser en format ISO 8601.
         } catch (_) {
-          // Si ISO 8601 échoue, tente le format "dd/MM/yyyy HH:mm"
           try {
             final format = DateFormat("dd/MM/yyyy HH:mm");
-            return format.parse(actualValue);
+            return format.parse(actualValue); // Tente de parser en format "dd/MM/yyyy HH:mm".
           } catch (e) {
             debugPrint('Erreur de parsing de date pour $fieldName (String): "$actualValue" - $e. Utilisation de DateTime.now().');
-            return DateTime.now();
+            return DateTime.now(); // Retourne l'heure actuelle en cas d'échec de parsing.
           }
         }
-      } else if (actualValue is num) { // Gère les dates numériques d'Excel
+      } else if (actualValue is num) {
         try {
-          // Excel base les dates sur le 1er janvier 1900 (jour 1). Ajustement pour la base 0 de Dart.
-          final DateTime excelEpoch = DateTime(1899, 12, 30); // Date de référence Excel pour le jour 0
-          final Duration duration = Duration(days: actualValue.toInt(), milliseconds: ((actualValue - actualValue.toInt()) * 24 * 60 * 60 * 1000).toInt());
+          // Convertit les dates numériques d'Excel (basées sur le 1er janvier 1900).
+          final DateTime excelEpoch = DateTime(1899, 12, 30); // Date de référence Excel pour le jour 0.
+          final Duration duration = Duration(
+              days: actualValue.toInt(),
+              milliseconds: ((actualValue - actualValue.toInt()) * 24 * 60 * 60 * 1000).toInt());
           return excelEpoch.add(duration);
         } catch (e) {
           debugPrint('Erreur de conversion de date numérique pour $fieldName (num): "$actualValue" - $e. Utilisation de DateTime.now().');
-          return DateTime.now();
+          return DateTime.now(); // Retourne l'heure actuelle en cas d'échec de conversion.
         }
       }
-      
+
       debugPrint('Avertissement: Type de données inattendu et non géré pour $fieldName: ${actualValue.runtimeType} ($actualValue). Utilisation de DateTime.now().');
-      return DateTime.now();
+      return DateTime.now(); // Retourne l'heure actuelle pour les types non gérés.
     }
 
-    // Utilise _extractCellValue pour toutes les données provenant de l'Excel.
-    // Les résultats sont ensuite convertis en String ou passés à la fonction de parsing de date.
+    // Crée une nouvelle instance de `Service` en extrayant et parsant les données de la map.
     return Service(
       id: _extractCellValue(data['VAC_IDF'])?.toString() ?? '',
-      employeeName: _extractCellValue(data['SVR_LIB'])?.toString() ?? '',
+      employeeName: _extractCellValue(data['USR_LIB'])?.toString() ?? '', // Correction du champ d'extraction
       employeeSvrCode: _extractCellValue(data['SVR_CODE'])?.toString() ?? '',
       employeeSvrLib: _extractCellValue(data['SVR_LIB'])?.toString() ?? '',
       employeeTelPort: _extractCellValue(data['SVR_TELPOR'])?.toString() ?? '',
@@ -126,15 +123,16 @@ class Service {
       endTime: parseExcelDateValue(data['VAC_END_HOUR'], 'VAC_END_HOUR'),
       locationCode: _extractCellValue(data['LIE_CODE'])?.toString() ?? '',
       locationLib: _extractCellValue(data['LIE_LIB'])?.toString() ?? '',
-      clientLocationLine3: 'client BM-CL01',
-      clientSvrCode: _extractCellValue(data['SVR_CODE'])?.toString() ?? '',
-      clientSvrLib: _extractCellValue(data['SVR_LIB'])?.toString() ?? '',
-      isAbsent: false,
-      isValidated: false,
+      clientLocationLine3: 'client BM-CL01', // Valeur statique.
+      clientSvrCode: _extractCellValue(data['CLI_SVR_CODE'])?.toString() ?? '', // Assurez-vous d'avoir le bon champ pour le client
+      clientSvrLib: _extractCellValue(data['CLI_SVR_LIB'])?.toString() ?? '', // Assurez-vous d'avoir le bon champ pour le client
+      isAbsent: false, // Initialisation par défaut.
+      isValidated: false, // Initialisation par défaut.
     );
   }
 
-  // Méthode copyWith pour la mise à jour des propriétés
+  // Méthode `copyWith` pour créer une nouvelle instance de `Service` avec des propriétés modifiées.
+  // Permet une mise à jour facile et immuable de l'objet `Service`.
   Service copyWith({
     String? id,
     String? employeeName,
@@ -152,7 +150,7 @@ class Service {
     String? clientSvrLib,
   }) {
     return Service(
-      id: id ?? this.id,
+      id: id ?? this.id, // Utilise la nouvelle valeur si fournie, sinon la valeur actuelle.
       employeeName: employeeName ?? this.employeeName,
       employeeSvrCode: employeeSvrCode ?? this.employeeSvrCode,
       employeeSvrLib: employeeSvrLib ?? this.employeeSvrLib,

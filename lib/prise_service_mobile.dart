@@ -2,50 +2,50 @@
 
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
-import 'dart:io'; // Pour File
+import 'dart:io'; // Importe la classe File pour les opérations sur les fichiers
 // ignore: unused_import
-import 'package:path_provider/path_provider.dart'; // Pour getExternalStorageDirectory, etc.
-import 'package:open_filex/open_filex.dart'; // Pour ouvrir le fichier après l'exportation
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:mon_projet/time_detail_card.dart'; // Assurez-vous que ce fichier existe
-import 'package:mon_projet/models/service.dart'; // Assurez-vous que ce fichier existe
-import 'dart:async';
-import 'package:file_picker/file_picker.dart';
-import 'package:excel/excel.dart' hide Border; // Importation pour la lecture et l'écriture Excel
-import 'dart:typed_data'; // Pour Uint8List
-import 'package:mon_projet/utils/date_time_extensions.dart';
-import 'package:mon_projet/utils/responsive_utils.dart' as responsive_utils; // NOUVEL IMPORT
+import 'package:path_provider/path_provider.dart'; // Utile pour obtenir les répertoires du système de fichiers (commenté car pas directement utilisé pour l'export final)
+import 'package:open_filex/open_filex.dart'; // Permet d'ouvrir un fichier avec l'application par défaut du système
+import 'package:flutter/material.dart'; // Importe les composants Material Design de Flutter
+import 'package:intl/intl.dart'; // Pour le formatage des dates et heures
+import 'package:mon_projet/time_detail_card.dart'; // Importe le widget TimeDetailCard personnalisé
+import 'package:mon_projet/models/service.dart'; // Importe le modèle de données Service
+import 'dart:async'; // Pour utiliser Timer
+import 'package:file_picker/file_picker.dart'; // Pour permettre à l'utilisateur de choisir un fichier
+import 'package:excel/excel.dart' hide Border; // Importation de la bibliothèque Excel, en masquant la classe Border pour éviter les conflits avec flutter
+import 'dart:typed_data'; // Pour manipuler des listes d'octets (Uint8List)
+import 'package:mon_projet/utils/date_time_extensions.dart'; // Importe les extensions personnalisées pour DateTime
+import 'package:mon_projet/utils/responsive_utils.dart' as responsive_utils; // Importe les utilitaires de responsive design avec un alias
 
+// Définition du widget PriseServiceScreen, qui est un StatefulWidget car son état peut changer
 class PriseServiceScreen extends StatefulWidget {
-  const PriseServiceScreen({super.key});
+  const PriseServiceScreen({super.key}); // Constructeur avec une clé optionnelle
 
   @override
-  State<PriseServiceScreen> createState() => _PriseServiceScreenState();
+  State<PriseServiceScreen> createState() => _PriseServiceScreenState(); // Crée l'état associé
 }
 
+// Classe d'état pour PriseServiceScreen
 class _PriseServiceScreenState extends State<PriseServiceScreen> {
-  DateTime _currentDisplayDate = DateTime.now();
-  DateTime _startDate = DateTime(2025, 7, 1); // Date de début de période par défaut
-  DateTime _endDate = DateTime(2025, 7, 31); // Date de fin de période par default
+  // Variables d'état
+  DateTime _currentDisplayDate = DateTime.now(); // Date et heure actuellement affichées (pour le footer)
+  DateTime _startDate = DateTime(2025, 7, 1); // Date de début par défaut pour le filtre des services
+  DateTime _endDate = DateTime(2025, 7, 31); // Date de fin par défaut pour le filtre des services
 
-  Timer? _timer;
+  Timer? _timer; // Timer pour mettre à jour l'heure affichée chaque seconde
 
+  // Contrôleurs de défilement pour les ListView des différentes colonnes
   final ScrollController _debutScrollController = ScrollController();
   final ScrollController _finScrollController = ScrollController();
   final ScrollController _resultatScrollController = ScrollController();
 
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = ''; // La chaîne de recherche actuelle
+  final TextEditingController _searchController = TextEditingController(); // Contrôleur pour le champ de recherche
+  String _searchQuery = ''; // La chaîne de caractères saisie dans la barre de recherche
 
-  List<Service> _services = []; // Liste des services chargés
-  bool _dataLoaded = false; // Indicateur si les données ont été chargées
+  List<Service> _services = []; // Liste principale de tous les services chargés
+  bool _dataLoaded = false; // Indicateur pour savoir si des données ont été chargées depuis un fichier Excel
 
-  double _totalWorkedHours = 0.0; // Heures totales travaillées
-  double _remainingHours = 0.0; // Heures restantes (prévues - travaillées)
-  double _totalScheduledHours = 0.0; // Heures totales prévues
-
-  // NOUVELLES VARIABLES D'ÉTAT POUR LA VISIBILITÉ DES COLONNES
+  // Indicateurs de visibilité pour les colonnes (Début, Fin, Résultat)
   bool _showDebutColumn = true;
   bool _showFinColumn = true;
   bool _showResultColumn = true;
@@ -53,17 +53,18 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   @override
   void initState() {
     super.initState();
-    _updateCurrentTime(); // Met à jour l'heure affichée
+    _updateCurrentTime(); // Initialise l'heure affichée au démarrage
+    // Configure un timer pour rafraîchir l'heure affichée toutes les secondes
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _updateCurrentTime(); // Met à jour l'heure toutes les secondes
+      _updateCurrentTime();
     });
 
-    _searchController.addListener(_onSearchChanged); // Écoute les changements dans la barre de recherche
-    Intl.defaultLocale = 'fr_FR'; // Assure la locale française pour les dates
-    _calculateSummaryData(); // Calcul initial des données de résumé
+    // Ajoute un écouteur au contrôleur de recherche pour réagir aux changements de texte
+    _searchController.addListener(_onSearchChanged);
+    Intl.defaultLocale = 'fr_FR'; // Définit la locale par défaut sur le français pour le formatage des dates
   }
 
-  // Met à jour la chaîne de recherche et déclenche un rafraîchissement de l'UI
+  // Met à jour la chaîne de recherche lorsque le texte change dans le champ, et rafraîchit l'UI
   void _onSearchChanged() {
     setState(() {
       _searchQuery = _searchController.text;
@@ -72,166 +73,138 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel(); // Annule le timer pour éviter les fuites de mémoire
+    _timer?.cancel(); // Annule le timer pour éviter les fuites de mémoire lorsque le widget est supprimé
+    // Libère les contrôleurs de défilement et de texte
     _debutScrollController.dispose();
     _finScrollController.dispose();
     _resultatScrollController.dispose();
-    _searchController.removeListener(_onSearchChanged);
+    _searchController.removeListener(_onSearchChanged); // Supprime l'écouteur pour éviter les erreurs
     _searchController.dispose();
-    super.dispose();
+    super.dispose(); // Appelle la méthode dispose de la classe parente
   }
 
-  // Met à jour l'heure actuelle affichée
+  // Met à jour l'heure et la date affichées dans le pied de page
   void _updateCurrentTime() {
     setState(() {
       _currentDisplayDate = DateTime.now();
     });
   }
 
-  // --- Fonctions de navigation de date ---
-  // Change la date par jour (pour _startDate ou _endDate)
+  // --- Fonctions de navigation de date pour les filtres ---
+
+  // Change la date spécifiée (début ou fin) d'un certain nombre de jours
   void _changeDateByDay(DateTime dateToChange, int daysToAdd, Function(DateTime) updateState) {
     setState(() {
-      updateState(dateToChange.add(Duration(days: daysToAdd)));
-      _filterAndSortServices(); // Rafraîchit après changement de date
-      _calculateSummaryData(); // Recalcule les données de résumé
+      updateState(dateToChange.add(Duration(days: daysToAdd))); // Ajoute/retire des jours
+      _filterAndSortServices(); // Rafraîchit l'affichage des services après le changement de date
     });
   }
 
-  // Change la date par mois (pour _startDate ou _endDate)
+  // Change la date spécifiée (début ou fin) d'un certain nombre de mois
   void _changeDateByMonth(DateTime dateToChange, int monthsToAdd, Function(DateTime) updateState) {
     setState(() {
       updateState(DateTime(
         dateToChange.year,
         dateToChange.month + monthsToAdd,
         dateToChange.day,
-      ));
-      _filterAndSortServices(); // Rafraîchit après changement de date
-      _calculateSummaryData(); // Recalcule les données de résumé
+      )); // Modifie l'année/mois en gardant le jour
+      _filterAndSortServices(); // Rafraîchit l'affichage des services après le changement de date
     });
   }
 
-  // Ouvre un sélecteur de date pour choisir une date spécifique
+  // Ouvre un sélecteur de date pour permettre à l'utilisateur de choisir une date
   Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) updateState) async {
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: initialDate, // Date initiale basée sur l'heure actuelle du service
-      firstDate: DateTime(2000), // Date de début possible
-      lastDate: DateTime(2030), // Date de fin possible
-      helpText: 'Sélectionner une date',
-      cancelText: 'Annuler',
-      confirmText: 'Confirmer',
-      locale: const Locale('fr', 'FR'), // Force le sélecteur de date en français
+      initialDate: initialDate, // Date par défaut affichée dans le sélecteur
+      firstDate: DateTime(2000), // Date la plus ancienne que l'utilisateur peut sélectionner
+      lastDate: DateTime(2030), // Date la plus récente que l'utilisateur peut sélectionner
+      helpText: 'Sélectionner une date', // Texte d'aide en haut du sélecteur
+      cancelText: 'Annuler', // Texte pour le bouton d'annulation
+      confirmText: 'Confirmer', // Texte pour le bouton de confirmation
+      locale: const Locale('fr', 'FR'), // Force la locale du sélecteur en français
     );
-    if (picked != null && picked != initialDate) {
+    if (picked != null && picked != initialDate) { // Si une date est sélectionnée et qu'elle est différente de l'initiale
       setState(() {
-        updateState(picked);
-        _filterAndSortServices(); // Rafraîchit après changement de date
-        _calculateSummaryData(); // Recalcule les données de résumé
+        updateState(picked); // Met à jour la date (soit _startDate, soit _endDate)
+        _filterAndSortServices(); // Rafraîchit l'affichage des services
       });
     }
   }
 
-  // Calcule les données de résumé (total et restant)
-  void _calculateSummaryData() {
-    double currentTotalWorkedHours = 0.0;
-    double currentTotalScheduledHours = 0.0;
-
-    // Itérer sur tous les services pour calculer les heures prévues et travaillées
-    for (var service in _services) {
-      // Vérifie si le service est dans la plage de dates actuelle
-      bool isInDateRange = service.startTime.isAfter(_startDate.startOfDay()) &&
-          service.startTime.isBefore(_endDate.endOfDay());
-
-      if (isInDateRange) {
-        // Ajoute la durée de tous les services à _totalScheduledHours
-        currentTotalScheduledHours += service.durationInHours;
-
-        // Ajoute la durée des services validés et non absents à _totalWorkedHours
-        if (service.isValidated && !service.isAbsent) {
-          currentTotalWorkedHours += service.durationInHours;
-        }
-      }
-    }
-
-    setState(() {
-      _totalWorkedHours = currentTotalWorkedHours;
-      _totalScheduledHours = currentTotalScheduledHours;
-      _remainingHours = _totalScheduledHours - _totalWorkedHours;
-    });
-  }
-
-  // Méthode pour déclencher le filtrage et le tri des services
+  // Déclenche le re-calcul des listes de services filtrées et triées
   void _filterAndSortServices() {
     setState(() {
-      // Le simple fait de déclencher setState() fera que les getters seront recalculés.
+      // Le simple fait d'appeler setState() avec un corps vide suffit à faire
+      // que les getters (_filteredAndSortedDebutServices, etc.) soient recalculés.
+      // C'est une manière implicite de rafraîchir la UI basée sur des données dérivées.
     });
   }
 
-  // Getter pour les services filtrés et triés pour la colonne "Début"
+  // Getter pour obtenir les services filtrés par date et recherche, puis triés par heure de DÉBUT
   List<Service> get _filteredAndSortedDebutServices {
     final filteredList = _services.where((service) {
-      // Filtre par plage de dates
+      // Vérifie si l'heure de début du service est dans la plage de dates sélectionnée
       bool isInDateRange = service.startTime.isBefore(_endDate.endOfDay()) && service.startTime.isAfter(_startDate.startOfDay());
-      // Filtre par nom d'employé (recherche insensible à la casse)
+      // Vérifie si le nom de l'employé contient la chaîne de recherche (insensible à la casse)
       bool matchesSearch = _searchQuery.isEmpty ||
           service.employeeName.toLowerCase().contains(_searchQuery.toLowerCase());
-      return isInDateRange && matchesSearch;
-    }).toList();
+      return isInDateRange && matchesSearch; // Retourne true si les deux conditions sont remplies
+    }).toList(); // Convertit le résultat en une nouvelle liste
 
-    filteredList.sort((a, b) => a.startTime.compareTo(b.startTime)); // Tri par heure de début
+    filteredList.sort((a, b) => a.startTime.compareTo(b.startTime)); // Trie la liste par heure de début croissante
     return filteredList;
   }
 
-  // Getter pour les services filtrés et triés pour la colonne "Fin"
+  // Getter pour obtenir les services filtrés par date et recherche, puis triés par heure de FIN
   List<Service> get _filteredAndSortedFinServices {
     final filteredList = _services.where((service) {
-      // Filtre par plage de dates
+      // Vérifie si l'heure de fin du service est dans la plage de dates sélectionnée
       bool isInDateRange = service.endTime.isBefore(_endDate.endOfDay()) && service.endTime.isAfter(_startDate.startOfDay());
-      // Filtre par nom d'employé
+      // Vérifie si le nom de l'employé contient la chaîne de recherche (insensible à la casse)
       bool matchesSearch = _searchQuery.isEmpty ||
           service.employeeName.toLowerCase().contains(_searchQuery.toLowerCase());
-      return isInDateRange && matchesSearch;
-    }).toList();
+      return isInDateRange && matchesSearch; // Retourne true si les deux conditions sont remplies
+    }).toList(); // Convertit le résultat en une nouvelle liste
 
-    filteredList.sort((a, b) => a.endTime.compareTo(b.endTime)); // Tri par heure de fin
+    filteredList.sort((a, b) => a.endTime.compareTo(b.endTime)); // Trie la liste par heure de fin croissante
     return filteredList;
   }
 
-  // Gère le basculement de l'état "Absent" d'un service
+  // Gère le basculement de l'état "Absent" d'un service donné
   void _handleAbsentToggle(String serviceId, bool newAbsentStatus) {
     setState(() {
-      final serviceIndex = _services.indexWhere((s) => s.id == serviceId);
-      if (serviceIndex != -1) {
-        // Si l'état devient absent, la validation est automatiquement retirée
+      final serviceIndex = _services.indexWhere((s) => s.id == serviceId); // Trouve l'index du service par son ID
+      if (serviceIndex != -1) { // Si le service est trouvé
         if (newAbsentStatus == true) {
+          // Si le service devient absent, la validation est automatiquement retirée
           _services[serviceIndex] = _services[serviceIndex].copyWith(isAbsent: newAbsentStatus, isValidated: false);
           debugPrint('Service $serviceId - Absent: $newAbsentStatus, Validation retirée.');
         } else {
-          // Si l'état devient présent, on met juste à jour isAbsent
+          // Si le service redevient présent, met simplement à jour l'état "absent"
           _services[serviceIndex] = _services[serviceIndex].copyWith(isAbsent: newAbsentStatus);
           debugPrint('Service $serviceId - Absent: $newAbsentStatus');
         }
-        _calculateSummaryData(); // Recalcule les données de résumé
       }
     });
   }
 
-  // Gère le basculement de l'état "Validé" d'un service
+  // Gère le basculement de l'état "Validé" d'un service donné
   void _handleValidate(String serviceId, bool newValidateStatus) {
     setState(() {
-      final serviceIndex = _services.indexWhere((s) => s.id == serviceId);
-      if (serviceIndex != -1) {
+      final serviceIndex = _services.indexWhere((s) => s.id == serviceId); // Trouve l'index du service
+      if (serviceIndex != -1) { // Si le service est trouvé
+        // Met à jour l'état "validé" du service
         _services[serviceIndex] = _services[serviceIndex].copyWith(isValidated: newValidateStatus);
         debugPrint('Service $serviceId - Validated: $newValidateStatus');
-        _calculateSummaryData(); // Recalcule les données de résumé
       }
     });
   }
 
-  // Gère la modification de l'heure de début ou de fin d'un service
+  // Gère la modification de l'heure de début ou de fin d'un service après sélection par l'utilisateur
   Future<void> _handleModifyTime(String serviceId, DateTime currentTime, TimeCardType type) async {
-    // Étape 1: Sélectionner la date
+    // Étape 1: Sélectionner la date via un sélecteur de date
     final DateTime? newDate = await showDatePicker(
       context: context,
       initialDate: currentTime, // Date initiale basée sur l'heure actuelle du service
@@ -247,7 +220,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       return; // L'utilisateur a annulé la sélection de la date
     }
 
-    // Étape 2: Sélectionner l'heure
+    // Étape 2: Sélectionner l'heure via un sélecteur d'heure
     final TimeOfDay? newTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(currentTime), // Heure initiale basée sur l'heure actuelle du service
@@ -266,15 +239,16 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
       final Service currentService = _services[serviceIndex];
 
-      // Construire le DateTime complet avec la NOUVELLE date et la NOUVELLE heure
+      // Construire le DateTime complet avec la NOUVELLE date et la NOUVELLE heure sélectionnées
       final DateTime updatedDateTime = DateTime(
-        newDate.year, // Utilise l'année de la nouvelle date
-        newDate.month, // Utilise le mois de la nouvelle date
-        newDate.day, // Utilise le jour de la nouvelle date
-        newTime.hour,
-        newTime.minute,
+        newDate.year, // Utilise l'année de la nouvelle date sélectionnée
+        newDate.month, // Utilise le mois de la nouvelle date sélectionnée
+        newDate.day, // Utilise le jour de la nouvelle date sélectionnée
+        newTime.hour, // Utilise l'heure de la nouvelle heure sélectionnée
+        newTime.minute, // Utilise la minute de la nouvelle heure sélectionnée
       );
 
+      // Messages de débogage pour suivre les valeurs
       debugPrint('--- Débogage de la validation ---');
       debugPrint('ID du service: $serviceId');
       debugPrint('Type de modification: $type');
@@ -283,21 +257,19 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       debugPrint('Nouvelle heure sélectionnée (complète): $updatedDateTime');
       debugPrint('--- Fin du débogage de la validation ---');
 
-      bool canUpdate = true;
-      String? errorMessage;
+      bool canUpdate = true; // Indicateur si la mise à jour est valide
+      String? errorMessage; // Message d'erreur si la validation échoue
 
       if (type == TimeCardType.debut) {
         // Pour une modification de l'heure de DÉBUT :
-        // La nouvelle heure de début (updatedDateTime) doit être AVANT l'heure de fin actuelle (currentService.endTime).
-        // Si elle est APRÈS ou ÉGALE, c'est une erreur.
+        // La nouvelle heure de début (updatedDateTime) doit être strictement AVANT l'heure de fin actuelle.
         if (updatedDateTime.isAfter(currentService.endTime) || updatedDateTime.isAtSameMomentAs(currentService.endTime)) {
           canUpdate = false;
           errorMessage = 'L\'heure de début (${DateFormat('dd/MM HH:mm').format(updatedDateTime)}) ne peut pas être après ou égale à l\'heure de fin actuelle (${DateFormat('dd/MM HH:mm').format(currentService.endTime)}).';
         }
       } else { // type == TimeCardType.fin
         // Pour une modification de l'heure de FIN :
-        // La nouvelle heure de fin (updatedDateTime) doit être APRÈS l'heure de début actuelle (currentService.startTime).
-        // Si elle est AVANT ou ÉGALE, c'est une erreur.
+        // La nouvelle heure de fin (updatedDateTime) doit être strictement APRÈS l'heure de début actuelle.
         if (updatedDateTime.isBefore(currentService.startTime) || updatedDateTime.isAtSameMomentAs(currentService.startTime)) {
           canUpdate = false;
           errorMessage = 'L\'heure de fin (${DateFormat('dd/MM HH:mm').format(updatedDateTime)}) ne peut pas être avant ou égale à l\'heure de début actuelle (${DateFormat('dd/MM HH:mm').format(currentService.startTime)}).';
@@ -306,6 +278,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
       if (canUpdate) {
         setState(() {
+          // Met à jour le service dans la liste avec la nouvelle heure
           if (type == TimeCardType.debut) {
             _services[serviceIndex] = currentService.copyWith(startTime: updatedDateTime);
             debugPrint('Service $serviceId - Nouvelle heure de début: ${DateFormat('dd/MM HH:mm').format(updatedDateTime)}');
@@ -313,9 +286,8 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             _services[serviceIndex] = currentService.copyWith(endTime: updatedDateTime);
             debugPrint('Service $serviceId - Nouvelle heure de fin: ${DateFormat('dd/MM HH:mm').format(updatedDateTime)}');
           }
-          _calculateSummaryData(); // Recalcule les données de résumé
         });
-        // Afficher un SnackBar de succès (optionnel, mais bonne pratique)
+        // Affiche un SnackBar de succès
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Heure ${type == TimeCardType.debut ? "de début" : "de fin"} mise à jour avec succès.'),
@@ -324,10 +296,10 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           ),
         );
       } else {
-        // Afficher le message d'erreur si la validation échoue
+        // Affiche le message d'erreur si la validation échoue
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage!),
+            content: Text(errorMessage!), // Affiche le message d'erreur spécifique
             duration: const Duration(seconds: 4),
             backgroundColor: Colors.red,
           ),
@@ -337,32 +309,31 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
-  // Fait défiler les différentes colonnes pour afficher le service spécifié
+  // Fait défiler les différentes colonnes de services pour afficher un service spécifique
   void _scrollToService(Service serviceToScrollTo) {
-    // Il n'y a plus besoin de ces listes filtrées et triées ici.
-    // Il faut utiliser _filteredServices qui est la liste utilisée par les ListViews.
-    final List<Service> currentFilteredServices = _services;
+    // Utilisez les listes filtrées qui sont effectivement affichées dans les ListViews
+    final List<Service> currentFilteredServices = _filteredAndSortedDebutServices; // Ou _filteredAndSortedFinServices, peu importe, l'ordre est le même par ID
 
-    // Hauteur estimée d'une carte (assurez-vous que cette valeur est proche de la réalité)
-    // Idéalement, calculez la hauteur réelle ou utilisez un package comme scrollable_positioned_list
-    // pour un défilement basé sur l'index sans hauteur fixe.
-    // Pour l'instant, on garde votre constante, mais soyez conscient de ses limites.
-    const double itemHeight = 200.0;
+    // Hauteur estimée d'une carte de service.
+    // C'est une valeur fixe qui peut être imprécise si les cartes ont des hauteurs variables.
+    // Pour une précision accrue, il faudrait utiliser un package comme `scrollable_positioned_list`
+    // ou calculer dynamiquement la hauteur de l'élément.
+    const double itemHeight = 200.0; // Valeur arbitraire, ajustez si nécessaire.
 
-    // Trouver l'index du service dans la liste des services filtrés actuellement affichée
+    // Trouve l'index du service dans la liste actuellement filtrée et triée
     final int serviceIndex = currentFilteredServices.indexWhere((s) => s.id == serviceToScrollTo.id);
 
-    if (serviceIndex != -1) {
-      // Défilement de la colonne Début si elle est activée
+    if (serviceIndex != -1) { // Si le service est trouvé dans la liste
+      // Défilement de la colonne "Début" si elle est visible et que son contrôleur est attaché
       if (_showDebutColumn && _debutScrollController.hasClients) {
         _debutScrollController.animateTo(
-          serviceIndex * itemHeight,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
+          serviceIndex * itemHeight, // Calcule la position de défilement
+          duration: const Duration(milliseconds: 500), // Durée de l'animation
+          curve: Curves.easeInOut, // Type d'animation
         );
       }
 
-      // Défilement de la colonne Fin si elle est activée
+      // Défilement de la colonne "Fin" si elle est visible et que son contrôleur est attaché
       if (_showFinColumn && _finScrollController.hasClients) {
         _finScrollController.animateTo(
           serviceIndex * itemHeight,
@@ -371,7 +342,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         );
       }
 
-      // Défilement de la colonne Résultat si elle est activée
+      // Défilement de la colonne "Résultat" si elle est visible et que son contrôleur est attaché
       if (_showResultColumn && _resultatScrollController.hasClients) {
         _resultatScrollController.animateTo(
           serviceIndex * itemHeight,
@@ -382,15 +353,17 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
-  // Fonction pour importer les services depuis un fichier Excel
+  // Fonction pour importer les services à partir d'un fichier Excel sélectionné par l'utilisateur
   Future<void> _importServicesFromExcel() async {
     try {
+      // Ouvre une fenêtre de dialogue pour permettre à l'utilisateur de choisir un fichier
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['xlsx'], // Autorise uniquement les fichiers .xlsx
-        allowMultiple: false,
+        type: FileType.custom, // Type de fichier personnalisé
+        allowedExtensions: ['xlsx'], // N'autorise que les fichiers avec l'extension .xlsx
+        allowMultiple: false, // Ne permet pas la sélection multiple de fichiers
       );
 
+      // Messages de débogage pour le résultat du sélecteur de fichiers
       debugPrint('*** DEBUG FILE PICKER RESULT ***');
       debugPrint('Result: $result');
       if (result != null) {
@@ -404,64 +377,68 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       }
       debugPrint('*** END DEBUG ***');
 
-      // Modifiez la condition ici pour vérifier le chemin au lieu des bytes directement
+      // Vérifie si un fichier a été sélectionné et si son chemin n'est pas nul
       if (result != null && result.files.single.path != null) {
         final String? filePath = result.files.single.path;
 
         if (filePath == null) {
           debugPrint('Le chemin du fichier sélectionné est nul après la sélection.');
+          // Affiche un SnackBar si le chemin est manquant
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Impossible d\'accéder au fichier sélectionné (chemin manquant).')),
           );
-          return;
+          return; // Quitte la fonction
         }
 
-        final File file = File(filePath);
-        final Uint8List bytes = await file.readAsBytes(); // LIRE LES OCTETS DIRECTEMENT DEPUIS LE CHEMIN
+        final File file = File(filePath); // Crée un objet File à partir du chemin
+        final Uint8List bytes = await file.readAsBytes(); // Lit le contenu du fichier en tant que liste d'octets
 
-        // Vérifiez si les bytes sont réellement vides après la lecture
+        // Vérifie si le fichier est vide après lecture
         if (bytes.isEmpty) {
           debugPrint('Le fichier sélectionné est vide après lecture des octets.');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Le fichier sélectionné est vide.')),
           );
-          return;
+          return; // Quitte la fonction
         }
 
+        // Décode le fichier Excel à partir des octets
         final Excel excel = Excel.decodeBytes(bytes);
 
-        // Supposons que les données sont dans la première feuille
+        // Supposons que les données se trouvent dans la première feuille du classeur Excel
         final String sheetName = excel.tables.keys.first;
 
-        final sheet = excel.tables[sheetName];
-        if (sheet == null || sheet.rows.isEmpty) {
+        final sheet = excel.tables[sheetName]; // Accède à la feuille
+        if (sheet == null || sheet.rows.isEmpty) { // Vérifie si la feuille est vide
           debugPrint('La feuille Excel est vide.');
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Le fichier Excel est vide ou la feuille sélectionnée est vide.')),
           );
-          return;
+          return; // Quitte la fonction
         }
 
         List<String> headers = [];
-        // Récupérer les en-têtes de la première ligne
+        // Récupère les en-têtes de colonne de la première ligne de la feuille
         if (sheet.rows.isNotEmpty) {
           headers = sheet.rows[0].map((cell) => cell?.value?.toString() ?? '').toList();
         }
 
-        List<Service> importedServices = [];
+        List<Service> importedServices = []; // Liste pour stocker les services importés
 
-        // Parcourir les lignes de données (à partir de la deuxième ligne)
+        // Parcourt les lignes de données à partir de la deuxième ligne (en-têtes ignorés)
         for (int i = 1; i < sheet.rows.length; i++) {
           final row = sheet.rows[i];
           Map<String, dynamic> rowData = {};
+          // Associe les valeurs de chaque cellule à leur en-tête correspondant
           for (int j = 0; j < headers.length; j++) {
             if (j < row.length) {
               rowData[headers[j]] = row[j]?.value;
             }
           }
           try {
-            importedServices.add(Service.fromExcelRow(rowData));
+            importedServices.add(Service.fromExcelRow(rowData)); // Crée un objet Service à partir des données de la ligne
           } catch (e) {
+            // Gère les erreurs lors de la conversion d'une ligne en Service
             debugPrint('Erreur lors de la création du service à partir de la ligne Excel ${i + 1}: $rowData - $e');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Erreur à la ligne ${i + 1}: $e')),
@@ -470,13 +447,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         }
 
         setState(() {
-          _services = importedServices;
-          _dataLoaded = true;
+          _services = importedServices; // Met à jour la liste des services de l'état
+          _dataLoaded = true; // Indique que les données ont été chargées
           debugPrint('Importation de ${importedServices.length} services depuis Excel réussie.');
-          _filterAndSortServices();
-          _calculateSummaryData();
+          _filterAndSortServices(); // Rafraîchit l'affichage des services
         });
 
+        // Affiche un SnackBar de succès
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Importation de ${importedServices.length} services depuis Excel réussie.'),
@@ -484,13 +461,14 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           ),
         );
       } else {
-        // Message si l'utilisateur annule ou si le fichier est invalide / chemin non trouvé
+        // Message si l'utilisateur annule la sélection ou si le fichier est invalide
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Aucun fichier sélectionné ou fichier invalide.')),
         );
         debugPrint('Aucun fichier sélectionné ou fichier invalide.');
       }
     } catch (e) {
+      // Gère toute autre erreur survenant pendant le processus d'importation
       debugPrint('Erreur lors de l\'importation du fichier Excel: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur lors de l\'importation du fichier Excel: $e')),
@@ -498,20 +476,21 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
-  // Fonction pour exporter les services vers un fichier Excel sur mobile
-  Future<void> _exportServicesToExcel(List<Service> servicesToExport) async { // Renommée 'services' en 'servicesToExport' pour clarté
+  // Fonction pour exporter les services vers un fichier Excel sur l'appareil mobile
+  Future<void> _exportServicesToExcel(List<Service> servicesToExport) async {
     if (servicesToExport.isEmpty) {
+      // Affiche un message si la liste de services à exporter est vide
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Aucune donnée à exporter.')),
       );
-      return;
+      return; // Quitte la fonction
     }
 
     try {
-      final excel = Excel.createExcel();
-      final sheet = excel['Services'];
+      final excel = Excel.createExcel(); // Crée un nouveau classeur Excel
+      final sheet = excel['Services']; // Crée une nouvelle feuille nommée 'Services'
 
-      // En-têtes (même logique que pour le web)
+      // Ajoute la ligne d'en-têtes à la feuille Excel
       sheet.appendRow([
         TextCellValue('VAC_IDF'),
         TextCellValue('SVR_LIB'),
@@ -529,47 +508,48 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         TextCellValue('Validé'),
       ]);
 
-      // Données (même logique que pour le web)
-      for (var service in servicesToExport) { // Utilise servicesToExport
+      // Parcourt chaque service de la liste et ajoute ses données à une nouvelle ligne dans Excel
+      for (var service in servicesToExport) {
         sheet.appendRow([
           TextCellValue(service.id),
-          TextCellValue(service.employeeSvrLib), // Utilisez ?? '' pour les String?
+          TextCellValue(service.employeeSvrLib),
           TextCellValue(service.employeeSvrCode),
           TextCellValue(service.employeeName),
           TextCellValue(service.employeeTelPort),
-          TextCellValue(DateFormat('dd/MM/yyyy HH:mm').format(service.startTime)),
-          TextCellValue(DateFormat('dd/MM/yyyy HH:mm').format(service.endTime)),
+          TextCellValue(DateFormat('dd/MM/yyyy HH:mm').format(service.startTime)), // Formate la date de début
+          TextCellValue(DateFormat('dd/MM/yyyy HH:mm').format(service.endTime)), // Formate la date de fin
           TextCellValue(service.locationCode),
           TextCellValue(service.locationLib),
           TextCellValue(service.clientLocationLine3),
           TextCellValue(service.clientSvrCode),
           TextCellValue(service.clientSvrLib),
-          TextCellValue(service.isAbsent ? 'Oui' : 'Non'),
-          TextCellValue(service.isValidated ? 'Oui' : 'Non'),
+          TextCellValue(service.isAbsent ? 'Oui' : 'Non'), // Convertit le booléen en texte
+          TextCellValue(service.isValidated ? 'Oui' : 'Non'), // Convertit le booléen en texte
         ]);
       }
-      excel.delete('Sheet1'); // Supprime la feuille par défaut
+      excel.delete('Sheet1'); // Supprime la feuille par défaut "Sheet1" si elle existe
 
-      final List<int>? bytes = excel.save();
-      if (bytes == null) throw Exception('Erreur lors de la génération Excel');
+      final List<int>? bytes = excel.save(); // Sauvegarde le classeur Excel en tant que liste d'octets
+      if (bytes == null) throw Exception('Erreur lors de la génération Excel'); // Lance une exception si la sauvegarde échoue
 
-      // *** MODIFICATION IMPORTANTE ICI : Utilisation de FilePicker pour choisir le répertoire ***
-      final String? directoryPath = await FilePicker.platform.getDirectoryPath(); // Ouvre la fenêtre de dialogue
+      // *** MODIFICATION IMPORTANTE ICI : Utilisation de FilePicker pour choisir le répertoire de sauvegarde ***
+      final String? directoryPath = await FilePicker.platform.getDirectoryPath(); // Ouvre une fenêtre de dialogue pour que l'utilisateur choisisse un répertoire
       if (directoryPath == null) {
         // L'utilisateur a annulé la sélection du répertoire
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Exportation annulée par l\'utilisateur.'), backgroundColor: Colors.orange),
         );
-        return;
+        return; // Quitte la fonction
       }
 
-      final String fileName = 'services_export.xlsx';
-      final File file = File('$directoryPath/$fileName'); // Utilise le chemin choisi par l'utilisateur
-      await file.writeAsBytes(bytes, flush: true);
+      final String fileName = 'services_export.xlsx'; // Nom du fichier exporté
+      final File file = File('$directoryPath/$fileName'); // Crée le chemin complet du fichier
+      await file.writeAsBytes(bytes, flush: true); // Écrit les octets du fichier Excel dans le fichier
 
-      // Optionnel : Ouvrir le fichier
+      // Optionnel : Ouvre le fichier exporté avec l'application par défaut du système
       await OpenFilex.open(file.path);
 
+      // Affiche un SnackBar de succès avec le chemin du fichier
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Exportation réussie ! Fichier enregistré à : ${file.path}'),
@@ -578,6 +558,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         ),
       );
     } catch (e) {
+      // Gère toute erreur survenant pendant le processus d'exportation
       debugPrint('Erreur lors de l\'export mobile : $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur lors de l\'exportation : $e')),
@@ -585,29 +566,34 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
+  // Méthode appelée lorsque le bouton d'exportation est pressé
   void _onExportPressed() {
-    _exportServicesToExcel(_services); // Exporte tous les services chargés
+    _exportServicesToExcel(_services); // Exporte tous les services actuellement chargés
   }
-
-
 
 
   // Méthode pour construire l'AppBar
   AppBar _buildAppBar(BuildContext context) {
+    // Récupère l'orientation actuelle de l'appareil (portrait ou paysage)
     final orientation = MediaQuery.of(context).orientation;
 
+    // Vérifie si l'orientation est portrait
     if (orientation == Orientation.portrait) {
       // Pour l'orientation Portrait
       return AppBar(
+        // Définit la hauteur de la barre d'outils de l'AppBar en utilisant une valeur responsive
         toolbarHeight: responsive_utils.responsivePadding(context, 80.0), // Hauteur standard pour le titre et le logo
+        // Widget affiché au début de l'AppBar (généralement une icône ou un logo)
         leading: Padding(
           padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 4.0)),
+          // Affiche l'image du logo de l'application
           child: Image.asset(
             'assets/logo_app.png',
             height: responsive_utils.responsiveIconSize(context, 40.0),
             width: responsive_utils.responsiveIconSize(context, 40.0),
           ),
         ),
+        // Titre de l'application affiché au centre de l'AppBar
         title: Text(
           'Prise de services automatique',
           style: TextStyle(
@@ -617,23 +603,32 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           ),
           // Plus besoin de overflow.ellipsis ici car le titre aura plus d'espace
         ),
+        // Centre le titre de l'AppBar
         centerTitle: true,
+        // Couleur de fond de l'AppBar
         backgroundColor: Theme.of(context).primaryColor,
+        // Couleur du premier plan (texte, icônes) de l'AppBar
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         // Les actions sont déplacées vers le 'bottom' pour l'orientation portrait
         bottom: PreferredSize(
+          // Définit la taille préférée pour le widget 'bottom' de l'AppBar
           preferredSize: Size.fromHeight(responsive_utils.responsivePadding(context, 45.0)), // Hauteur pour les boutons d'action
           child: Container(
+            // Couleur de fond pour cette bande inférieure de l'AppBar
             color: Theme.of(context).primaryColor, // Couleur de fond pour cette bande inférieure
+            // Rembourrage horizontal et vertical pour le contenu du conteneur
             padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 8.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
             child: Row(
+              // Centre les enfants de la Row horizontalement
               mainAxisAlignment: MainAxisAlignment.center, // Centrer les boutons
               children: [
                 // Bouton Changer/Importer fichier
-                Expanded( // Permet aux boutons de prendre de l'espace
+                Expanded( // Permet aux boutons de prendre de l'espace disponible
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+                    // Affiche un bouton différent selon si les données sont déjà chargées ou non
                     child: _dataLoaded
+                        // Si les données sont chargées, affiche un bouton "Changer fichier"
                         ? ElevatedButton.icon(
                             onPressed: _importServicesFromExcel,
                             icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Légèrement réduit
@@ -651,6 +646,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                           )
+                        // Si les données ne sont pas chargées, affiche un bouton "Importer services"
                         : ElevatedButton.icon(
                             onPressed: _importServicesFromExcel,
                             icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Légèrement réduit
@@ -673,7 +669,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 SizedBox(width: responsive_utils.responsivePadding(context, 6.0)), // Espacement entre les boutons
 
                 // Bouton Exporter services
-                Expanded( // Permet aux boutons de prendre de l'espace
+                Expanded( // Permet aux boutons de prendre de l'espace disponible
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
                     child: ElevatedButton.icon(
@@ -703,6 +699,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     } else {
       // Pour l'orientation Paysage (votre code existant, ajusté pour la taille des boutons)
       return AppBar(
+        // Définit la hauteur de la barre d'outils pour l'orientation paysage
         toolbarHeight: responsive_utils.responsivePadding(context, 50.0),
         leading: Padding(
           padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 4.0)),
@@ -724,10 +721,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        // Widgets d'action affichés à droite de l'AppBar
         actions: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+            // Affiche un bouton différent selon si les données sont déjà chargées ou non
             child: _dataLoaded
+                // Si les données sont chargées, affiche un bouton "Changer fichier"
                 ? ElevatedButton.icon(
                     onPressed: _importServicesFromExcel,
                     icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Ajusté
@@ -745,6 +745,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   )
+                // Si les données ne sont pas chargées, affiche un bouton "Importer services"
                 : ElevatedButton.icon(
                     onPressed: _importServicesFromExcel,
                     icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Ajusté
@@ -791,21 +792,24 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   // Méthode pour construire le sélecteur de date (maintenant avec les boutons D,F,R)
   Widget _buildDateRangeSelector() {
+    // Récupère l'orientation actuelle de l'appareil
     final orientation = MediaQuery.of(context).orientation;
 
-    // Fonction d'aide interne pour les boutons de colonne
+    // Fonction d'aide interne pour les boutons de colonne (D, F, R)
     Widget buildColumnToggleButton(String label, bool isVisible, ValueChanged<bool> onChanged) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)), // Espacement entre les boutons
         child: InkWell(
-          onTap: () => onChanged(!isVisible),
+          onTap: () => onChanged(!isVisible), // Inverse la visibilité au tap
           borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0)), // Bordures arrondies
           child: Container(
             width: responsive_utils.responsivePadding(context, 70.0), // **Augmenter la largeur** pour accueillir icône + texte côte à côte
             height: responsive_utils.responsivePadding(context, 35.0), // Revenir à une hauteur plus standard pour un bouton avec texte à côté
             decoration: BoxDecoration(
+              // Change la couleur de fond en fonction de la visibilité
               color: isVisible ? Theme.of(context).primaryColor : Colors.grey[400],
               borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0)),
+              // Ajoute une ombre si le bouton est visible
               boxShadow: isVisible ? [
                 BoxShadow(
                   color: Theme.of(context).primaryColor.withOpacity(0.3),
@@ -818,6 +822,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
               mainAxisAlignment: MainAxisAlignment.center, // Centrer horizontalement
               crossAxisAlignment: CrossAxisAlignment.center, // Centrer verticalement
               children: [
+                // Icône qui change en fonction de la visibilité (oeil ouvert/fermé)
                 Icon(
                   isVisible ? Icons.visibility : Icons.visibility_off,
                   color: Colors.white,
@@ -841,10 +846,11 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       );
     }
 
-    // Contenu des contrôles de date
+    // Contenu des contrôles de date (boutons de navigation et sélecteurs de date)
     Widget dateControls = Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        // Bouton pour reculer d'un mois
         IconButton(
           icon: Icon(Icons.arrow_back_ios, size: responsive_utils.responsiveIconSize(context, 16.0)),
           onPressed: () {
@@ -857,6 +863,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
         ),
+        // Contrôle de la date de début
         _buildDateControl(_startDate, (newDate) => setState(() => _startDate = newDate)),
         SizedBox(width: responsive_utils.responsivePadding(context, 4.0)),
         // Séparateur vertical
@@ -866,7 +873,9 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           color: Theme.of(context).colorScheme.primary,
         ),
         SizedBox(width: responsive_utils.responsivePadding(context, 4.0)),
+        // Contrôle de la date de fin
         _buildDateControl(_endDate, (newDate) => setState(() => _endDate = newDate)),
+        // Bouton pour avancer d'un mois
         IconButton(
           icon: Icon(Icons.arrow_forward_ios, size: responsive_utils.responsiveIconSize(context, 16.0)),
           onPressed: () {
@@ -882,20 +891,23 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       ],
     );
 
-    // Les boutons D,F,R
+    // Les boutons D,F,R (pour activer/désactiver les colonnes Début, Fin, Résultat)
     Widget columnToggleButtons = Row(
       mainAxisSize: MainAxisSize.min, // S'assure que la Row prend juste la taille nécessaire
       children: [
+        // Bouton pour la colonne "Début"
         buildColumnToggleButton('D', _showDebutColumn, (newStatus) {
           setState(() {
             _showDebutColumn = newStatus;
           });
         }),
+        // Bouton pour la colonne "Fin"
         buildColumnToggleButton('F', _showFinColumn, (newStatus) {
           setState(() {
             _showFinColumn = newStatus;
           });
         }),
+        // Bouton pour la colonne "Résultat"
         buildColumnToggleButton('R', _showResultColumn, (newStatus) {
           setState(() {
             _showResultColumn = newStatus;
@@ -907,6 +919,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 10.0), vertical: responsive_utils.responsivePadding(context, 4.0)), // Ajusté pour éviter l'overflow vertical
       color: Colors.grey[100],
+      // Affiche la mise en page en fonction de l'orientation
       child: orientation == Orientation.portrait
           ? Column(
               mainAxisSize: MainAxisSize.min,
@@ -953,11 +966,12 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode d'aide pour les contrôles individuels de date
+  // Méthode d'aide pour les contrôles individuels de date (boutons +/- et sélecteur de date)
   Widget _buildDateControl(DateTime date, ValueChanged<DateTime> onDateChanged) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Bouton pour décrémenter le jour
         IconButton(
           icon: Icon(Icons.remove, size: responsive_utils.responsiveIconSize(context, 16.0)),
           onPressed: () => _changeDateByDay(date, -1, onDateChanged),
@@ -966,6 +980,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           constraints: const BoxConstraints(),
         ),
         SizedBox(width: responsive_utils.responsivePadding(context, 3.0)),
+        // GestureDetector pour ouvrir le sélecteur de date au tap
         GestureDetector(
           onTap: () => _selectDate(context, date, onDateChanged),
           child: Container(
@@ -982,6 +997,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           ),
         ),
         SizedBox(width: responsive_utils.responsivePadding(context, 3.0)),
+        // Bouton pour incrémenter le jour
         IconButton(
           icon: Icon(Icons.add, size: responsive_utils.responsiveIconSize(context, 16.0)),
           onPressed: () => _changeDateByDay(date, 1, onDateChanged),
@@ -998,18 +1014,18 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 9.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
       child: TextField(
-        controller: _searchController,
+        controller: _searchController, // Contrôleur pour le champ de texte
         decoration: InputDecoration(
-          labelText: 'Rechercher par nom d\'employé',
-          hintText: 'Entrez le nom de l\'employé...',
-          prefixIcon: Icon(Icons.search, size: responsive_utils.responsiveIconSize(context, 12.0)),
+          labelText: 'Rechercher par nom d\'employé', // Texte du label
+          hintText: 'Entrez le nom de l\'employé...', // Texte d'indication
+          prefixIcon: Icon(Icons.search, size: responsive_utils.responsiveIconSize(context, 12.0)), // Icône de recherche
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
           ),
           contentPadding: EdgeInsets.symmetric(vertical: responsive_utils.responsivePadding(context, 6.0), horizontal: responsive_utils.responsivePadding(context, 6.0)),
-          isDense: true,
+          isDense: true, // Rend le champ de texte plus compact
         ),
-        style: TextStyle(fontSize: responsive_utils.responsiveFontSize(context, 10.0)),
+        style: TextStyle(fontSize: responsive_utils.responsiveFontSize(context, 10.0)), // Style du texte saisi
       ),
     );
   }
@@ -1020,6 +1036,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 10.0), vertical: responsive_utils.responsivePadding(context, 6.0)),
       child: Row(
         children: [
+          // Affiche l'en-tête "Début" si _showDebutColumn est vrai
           if (_showDebutColumn) // Condition pour la colonne "Début"
             Expanded(
               flex: 2,
@@ -1034,6 +1051,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 ),
               ),
             ),
+          // Affiche l'en-tête "Fin" si _showFinColumn est vrai
           if (_showFinColumn) // Condition pour la colonne "Fin"
             Expanded(
               flex: 2,
@@ -1048,6 +1066,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 ),
               ),
             ),
+          // Affiche l'en-tête "Résultat" si _showResultColumn est vrai
           if (_showResultColumn) // Condition pour la colonne "Résultat"
             Expanded(
               flex: 1,
@@ -1070,25 +1089,30 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   // Méthode pour construire une liste de services (colonne)
   Widget _buildServiceColumn(List<Service> services, ScrollController controller, TimeCardType type) {
     return Expanded(
+      // La flexibilité de la colonne varie en fonction du type (résultat ou autre)
       flex: type == TimeCardType.result ? 1 : 2, // Flexibilité différente pour la colonne Résultat
       child: ListView.builder(
-        controller: controller,
+        controller: controller, // Contrôleur de défilement pour synchronisation
         padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 5.0)),
-        itemCount: services.length,
+        itemCount: services.length, // Nombre d'éléments dans la liste
         itemBuilder: (context, index) {
-          final service = services[index];
+          final service = services[index]; // Récupère le service actuel
           return TimeDetailCard(
             service: service,
             type: type,
+            // Rappel lorsque le statut "absent" est modifié
             onAbsentPressed: (newStatus) {
               _handleAbsentToggle(service.id, newStatus);
             },
+            // Rappel lorsque l'heure est modifiée
             onModifyTime: (currentTime) {
               _handleModifyTime(service.id, currentTime, type); // Passe le type correct
             },
+            // Rappel lorsque le statut "validé" est modifié
             onValidate: (newStatus) {
               _handleValidate(service.id, newStatus);
             },
+            // Rappel lorsque la carte de service est tapée
             onTap: () {
               _scrollToService(service);
             },
@@ -1108,10 +1132,10 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center, // Centrer le contenu de la Row
         children: [
-          // const Spacer(), // **SUPPRIMEZ CETTE LIGNE**
+          // const Spacer(), // **SUPPRIMEZ CETTE LIGNE** (commenté car la demande était de le supprimer)
           Flexible(
             child: Text(
-              // Si le texte est toujours tronqué ici, vous devrez réduire sa taille
+              // Affiche le copyright et la date/heure actuelle formatée
               "© BMSoft 2025, tous droits réservés    ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
               style: TextStyle(
                 fontSize: responsive_utils.responsiveFontSize(context, 9.0), // Peut-être réduire à 8.0 ou 7.0 si ça déborde encore
@@ -1126,75 +1150,20 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode pour construire une puce de résumé flottante
-  Widget _buildSummaryChip(IconData icon, String label, String value, Color color) {
-    return Card(
-      color: color,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0))),
-      elevation: 4,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
-        child: Row(
-          mainAxisSize: MainAxisSize.min, // Occupe le moins de largeur possible
-          children: [
-            Icon(icon, color: Colors.white, size: responsive_utils.responsiveIconSize(context, 16.0)),
-            SizedBox(width: responsive_utils.responsivePadding(context, 4.0)),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(color: Colors.white, fontSize: responsive_utils.responsiveFontSize(context, 10.0)),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: responsive_utils.responsiveFontSize(context, 12.0)),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Méthode pour construire les widgets flottants de résumé
-  Widget _buildSummaryFloatingWidgets() {
-    return Positioned(
-      bottom: responsive_utils.responsivePadding(context, 30.0),
-      right: responsive_utils.responsivePadding(context, 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _buildSummaryChip(Icons.calendar_today, 'Mois', DateFormat('MMMM', 'fr_FR').format(_startDate), Colors.blueAccent),
-          SizedBox(width: responsive_utils.responsivePadding(context, 5.0)), // Utilisez 'width' pour Row
-          _buildSummaryChip(Icons.balance, 'Prévu', '${_totalScheduledHours.toStringAsFixed(1)}H', Colors.purpleAccent),
-          SizedBox(width: responsive_utils.responsivePadding(context, 5.0)), // Utilisez 'width' pour Row
-          _buildSummaryChip(Icons.access_time, 'Travaillé', '${_totalWorkedHours.toStringAsFixed(1)}H', Colors.redAccent),
-          SizedBox(width: responsive_utils.responsivePadding(context, 5.0)), // Utilisez 'width' pour Row
-          _buildSummaryChip(Icons.access_time, 'Restant', '${_remainingHours.toStringAsFixed(1)}H', Colors.orangeAccent),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(context),
+      appBar: _buildAppBar(context), // Construit la barre d'application
       body: Stack(
         children: <Widget>[
           Column(
             children: <Widget>[
-              _buildDateRangeSelector(),
-              _buildSearchBar(),
-              _buildColumnHeaders(),
+              _buildDateRangeSelector(), // Construit le sélecteur de plage de dates
+              _buildSearchBar(), // Construit la barre de recherche
+              _buildColumnHeaders(), // Construit les en-têtes de colonne
+              // Affiche un message si aucune donnée n'est chargée
               if (!_dataLoaded) ...[
-                const Spacer(),
+                const Spacer(), // Prend tout l'espace disponible verticalement
                 Padding(
                   padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 15.0)),
                   child: Text(
@@ -1207,25 +1176,27 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                const Spacer(),
+                const Spacer(), // Prend tout l'espace disponible verticalement
               ],
               Expanded(
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start, // Alignement en haut des colonnes
                   children: [
+                    // Affiche la colonne "Début" si _showDebutColumn est vrai
                     if (_showDebutColumn) // Conditionnel
                       _buildServiceColumn(_filteredAndSortedDebutServices, _debutScrollController, TimeCardType.debut),
+                    // Affiche la colonne "Fin" si _showFinColumn est vrai
                     if (_showFinColumn) // Conditionnel
                       _buildServiceColumn(_filteredAndSortedFinServices, _finScrollController, TimeCardType.fin),
+                    // Affiche la colonne "Résultat" si _showResultColumn est vrai
                     if (_showResultColumn) // Conditionnel
                       _buildServiceColumn(_filteredAndSortedDebutServices, _resultatScrollController, TimeCardType.result),
                   ],
                 ),
               ),
-              _buildFooter(),
+              _buildFooter(), // Construit le pied de page
             ],
           ),
-          //_buildSummaryFloatingWidgets(),
         ],
       ),
     );
