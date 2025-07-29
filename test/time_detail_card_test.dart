@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mon_projet/models/service.dart';
 import 'package:mon_projet/time_detail_card.dart';
-import 'package:intl/intl.dart';
-import 'package:mon_projet/utils/time_card_helpers.dart' as helpers;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:ui'; // Import for PlatformDispatcher.instance.views
 
