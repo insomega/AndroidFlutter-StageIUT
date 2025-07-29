@@ -156,12 +156,13 @@ class TimeDetailCard extends StatelessWidget {
               Icon(Icons.watch_later_outlined, size: helpers.responsiveIconSize(context, 15.0)), // Icône d'horloge.
               Flexible(
                 child: Text(
-                  " ${helpers.formatDuration(calculatedDuration)}", // Durée formatée.
+                  key: const Key('calculatedDurationText'), // <--- ADD THIS KEY
+                  " ${helpers.formatDuration(calculatedDuration)}",
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: helpers.responsiveFontSize(context, 11.0),
-                        fontWeight: FontWeight.bold,
-                        color: calculatedDuration.isNegative ? Colors.green : Colors.red, // Couleur de la durée (vert si négatif, rouge sinon).
-                      ),
+                    fontSize: helpers.responsiveFontSize(context, 11.0),
+                    fontWeight: FontWeight.bold,
+                    color: calculatedDuration.isNegative ? Colors.green : Colors.red,
+                  ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
@@ -183,7 +184,19 @@ class TimeDetailCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Icon(Icons.watch_later_outlined, size: helpers.responsiveIconSize(context, 15.0)),
-                Flexible(child: Text(" ${helpers.formatDuration(calculatedDuration)}", style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: helpers.responsiveFontSize(context, 11.0), fontWeight: FontWeight.bold, color: calculatedDuration.isNegative ? Colors.green : Colors.red), overflow: TextOverflow.ellipsis, maxLines: 1)),
+                Flexible(
+                  child: Text(
+                    key: const Key('calculatedDurationText'), // <--- ADD THIS KEY HERE TOO
+                    " ${helpers.formatDuration(calculatedDuration)}",
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontSize: helpers.responsiveFontSize(context, 11.0),
+                      fontWeight: FontWeight.bold,
+                      color: calculatedDuration.isNegative ? Colors.green : Colors.red,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
               ],
             ),
           ),
@@ -299,38 +312,57 @@ class TimeDetailCard extends StatelessWidget {
   // Méthode d'aide privée pour construire les boutons d'action au bas de la carte (Modifier, Absent/Présent, Valider/Dévalider).
   // S'adapte à l'orientation portrait ou paysage.
   Widget _buildActionButtons(BuildContext context) {
-    final orientation = MediaQuery.of(context).orientation; // Obtient l'orientation actuelle.
+    final orientation = MediaQuery.of(context).orientation;
 
     if (orientation == Orientation.portrait) {
-      // Layout pour le mode portrait (boutons en colonne, pleine largeur).
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch, // Étire les boutons pour prendre toute la largeur disponible.
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Bouton "Modifier" (si le type n'est pas 'result').
+          // Modifier button
           if (type != TimeCardType.result) ...[
             ElevatedButton.icon(
-              onPressed: onModifyTime != null ? () => onModifyTime!(type == TimeCardType.debut ? service.startTime : service.endTime) : null, // Active le bouton si le callback est fourni.
-              icon: Icon(Icons.edit, size: helpers.responsiveIconSize(context, 16.0)), // Icône d'édition.
+              key: const Key('modifyTimeButtonPortrait'),
+              onPressed: onModifyTime != null
+                  ? () async {
+                      final initialTime = type == TimeCardType.debut ? service.startTime : service.endTime;
+                      final pickedTime = await showTimePicker( // <-- showTimePicker est appelé ici
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(initialTime),
+                      );
+                      if (pickedTime != null) {
+                        final newDateTime = DateTime(
+                          initialTime.year,
+                          initialTime.month,
+                          initialTime.day,
+                          pickedTime.hour,
+                          pickedTime.minute,
+                        );
+                        onModifyTime!(newDateTime);
+                      }
+                    }
+                  : null,
+              icon: Icon(Icons.edit, size: helpers.responsiveIconSize(context, 16.0)),
               label: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text('Modifier', style: TextStyle(fontSize: helpers.responsiveFontSize(context, 10.0))),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade600, // Couleur de fond du bouton.
-                foregroundColor: Colors.white, // Couleur du texte et de l'icône.
+                backgroundColor: Colors.blue.shade600,
+                foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: helpers.responsivePadding(context, 3.0), vertical: helpers.responsivePadding(context, 4.0)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(helpers.responsivePadding(context, 4.0))),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Réduit la zone de tap pour le bouton.
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
-            SizedBox(height: helpers.responsivePadding(context, 5.0)), // Espacement vertical.
+            SizedBox(height: helpers.responsivePadding(context, 5.0)),
           ],
 
-          // Bouton "Absent/Présent".
+          // Absent/Présent button
           ElevatedButton(
-            onPressed: onAbsentPressed != null ? () => onAbsentPressed!(!service.isAbsent) : null, // Active le bouton si le callback est fourni, inverse le statut d'absence.
+            key: const Key('absentButtonPortrait'),
+            onPressed: onAbsentPressed != null ? () => onAbsentPressed!(!service.isAbsent) : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: service.isAbsent ? Colors.red.shade700 : Colors.blueGrey.shade600, // Couleur basée sur le statut d'absence.
+              backgroundColor: service.isAbsent ? Colors.red.shade700 : Colors.blueGrey.shade600,
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: helpers.responsivePadding(context, 3.0), vertical: helpers.responsivePadding(context, 4.0)),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(helpers.responsivePadding(context, 4.0))),
@@ -338,28 +370,28 @@ class TimeDetailCard extends StatelessWidget {
             ),
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              // Le texte du bouton est toujours "Absent" quel que soit le statut actuel. Ceci pourrait être une faute de frappe et devrait probablement basculer entre "Absent" et "Présent".
               child: Text(
-                service.isAbsent ? 'Absent' : 'Absent',
+                service.isAbsent ? 'Absent' : 'Absent', // Still 'Absent' for both states as per your last request.
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold, fontSize: helpers.responsiveFontSize(context, 10.0)),
               ),
             ),
           ),
-          SizedBox(height: helpers.responsivePadding(context, 5.0)), // Espacement vertical.
+          SizedBox(height: helpers.responsivePadding(context, 5.0)),
 
-          // Bouton "Valider/Dévalider".
+          // Valider/Dévalider button
           ElevatedButton.icon(
-            onPressed: onValidate != null && !service.isAbsent ? () => onValidate!(!service.isValidated) : null, // Active si le callback est fourni et si le service n'est pas absent.
-            icon: Icon(service.isValidated ? Icons.undo : Icons.check, size: helpers.responsiveIconSize(context, 16.0)), // Icône changeante.
+            key: const Key('validateButtonPortrait'),
+            onPressed: onValidate != null && !service.isAbsent ? () => onValidate!(!service.isValidated) : null,
+            icon: Icon(service.isValidated ? Icons.undo : Icons.check, size: helpers.responsiveIconSize(context, 16.0)),
             label: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                service.isValidated ? 'Dévalider' : 'Valider', // Texte changeant.
+                service.isValidated ? 'Dévalider' : 'Valider',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: helpers.responsiveFontSize(context, 10.0)),
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: service.isAbsent ? Colors.grey.shade400 : (service.isValidated ? Colors.orange.shade600 : Colors.green.shade600), // Couleur basée sur le statut et l'absence.
+              backgroundColor: service.isAbsent ? Colors.grey.shade400 : (service.isValidated ? Colors.orange.shade600 : Colors.green.shade600),
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: helpers.responsivePadding(context, 3.0), vertical: helpers.responsivePadding(context, 4.0)),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(helpers.responsivePadding(context, 4.0))),
@@ -412,44 +444,47 @@ class TimeDetailCard extends StatelessWidget {
   // La méthode `build` est appelée pour construire l'interface utilisateur de ce widget.
   @override
   Widget build(BuildContext context) {
-    // Détermine l'heure à afficher en fonction du type de carte.
     final DateTime displayTime = type == TimeCardType.debut ? service.startTime : service.endTime;
 
-    // Calcule la durée. Si c'est une carte de début, c'est la différence entre maintenant et l'heure de début.
-    // Si c'est une carte de fin, c'est la différence entre maintenant et l'heure de fin.
     Duration calculatedDuration;
-    if (type == TimeCardType.debut) {
+    // Pour le type 'result', la durée est la différence entre les heures de début et de fin du service.
+    // Pour les autres types (debut, fin), vous calculez la différence avec l'heure actuelle.
+    if (type == TimeCardType.result) {
+      calculatedDuration = service.endTime.difference(service.startTime); // Correction ici !
+    } else if (type == TimeCardType.debut) {
       calculatedDuration = DateTime.now().difference(service.startTime);
-    } else {
+    } else { // type == TimeCardType.fin
       calculatedDuration = DateTime.now().difference(service.endTime);
     }
 
+
     return GestureDetector(
-      onTap: onTap, // Permet à la carte d'être tapable.
+      onTap: onTap,
       child: Card(
-        color: service.isAbsent ? Colors.red.shade100 : null, // Change la couleur de fond si l'employé est absent.
-        margin: EdgeInsets.symmetric(horizontal: helpers.responsivePadding(context, 5.0), vertical: helpers.responsivePadding(context, 7.0)), // Marges responsives.
-        elevation: 2.0, // Ombre de la carte.
+        color: service.isAbsent ? Colors.red.shade100 : null,
+        margin: EdgeInsets.symmetric(horizontal: helpers.responsivePadding(context, 5.0), vertical: helpers.responsivePadding(context, 7.0)),
+        elevation: 2.0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(helpers.responsivePadding(context, 5.0)), // Rayon des bordures de la carte.
-          side: BorderSide(color: Colors.grey.shade200, width: 1.0), // Bordure de la carte.
+          borderRadius: BorderRadius.circular(helpers.responsivePadding(context, 5.0)),
+          side: BorderSide(color: Colors.grey.shade200, width: 1.0),
         ),
         child: Padding(
-          padding: EdgeInsets.all(helpers.responsivePadding(context, 8.0)), // Padding interne de la carte.
+          padding: EdgeInsets.all(helpers.responsivePadding(context, 8.0)),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, // Aligne le contenu de la colonne au début.
-            mainAxisSize: MainAxisSize.min, // La colonne prend la taille minimale requise par ses enfants.
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildHeader(context), // Construit l'en-tête de la carte.
-              SizedBox(height: helpers.responsivePadding(context, 5.0)), // Espace vertical.
-              // Affiche les sections de temps et de localisation si le type n'est pas 'result'.
+              _buildHeader(context),
+              SizedBox(height: helpers.responsivePadding(context, 5.0)),
+              // Correction ici : Affichez _buildTimeAndDuration toujours,
+              // mais _buildLocation et l'espace seulement si ce n'est PAS 'result'
+              _buildTimeAndDuration(context, displayTime, calculatedDuration), // <-- Déplacé en dehors de la condition
               if (type != TimeCardType.result) ...[
-                _buildTimeAndDuration(context, displayTime, calculatedDuration), // Construit la section temps et durée.
-                SizedBox(height: helpers.responsivePadding(context, 5.0)), // Espace vertical.
-                _buildLocation(context), // Construit la section de localisation.
-                SizedBox(height: helpers.responsivePadding(context, 7.0)), // Espace vertical.
+                SizedBox(height: helpers.responsivePadding(context, 5.0)),
+                _buildLocation(context),
+                SizedBox(height: helpers.responsivePadding(context, 7.0)),
               ],
-              _buildActionButtons(context), // Construit les boutons d'action.
+              _buildActionButtons(context),
             ],
           ),
         ),

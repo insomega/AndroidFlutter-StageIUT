@@ -13,7 +13,7 @@ class Service {
   final String employeeSvrLib; // Libellé de service de l'employé (SVR_LIB).
   final String employeeTelPort; // Numéro de téléphone portable de l'employé (SVR_TELPOR).
 
-  final DateTime startTime; // Heure de début du service (VAC_START_HOUR).
+  late final DateTime startTime; // Heure de début du service (VAC_START_HOUR).
   DateTime endTime; // Heure de fin du service (VAC_END_HOUR), peut être modifiée.
   bool isAbsent; // Indique si l'employé est absent pour ce service.
   bool isValidated; // Indique si le service a été validé.
