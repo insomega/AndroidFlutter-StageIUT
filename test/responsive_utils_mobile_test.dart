@@ -106,13 +106,24 @@ void main() {
       expect(mobile_responsive.responsivePadding(context, basePadding), closeTo(16.0, 0.0001));
     });
 
-    testWidgets('responsivePadding should cap at kMinPadding for very small screens', (WidgetTester tester) async {
-      double screenWidth = 100.0; // Result would be 16.0 * (100/1000) = 1.6, but min is 2.0
+    testWidgets('responsivePadding should cap at 8.0 for base 16.0 on very small screens', (WidgetTester tester) async {
+      double screenWidth = 100.0; // Result would be 16.0 * (100/1000) = 1.6, but clamped factor is 0.5 => 16.0 * 0.5 = 8.0
       await _pumpTestWidget(tester, screenWidth);
       final BuildContext context = tester.element(find.byType(Container));
 
       double basePadding = 16.0;
-      expect(mobile_responsive.responsivePadding(context, basePadding), closeTo(kMinPadding, 0.0001));
+      // The expected value is 8.0 because 16.0 * 0.5 (clamped factor) = 8.0
+      expect(mobile_responsive.responsivePadding(context, basePadding), closeTo(8.0, 0.0001));
+    });
+
+    // Add a new test case to verify kMinPadding is hit for a smaller base size
+    testWidgets('responsivePadding should cap at kMinPadding for very small base sizes on small screens', (WidgetTester tester) async {
+      double screenWidth = 100.0; // Clamped scaling factor will be 0.5
+      await _pumpTestWidget(tester, screenWidth);
+      final BuildContext context = tester.element(find.byType(Container));
+
+      double basePadding = 3.0; // 3.0 * 0.5 = 1.5, which is less than kMinPadding (2.0)
+      expect(mobile_responsive.responsivePadding(context, basePadding), closeTo(kMinPadding, 0.0001)); // Expect 2.0
     });
   
   

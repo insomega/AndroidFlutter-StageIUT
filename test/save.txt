@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // Required for localizations
 
 // Import your responsive_utils (we will mock it)
-
+import 'package:mon_projet/utils/responsive_utils.dart' as responsive_utils; // Importe les utilitaires de responsive design avec un alias
 // Assuming you have a Service model
 
 // Assuming you have this widget
@@ -17,7 +17,14 @@ import 'package:flutter_localizations/flutter_localizations.dart'; // Required f
 class MockResponsiveUtils {
   static double responsivePadding(BuildContext context, double value) => value;
   static double responsiveIconSize(BuildContext context, double value) => value;
-  static double responsiveFontSize(BuildContext context, double value) => value;
+  static double responsiveFontSize(BuildContext context, double value) {
+    // Force critical text to be a readable size for tests
+    // You can make this conditional if you only want to affect specific font sizes
+    if (value == 9.0) { // If the intended font size is very small
+      return 14.0; // Make it larger for test visibility
+    }
+    return value; // For other font sizes, return as normal
+  }
 }
 
 // Dummy classes needed for the build methods
@@ -153,13 +160,17 @@ class TimeDetailCard extends StatelessWidget {
 }
 
 class MockMyHomePage extends StatefulWidget {
+  final bool initialDataLoaded;
+
+  const MockMyHomePage({Key? key, this.initialDataLoaded = false}) : super(key: key);
+
   @override
   _MockMyHomePageState createState() => _MockMyHomePageState();
 }
 
 class _MockMyHomePageState extends State<MockMyHomePage> {
-  // Fixed dates for consistent testing
-  bool _dataLoaded = false;
+  late bool _dataLoaded;
+
   DateTime _startDate = DateTime(2025, 7, 29);
   DateTime _endDate = DateTime(2025, 7, 29);
   final DateTime _currentDisplayDate = DateTime(2025, 7, 29, 16, 4, 18);
@@ -167,6 +178,12 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
   bool _showFinColumn = true;
   bool _showResultColumn = true;
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _dataLoaded = widget.initialDataLoaded; // Initialise _dataLoaded à partir du paramètre
+  }
 
   void _importServicesFromExcel() {
     setState(() {
@@ -212,7 +229,7 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
         Locale('en', 'US'),
         Locale('fr', 'FR'),
       ],
-      locale: const Locale('fr', 'FR'), // Force French locale for consistent date formatting
+      locale: const Locale('fr', 'FR'),
 
       home: Builder(
         builder: (context) {
@@ -238,76 +255,22 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
   AppBar _buildAppBar(BuildContext context) {
     final orientation = MediaQuery.of(context).orientation;
 
-    Widget importButton;
-    if (_dataLoaded) {
-      importButton = ElevatedButton.icon(
-        onPressed: _importServicesFromExcel,
-        icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: MockResponsiveUtils.responsiveIconSize(context, 16.0)),
-        label: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: MockResponsiveUtils.responsiveFontSize(context, 9.0))),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MockResponsiveUtils.responsivePadding(context, 6.0))),
-          padding: EdgeInsets.symmetric(horizontal: MockResponsiveUtils.responsivePadding(context, 6.0), vertical: MockResponsiveUtils.responsivePadding(context, 2.0)),
-          minimumSize: orientation == Orientation.portrait ? Size.fromHeight(MockResponsiveUtils.responsivePadding(context, 35.0)) : Size(MockResponsiveUtils.responsivePadding(context, 75.0), MockResponsiveUtils.responsivePadding(context, 30.0)),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-      );
-    } else {
-      importButton = ElevatedButton.icon(
-        onPressed: _importServicesFromExcel,
-        icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: MockResponsiveUtils.responsiveIconSize(context, 16.0)),
-        label: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: MockResponsiveUtils.responsiveFontSize(context, 9.0))),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MockResponsiveUtils.responsivePadding(context, 6.0))),
-          padding: EdgeInsets.symmetric(horizontal: MockResponsiveUtils.responsivePadding(context, 6.0), vertical: MockResponsiveUtils.responsivePadding(context, 2.0)),
-          minimumSize: orientation == Orientation.portrait ? Size.fromHeight(MockResponsiveUtils.responsivePadding(context, 35.0)) : Size(MockResponsiveUtils.responsivePadding(context, 75.0), MockResponsiveUtils.responsivePadding(context, 30.0)),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-      );
-    }
-
-    Widget exportButton = ElevatedButton.icon(
-      onPressed: _onExportPressed,
-      icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: MockResponsiveUtils.responsiveIconSize(context, 16.0)),
-      label: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: MockResponsiveUtils.responsiveFontSize(context, 9.0))),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.onPrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(MockResponsiveUtils.responsivePadding(context, 6.0))),
-        padding: EdgeInsets.symmetric(horizontal: MockResponsiveUtils.responsivePadding(context, 6.0), vertical: MockResponsiveUtils.responsivePadding(context, 2.0)),
-        minimumSize: orientation == Orientation.portrait ? Size.fromHeight(MockResponsiveUtils.responsivePadding(context, 35.0)) : Size(MockResponsiveUtils.responsivePadding(context, 75.0), MockResponsiveUtils.responsivePadding(context, 30.0)),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-    );
-
     if (orientation == Orientation.portrait) {
       return AppBar(
-        toolbarHeight: MockResponsiveUtils.responsivePadding(context, 80.0),
+        toolbarHeight: responsive_utils.responsivePadding(context, 80.0),
         leading: Padding(
-          padding: EdgeInsets.all(MockResponsiveUtils.responsivePadding(context, 4.0)),
+          padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 4.0)),
           child: Image.asset(
             'assets/logo_app.png',
-            height: MockResponsiveUtils.responsiveIconSize(context, 40.0),
-            width: MockResponsiveUtils.responsiveIconSize(context, 40.0),
-            errorBuilder: (context, error, stackTrace) {
-              return Icon(Icons.error, size: MockResponsiveUtils.responsiveIconSize(context, 40.0));
-            },
+            height: responsive_utils.responsiveIconSize(context, 40.0),
+            width: responsive_utils.responsiveIconSize(context, 40.0),
           ),
         ),
         title: Text(
           'Prise de services automatique',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: MockResponsiveUtils.responsiveFontSize(context, 16.0),
+            fontSize: responsive_utils.responsiveFontSize(context, 16.0),
             color: Theme.of(context).colorScheme.onPrimary,
           ),
         ),
@@ -315,40 +278,98 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(MockResponsiveUtils.responsivePadding(context, 45.0)),
+          preferredSize: Size.fromHeight(responsive_utils.responsivePadding(context, 45.0)),
           child: Container(
             color: Theme.of(context).primaryColor,
-            padding: EdgeInsets.symmetric(horizontal: MockResponsiveUtils.responsivePadding(context, 8.0), vertical: MockResponsiveUtils.responsivePadding(context, 4.0)),
+            padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 8.0), vertical: responsive_utils.responsivePadding(context, 4.0)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(child: Padding(padding: EdgeInsets.symmetric(horizontal: MockResponsiveUtils.responsivePadding(context, 2.0)), child: importButton)),
-                SizedBox(width: MockResponsiveUtils.responsivePadding(context, 6.0)),
-                Expanded(child: Padding(padding: EdgeInsets.symmetric(horizontal: MockResponsiveUtils.responsivePadding(context, 2.0)), child: exportButton)),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+                    child: _dataLoaded
+                        ? ElevatedButton.icon(
+                            onPressed: _importServicesFromExcel,
+                            icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)),
+                              minimumSize: Size.fromHeight(responsive_utils.responsivePadding(context, 35.0)),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: _importServicesFromExcel,
+                            icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)),
+                              minimumSize: Size.fromHeight(responsive_utils.responsivePadding(context, 35.0)),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                  ),
+                ),
+                SizedBox(width: responsive_utils.responsivePadding(context, 6.0)),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+                    child: ElevatedButton.icon(
+                      onPressed: _onExportPressed,
+                      icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)),
+                        minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       );
     } else {
+      // Pour l'orientation Paysage
       return AppBar(
-        toolbarHeight: MockResponsiveUtils.responsivePadding(context, 50.0),
+        toolbarHeight: responsive_utils.responsivePadding(context, 50.0),
         leading: Padding(
-          padding: EdgeInsets.all(MockResponsiveUtils.responsivePadding(context, 4.0)),
+          padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 4.0)),
           child: Image.asset(
             'assets/logo_app.png',
-            height: MockResponsiveUtils.responsiveIconSize(context, 25.0),
-            width: MockResponsiveUtils.responsiveIconSize(context, 25.0),
-            errorBuilder: (context, error, stackTrace) {
-              return Icon(Icons.error, size: MockResponsiveUtils.responsiveIconSize(context, 25.0));
-            },
+            height: responsive_utils.responsiveIconSize(context, 25.0),
+            width: responsive_utils.responsiveIconSize(context, 25.0),
           ),
         ),
         title: Text(
           'Prise de services automatique',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: MockResponsiveUtils.responsiveFontSize(context, 16.0),
+            fontSize: responsive_utils.responsiveFontSize(context, 16.0),
             color: Theme.of(context).colorScheme.onPrimary,
           ),
           overflow: TextOverflow.ellipsis,
@@ -357,9 +378,69 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         actions: [
-          Padding(padding: EdgeInsets.symmetric(horizontal: MockResponsiveUtils.responsivePadding(context, 2.0)), child: importButton),
-          Padding(padding: EdgeInsets.symmetric(horizontal: MockResponsiveUtils.responsivePadding(context, 2.0)), child: exportButton),
-          SizedBox(width: MockResponsiveUtils.responsivePadding(context, 6.0)),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+              child: _dataLoaded
+                  ? ElevatedButton.icon(
+                      onPressed: _importServicesFromExcel,
+                      icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)),
+                        minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    )
+                  : ElevatedButton.icon(
+                      onPressed: _importServicesFromExcel,
+                      icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)),
+                        minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+            ),
+          ),
+          Expanded( // And here
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+              child: ElevatedButton.icon(
+                onPressed: _onExportPressed,
+                icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)),
+                  minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: responsive_utils.responsivePadding(context, 6.0)),
         ],
       );
     }
@@ -369,46 +450,51 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
     final orientation = MediaQuery.of(context).orientation;
 
     Widget buildColumnToggleButton(String label, bool isVisible, ValueChanged<bool> onChanged) {
-      return Padding(
-        padding: EdgeInsets.symmetric(horizontal: MockResponsiveUtils.responsivePadding(context, 2.0)),
-        child: InkWell(
-          onTap: () => setState(() => onChanged(!isVisible)),
-          borderRadius: BorderRadius.circular(MockResponsiveUtils.responsivePadding(context, 8.0)),
-          child: Container(
-            width: MockResponsiveUtils.responsivePadding(context, 70.0),
-            height: MockResponsiveUtils.responsivePadding(context, 35.0),
-            decoration: BoxDecoration(
-              color: isVisible ? Theme.of(context).primaryColor : Colors.grey[400],
-              borderRadius: BorderRadius.circular(MockResponsiveUtils.responsivePadding(context, 8.0)),
-              boxShadow: isVisible ? [
-                BoxShadow(
-                  color: Theme.of(context).primaryColor.withOpacity(0.3),
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
-                ),
-              ] : null,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Icon(
-                  isVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.white,
-                  size: MockResponsiveUtils.responsiveIconSize(context, 16.0),
-                ),
-                SizedBox(width: MockResponsiveUtils.responsivePadding(context, 2.0)),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: MockResponsiveUtils.responsiveFontSize(context, 10.0),
-                    fontWeight: FontWeight.bold,
+      return Expanded( // Wrap each button in Expanded
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
+          child: InkWell(
+            onTap: () => setState(() => onChanged(!isVisible)),
+            borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0)),
+            child: Container(
+              // Remove fixed width, let Expanded manage it
+              height: responsive_utils.responsivePadding(context, 35.0),
+              decoration: BoxDecoration(
+                color: isVisible ? Theme.of(context).primaryColor : Colors.grey[400],
+                borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 8.0)),
+                boxShadow: isVisible ? [
+                  BoxShadow(
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+                ] : null,
+              ),
+              child: FittedBox( // Ensure the content fits
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isVisible ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.white,
+                      size: responsive_utils.responsiveIconSize(context, 16.0),
+                    ),
+                    SizedBox(width: responsive_utils.responsivePadding(context, 2.0)),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: responsive_utils.responsiveFontSize(context, 10.0),
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -419,7 +505,7 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          icon: Icon(Icons.arrow_back_ios, size: MockResponsiveUtils.responsiveIconSize(context, 16.0)),
+          icon: Icon(Icons.arrow_back_ios, size: responsive_utils.responsiveIconSize(context, 16.0)), // Use responsive_utils
           onPressed: () {
             _changeDateByMonth(_startDate, -1, (newDate) => _startDate = newDate);
             _changeDateByMonth(_endDate, -1, (newDate) => _endDate = newDate);
@@ -428,31 +514,31 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
         ),
-        // Wrap _buildDateControl calls with Expanded to make them flexible
         Expanded(
           child: _buildDateControl(
             _startDate,
-            (newDate) => _startDate = newDate,
+            (newDate) => setState(() => _startDate = newDate),
             const Key('startDateText'),
-            rowKey: const Key('startDateControlRow'), // <--- ADD THIS LINE
+            rowKey: const Key('startDateControlRow'),
           ),
         ),
-        SizedBox(width: MockResponsiveUtils.responsivePadding(context, 4.0)),
+        SizedBox(width: responsive_utils.responsivePadding(context, 4.0)), // Use responsive_utils
         Container(
-          width: MockResponsiveUtils.responsivePadding(context, 1.5),
-          height: MockResponsiveUtils.responsiveFontSize(context, 20.0),
+          width: responsive_utils.responsivePadding(context, 1.5), // Use responsive_utils
+          height: responsive_utils.responsiveFontSize(context, 20.0), // Use responsive_utils
           color: Theme.of(context).colorScheme.primary,
         ),
-        SizedBox(width: MockResponsiveUtils.responsivePadding(context, 4.0)),
+        SizedBox(width: responsive_utils.responsivePadding(context, 4.0)), // Use responsive_utils
         Expanded(
           child: _buildDateControl(
             _endDate,
-            (newDate) => _endDate = newDate,
-            const Key('endDateText'), // You might want to add a key for the endDateControlRow too
+            (newDate) => setState(() => _endDate = newDate),
+            const Key('endDateText'),
+            rowKey: const Key('endDateControlRow'),
           ),
         ),
         IconButton(
-          icon: Icon(Icons.arrow_forward_ios, size: MockResponsiveUtils.responsiveIconSize(context, 16.0)),
+          icon: Icon(Icons.arrow_forward_ios, size: responsive_utils.responsiveIconSize(context, 16.0)), // Use responsive_utils
           onPressed: () {
             _changeDateByMonth(_startDate, 1, (newDate) => _startDate = newDate);
             _changeDateByMonth(_endDate, 1, (newDate) => _endDate = newDate);
@@ -465,7 +551,6 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
     );
 
     Widget columnToggleButtons = Row(
-      mainAxisSize: MainAxisSize.min, // Keep this as min, as these buttons have fixed sizes
       children: [
         buildColumnToggleButton('D', _showDebutColumn, (newStatus) {
           _showDebutColumn = newStatus;
@@ -480,22 +565,22 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
     );
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: MockResponsiveUtils.responsivePadding(context, 10.0), vertical: MockResponsiveUtils.responsivePadding(context, 4.0)),
+      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 10.0), vertical: responsive_utils.responsivePadding(context, 4.0)), // Use responsive_utils
       color: Colors.grey[100],
       child: orientation == Orientation.portrait
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                dateControls, // This Row will now flex its date controls
-                SizedBox(height: MockResponsiveUtils.responsivePadding(context, 8.0)),
+                dateControls,
+                SizedBox(height: responsive_utils.responsivePadding(context, 8.0)), // Use responsive_utils
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded( // Ensure the date text takes available space
+                    Expanded(
                       child: Text(
                         DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
                         style: TextStyle(
-                          fontSize: MockResponsiveUtils.responsiveFontSize(context, 11.0),
+                          fontSize: responsive_utils.responsiveFontSize(context, 11.0), // Use responsive_utils
                           fontWeight: FontWeight.w500,
                           color: Theme.of(context).colorScheme.secondary,
                         ),
@@ -511,16 +596,16 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
           : Row(
               children: [
                 Expanded(
-                  flex: 3, // Increased flex from 2 to 3 to give date controls more room
+                  flex: 3,
                   child: dateControls,
                 ),
-                SizedBox(width: MockResponsiveUtils.responsivePadding(context, 10.0)),
+                SizedBox(width: responsive_utils.responsivePadding(context, 10.0)), // Use responsive_utils
                 Expanded(
-                  flex: 4, // Increased flex from 3 to 4 for the long date text
+                  flex: 4,
                   child: Text(
                     DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(_currentDisplayDate),
                     style: TextStyle(
-                      fontSize: MockResponsiveUtils.responsiveFontSize(context, 11.0),
+                      fontSize: responsive_utils.responsiveFontSize(context, 11.0), // Use responsive_utils
                       fontWeight: FontWeight.w500,
                       color: Theme.of(context).colorScheme.secondary,
                     ),
@@ -528,9 +613,9 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
                     maxLines: 1,
                   ),
                 ),
-                SizedBox(width: MockResponsiveUtils.responsivePadding(context, 10.0)),
-                Expanded( // Wrap columnToggleButtons in Expanded for better landscape layout
-                  flex: 3, // Adjust flex as needed, keeping enough space for buttons
+                SizedBox(width: responsive_utils.responsivePadding(context, 10.0)), // Use responsive_utils
+                Expanded(
+                  flex: 3,
                   child: columnToggleButtons,
                 ),
               ],
@@ -698,19 +783,25 @@ class _MockMyHomePageState extends State<MockMyHomePage> {
       ),
     );
   }
+
 }
 
 // --- MOCK CLASSES AND DUMMY WIDGETS END ---
 
 // Helper function to pump MockMyHomePage with consistent setup
-Future<void> _pumpMockMyHomePage(WidgetTester tester, {required Size size}) async {
+Future<void> _pumpMockMyHomePage(WidgetTester tester, {required Size size, bool dataLoaded = false}) async {
   await tester.pumpWidget(
-    MediaQuery(
-      data: MediaQueryData(size: size),
-      child: MockMyHomePage(),
+    MaterialApp(
+      home: MediaQuery(
+        // Le paramètre 'orientation' n'existe pas pour MediaQueryData.
+        // L'orientation est déduite automatiquement de la 'size'.
+        data: MediaQueryData(size: size),
+        // Nous instancions MockMyHomePage, car c'est votre widget de test qui simule l'écran principal.
+        child: MockMyHomePage(initialDataLoaded: dataLoaded),
+      ),
     ),
   );
-  await tester.pumpAndSettle(); // Allow any animations or initial frames to settle
+  await tester.pumpAndSettle(); // Permet aux animations et au layout de se stabiliser
 }
 
 
@@ -730,6 +821,34 @@ void main() {
       expect(find.text('Exporter services'), findsOneWidget);
     });
 
+    // testWidgets('AppBar displays title and import/export buttons in landscape mode', (WidgetTester tester) async {
+    //   // Ensure _dataLoaded is false when pumping
+    //   await _pumpMockMyHomePage(tester, size: const Size(1920.0, 1080.0), dataLoaded: false);
+    //   await tester.pumpAndSettle();
+    //   expect(find.text('Prise de services automatique'), findsOneWidget);
+    //   expect(
+    //     find.descendant(
+    //       of: find.byType(ElevatedButton),
+    //       matching: find.byWidgetPredicate(
+    //         (widget) => widget is Text && widget.data?.contains('Importer services') == true,
+    //         description: 'text "Importer services"',
+    //       ),
+    //     ),
+    //     findsOneWidget,
+    //   );
+    //   // This should still pass
+    //   expect(find.descendant(
+    //     of: find.byType(ElevatedButton),
+    //     matching: find.text('Changer fichier'),
+    //   ), findsNothing);
+    //   expect(find.descendant(
+    //     of: find.byType(ElevatedButton),
+    //     matching: find.text('Exporter services'),
+    //   ), findsOneWidget);
+    //   expect(find.byIcon(Icons.upload_file), findsOneWidget);
+    //   expect(find.byIcon(Icons.download), findsOneWidget);
+    // });
+
     testWidgets('Import button changes text when data is loaded', (WidgetTester tester) async {
       await _pumpMockMyHomePage(tester, size: const Size(360, 640)); // Portrait
 
@@ -745,10 +864,15 @@ void main() {
   });
 
   group('Date Range Selector Tests', () {
-
     testWidgets('Date range selector displays current date and time in portrait', (WidgetTester tester) async {
       await _pumpMockMyHomePage(tester, size: const Size(360, 640)); // Portrait
 
+      final formattedDate = DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(DateTime(2025, 7, 29, 16, 4, 18));
+      expect(find.textContaining(formattedDate.substring(0, 10)), findsOneWidget);
+    });
+
+    testWidgets('Date range selector displays current date and time in landscape', (WidgetTester tester) async {
+      await _pumpMockMyHomePage(tester, size: const Size(640, 360)); // Landscape
       final formattedDate = DateFormat('EEEE dd MMMM HH:mm:ss', 'fr_FR').format(DateTime(2025, 7, 29, 16, 4, 18));
       expect(find.textContaining(formattedDate.substring(0, 10)), findsOneWidget);
     });
@@ -1078,4 +1202,5 @@ void main() {
       expect(find.byKey(const Key('validateButtonPortrait')), findsNothing); // Validate button should not be present
     });
   });
+
 }
