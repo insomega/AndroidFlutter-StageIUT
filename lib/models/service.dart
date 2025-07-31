@@ -4,30 +4,68 @@ import 'package:flutter/material.dart'; // Importe Flutter pour `debugPrint`.
 import 'package:intl/intl.dart'; // Importe `intl` pour le formatage des dates.
 import 'package:excel/excel.dart'; // Importation nécessaire pour les types `CellValue` du package Excel.
 
-// Représente un service avec toutes ses informations détaillées,
-// incluant l'employé, les heures, la localisation et le statut.
+/// Représente un service avec toutes ses informations détaillées,
+/// incluant l'employé, les heures, la localisation et le statut.
+///
+/// Cette classe est utilisée pour modéliser les données des services
+/// importées depuis des fichiers Excel et manipulées dans l'application.
 class Service {
-  final String id; // ID du service (correspond à VAC_IDF dans les données).
-  final String employeeName; // Nom de l'employé (correspond à USR_LIB).
-  final String employeeSvrCode; // Code de service de l'employé (SVR_CODE).
-  final String employeeSvrLib; // Libellé de service de l'employé (SVR_LIB).
-  final String employeeTelPort; // Numéro de téléphone portable de l'employé (SVR_TELPOR).
+  /// ID unique du service (correspond à VAC_IDF dans les données Excel).
+  final String id;
 
-  DateTime startTime; // Heure de début du service (VAC_START_HOUR).
-  DateTime endTime; // Heure de fin du service (VAC_END_HOUR), peut être modifiée.
-  bool isAbsent; // Indique si l'employé est absent pour ce service.
-  bool isValidated; // Indique si le service a été validé.
+  /// Nom de l'employé assigné à ce service (correspond à USR_LIB).
+  final String employeeName;
 
-  // Informations de localisation/client, communes aux deux types de cartes.
-  final String locationCode; // Code du lieu (LIE_CODE).
-  final String locationLib; // Libellé du lieu (LIE_LIB).
-  final String clientLocationLine3; // Texte statique "client BM-CL01".
+  /// Code de service de l'employé (correspond à SVR_CODE).
+  final String employeeSvrCode;
 
-  // Informations spécifiques au client pour la carte "Fin".
-  final String clientSvrCode; // Code de service du client (SVR_CODE).
-  final String clientSvrLib; // Libellé de service du client (SVR_LIB).
+  /// Libellé de service de l'employé (correspond à SVR_LIB).
+  final String employeeSvrLib;
 
-  // Constructeur de la classe `Service`.
+  /// Numéro de téléphone portable de l'employé (correspond à SVR_TELPOR).
+  final String employeeTelPort;
+
+  /// Heure de début du service (correspond à VAC_START_HOUR).
+  ///
+  /// Cette propriété est mutable car l'heure de début peut être modifiée par l'utilisateur.
+  DateTime startTime;
+
+  /// Heure de fin du service (correspond à VAC_END_HOUR).
+  ///
+  /// Cette propriété est mutable car l'heure de fin peut être modifiée par l'utilisateur.
+  DateTime endTime;
+
+  /// Indique si l'employé est absent pour ce service.
+  ///
+  /// Cette propriété est mutable et peut être basculée par l'utilisateur.
+  bool isAbsent;
+
+  /// Indique si le service a été validé.
+  ///
+  /// Cette propriété est mutable et peut être basculée par l'utilisateur.
+  bool isValidated;
+
+  /// Code du lieu où le service est effectué (correspond à LIE_CODE).
+  final String locationCode;
+
+  /// Libellé du lieu où le service est effectué (correspond à LIE_LIB).
+  final String locationLib;
+
+  /// Texte statique représentant la troisième ligne d'information de localisation du client.
+  ///
+  /// Actuellement, cette valeur est fixée à "client BM-CL01".
+  final String clientLocationLine3;
+
+  /// Code de service spécifique au client (correspond à CLI_SVR_CODE).
+  final String clientSvrCode;
+
+  /// Libellé de service spécifique au client (correspond à CLI_SVR_LIB).
+  final String clientSvrLib;
+
+  /// Constructeur de la classe [Service].
+  ///
+  /// Tous les paramètres marqués `required` sont obligatoires lors de la création d'une instance.
+  /// Les propriétés [isAbsent] et [isValidated] sont initialisées à `false` par défaut.
   Service({
     required this.id,
     required this.employeeName,
@@ -45,7 +83,10 @@ class Service {
     required this.clientSvrLib,
   });
 
-  // Getter pour obtenir la durée du service formatée en heures et minutes.
+  /// Getter pour obtenir la durée du service formatée en heures et minutes.
+  ///
+  /// Calcule la différence entre [endTime] et [startTime] et la présente
+  /// sous un format lisible, par exemple "8h 30min".
   String get duration {
     final Duration diff = endTime.difference(startTime); // Calcule la différence entre l'heure de fin et de début.
     final int hours = diff.inHours; // Nombre total d'heures.
@@ -53,14 +94,24 @@ class Service {
     return '${hours}h ${minutes}min'; // Retourne la durée formatée.
   }
 
-  // Getter pour obtenir la durée du service en heures sous forme décimale.
+  /// Getter pour obtenir la durée du service en heures sous forme décimale.
+  ///
+  /// Calcule la différence entre [endTime] et [startTime] et la convertit
+  /// en un nombre décimal représentant les heures totales.
   double get durationInHours {
     final Duration diff = endTime.difference(startTime); // Calcule la différence.
     return diff.inMinutes / 60.0; // Convertit les minutes totales en heures décimales.
   }
 
-  // Méthode d'aide statique pour extraire la valeur réelle d'un `CellValue` ou d'un autre type.
-  // Si l'objet est un `CellValue`, il est converti en `String`. Sinon, il est retourné tel quel.
+  /// Méthode d'aide statique pour extraire la valeur réelle d'un [CellValue] ou d'un autre type.
+  ///
+  /// Si l'objet [valueObject] est un [CellValue] (provenant du package `excel`),
+  /// il est converti en [String]. Sinon, il est retourné tel quel.
+  /// Gère également le cas où l'objet est `null`.
+  ///
+  /// [valueObject]: L'objet dont la valeur doit être extraite.
+  ///
+  /// Retourne la valeur extraite (String, num, ou autre type, ou null).
   static dynamic _extractCellValue(dynamic valueObject) {
     if (valueObject == null) {
       return null; // Retourne null si l'objet est null.
@@ -71,9 +122,26 @@ class Service {
     return valueObject; // Retourne l'objet tel quel si ce n'est pas un CellValue.
   }
 
-  // Méthode factory pour créer une instance de `Service` à partir d'une `Map` de données (souvent issue d'une ligne Excel).
+  /// Méthode factory pour créer une instance de [Service] à partir d'une [Map] de données.
+  ///
+  /// Cette méthode est conçue pour parser une ligne de données provenant typiquement
+  /// d'un fichier Excel, gérant divers formats de données, notamment pour les dates.
+  ///
+  /// [data]: Une [Map] où les clés sont des noms de colonnes (ex: 'VAC_IDF')
+  ///        et les valeurs sont les données correspondantes.
+  ///
+  /// Retourne une nouvelle instance de [Service].
   factory Service.fromExcelRow(Map<String, dynamic> data) {
-    /// Helper interne pour parser les valeurs de date provenant d'Excel, gérant différents formats (String, numérique).
+    /// Fonction interne d'aide pour parser les valeurs de date provenant d'Excel.
+    ///
+    /// Gère différents formats de valeurs brutes ([String], numérique) et fournit
+    /// des messages de débogage en cas d'erreur ou de valeur inattendue.
+    /// Si le parsing échoue, [DateTime.now()] est retourné par défaut.
+    ///
+    /// [rawValue]: La valeur brute à parser (peut être [String], [num], ou [CellValue]).
+    /// [fieldName]: Le nom du champ de la date (pour les messages de débogage).
+    ///
+    /// Retourne un [DateTime] parsé ou [DateTime.now()] en cas d'erreur.
     DateTime parseExcelDateValue(dynamic rawValue, String fieldName) {
       if (rawValue == null) {
         debugPrint('Avertissement: La date pour $fieldName est vide ou nulle. Utilisation de DateTime.now().');
@@ -112,7 +180,7 @@ class Service {
       return DateTime.now(); // Retourne l'heure actuelle pour les types non gérés.
     }
 
-    // Crée une nouvelle instance de `Service` en extrayant et parsant les données de la map.
+    // Crée une nouvelle instance de [Service] en extrayant et parsant les données de la map.
     return Service(
       id: _extractCellValue(data['VAC_IDF'])?.toString() ?? '',
       employeeName: _extractCellValue(data['USR_LIB'])?.toString() ?? '',
@@ -131,8 +199,11 @@ class Service {
     );
   }
 
-  // Méthode `copyWith` pour créer une nouvelle instance de `Service` avec des propriétés modifiées.
-  // Permet une mise à jour facile et immuable de l'objet `Service`.
+  /// Méthode `copyWith` pour créer une nouvelle instance de [Service] avec des propriétés modifiées.
+  ///
+  /// Cette méthode permet une mise à jour facile et immuable de l'objet [Service]
+  /// en créant une nouvelle instance avec les propriétés spécifiées ou en conservant
+  /// les valeurs de l'instance actuelle si aucun nouveau n'est fourni.
   Service copyWith({
     String? id,
     String? employeeName,

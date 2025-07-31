@@ -1,64 +1,93 @@
 // lib/prise_service_web.dart
 
-
 // ignore: deprecated_member_use, avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mon_projet/time_detail_card.dart';
-import 'package:mon_projet/models/service.dart'; 
+import 'package:mon_projet/models/service.dart';
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
-import 'package:excel/excel.dart' hide Border; // Importation pour la lecture et l'écriture Excel
-import 'dart:typed_data'; // Pour Uint8List
+import 'package:excel/excel.dart' hide Border;
+import 'dart:typed_data';
 import 'package:mon_projet/utils/date_time_extensions.dart';
 import 'package:mon_projet/utils/responsive_utils_web.dart' as responsive_utils;
 
-
+/// Écran principal pour la gestion et l'affichage des services.
+///
+/// Cet écran permet aux utilisateurs d'importer des données de service depuis
+/// un fichier Excel, de filtrer et de trier ces services par plage de dates
+/// et par recherche textuelle, de modifier des services individuels, et d'exporter
+/// les données modifiées vers un nouveau fichier Excel.
 class PriseServiceScreen extends StatefulWidget {
+  /// Crée un [PriseServiceScreen].
   const PriseServiceScreen({super.key});
 
   @override
   State<PriseServiceScreen> createState() => _PriseServiceScreenState();
 }
 
+/// L'état mutable pour [PriseServiceScreen].
 class _PriseServiceScreenState extends State<PriseServiceScreen> {
+  /// La date et l'heure actuelles affichées, mise à jour chaque seconde.
   DateTime _currentDisplayDate = DateTime.now();
-  DateTime _startDate = DateTime(2025, 7, 1); // Date de début de période par défaut
-  DateTime _endDate = DateTime(2025, 7, 31); // Date de fin de période par défaut
 
+  /// La date de début de la période de filtrage des services.
+  DateTime _startDate = DateTime(2025, 7, 1);
+
+  /// La date de fin de la période de filtrage des services.
+  DateTime _endDate = DateTime(2025, 7, 31);
+
+  /// Le minuteur utilisé pour rafraîchir l'heure affichée.
   Timer? _timer;
 
+  /// Contrôleur de défilement pour la colonne des services de début.
   final ScrollController _debutScrollController = ScrollController();
+
+  /// Contrôleur de défilement pour la colonne des services de fin.
   final ScrollController _finScrollController = ScrollController();
+
+  /// Contrôleur de défilement pour la colonne des résultats (défilement synchronisé avec la colonne début).
   final ScrollController _resultatScrollController = ScrollController();
 
+  /// Contrôleur de texte pour la barre de recherche.
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = ''; // La chaîne de recherche actuelle
 
-  List<Service> _services = []; // Liste des services chargés
-  bool _dataLoaded = false; // Indicateur si les données ont été chargées
+  /// La chaîne de caractères actuelle utilisée pour filtrer les services.
+  String _searchQuery = '';
 
-  // Visibilité des colonnes
+  /// La liste des services chargés depuis le fichier Excel.
+  List<Service> _services = [];
+
+  /// Indique si des données de service ont été chargées.
+  bool _dataLoaded = false;
+
+  /// Contrôle la visibilité de la colonne "Début".
   bool _showDebutColumn = true;
+
+  /// Contrôle la visibilité de la colonne "Fin".
   bool _showFinColumn = true;
+
+  /// Contrôle la visibilité de la colonne "Résultat".
   bool _showResultColumn = true;
 
   @override
   void initState() {
     super.initState();
-    _updateCurrentTime(); // Met à jour l'heure affichée
+    _updateCurrentTime();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _updateCurrentTime(); // Met à jour l'heure toutes les secondes
+      _updateCurrentTime();
     });
 
-    _searchController.addListener(_onSearchChanged); // Écoute les changements dans la barre de recherche
-    Intl.defaultLocale = 'fr_FR'; // Assure la locale française pour les dates
+    _searchController.addListener(_onSearchChanged);
+    Intl.defaultLocale = 'fr_FR';
 
-    _syncScrollControllers(); // Initialise la synchronisation des scroll controllers
+    _syncScrollControllers();
   }
 
-  // Met à jour la chaîne de recherche et déclenche un rafraîchissement de l'UI
+  /// Met à jour la chaîne de recherche et déclenche un rafraîchissement de l'interface utilisateur.
+  ///
+  /// Cette méthode est un écouteur pour le [TextEditingController] de la barre de recherche.
   void _onSearchChanged() {
     setState(() {
       _searchQuery = _searchController.text;
@@ -67,7 +96,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel(); // Annule le timer pour éviter les fuites de mémoire
+    _timer?.cancel();
     _debutScrollController.dispose();
     _finScrollController.dispose();
     _resultatScrollController.dispose();
@@ -76,23 +105,37 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     super.dispose();
   }
 
-  // Met à jour l'heure actuelle affichée
+  /// Met à jour l'heure actuelle affichée dans l'interface utilisateur.
+  ///
+  /// Cette méthode est appelée périodiquement par un [Timer] pour maintenir
+  /// l'affichage de l'heure à jour.
   void _updateCurrentTime() {
     setState(() {
       _currentDisplayDate = DateTime.now();
     });
   }
 
-  // --- Fonctions de navigation de date ---
-  // Change la date par jour (pour _startDate ou _endDate)
+  /// Modifie la date spécifiée ([dateToChange]) d'un certain nombre de jours.
+  ///
+  /// Après la modification, un rafraîchissement des services est déclenché.
+  ///
+  /// [dateToChange] La date à modifier (soit `_startDate` soit `_endDate`).
+  /// [daysToAdd] Le nombre de jours à ajouter ou soustraire.
+  /// [updateState] Une fonction de rappel pour mettre à jour la date dans l'état du widget.
   void _changeDateByDay(DateTime dateToChange, int daysToAdd, Function(DateTime) updateState) {
     setState(() {
       updateState(dateToChange.add(Duration(days: daysToAdd)));
-      _filterAndSortServices(); // Rafraîchit après changement de date
+      _filterAndSortServices();
     });
   }
 
-  // Change la date par mois (pour _startDate ou _endDate)
+  /// Modifie la date spécifiée ([dateToChange]) d'un certain nombre de mois.
+  ///
+  /// Après la modification, un rafraîchissement des services est déclenché.
+  ///
+  /// [dateToChange] La date à modifier (soit `_startDate` soit `_endDate`).
+  /// [monthsToAdd] Le nombre de mois à ajouter ou soustraire.
+  /// [updateState] Une fonction de rappel pour mettre à jour la date dans l'état du widget.
   void _changeDateByMonth(DateTime dateToChange, int monthsToAdd, Function(DateTime) updateState) {
     setState(() {
       updateState(DateTime(
@@ -100,83 +143,95 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         dateToChange.month + monthsToAdd,
         dateToChange.day,
       ));
-      _filterAndSortServices(); // Rafraîchit après changement de date
+      _filterAndSortServices();
     });
   }
 
-  // Ouvre un sélecteur de date pour choisir une date spécifique
+  /// Ouvre un sélecteur de date pour permettre à l'utilisateur de choisir une date spécifique.
+  ///
+  /// Après la sélection, la date est mise à jour et les services sont rafraîchis.
+  ///
+  /// [context] Le BuildContext de l'application.
+  /// [initialDate] La date initialement affichée dans le sélecteur.
+  /// [updateState] Une fonction de rappel pour mettre à jour la date dans l'état du widget.
   Future<void> _selectDate(BuildContext context, DateTime initialDate, Function(DateTime) updateState) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: DateTime(2000), // Date de début possible
-      lastDate: DateTime(2030), // Date de fin possible
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2030),
       helpText: 'Sélectionner une date',
       cancelText: 'Annuler',
       confirmText: 'Confirmer',
-      locale: const Locale('fr', 'FR'), // Force le sélecteur de date en français
+      locale: const Locale('fr', 'FR'),
     );
     if (picked != null && picked != initialDate) {
       setState(() {
         updateState(picked);
-        _filterAndSortServices(); // Rafraîchit après changement de date
+        _filterAndSortServices();
       });
     }
   }
 
-  // Méthode pour déclencher le filtrage et le tri des services
+  /// Déclenche le filtrage et le tri des services en forçant un rafraîchissement de l'UI.
+  ///
+  /// Cette méthode appelle `setState` pour que les getters des listes de services filtrées
+  /// et triées soient recalculés.
   void _filterAndSortServices() {
     setState(() {
       // Le simple fait de déclencher setState() fera que les getters seront recalculés.
     });
   }
 
-  // Getter pour les services filtrés et triés pour la colonne "Début"
+  /// Retourne la liste des services filtrés par plage de dates et par la chaîne de recherche,
+  /// puis triés par heure de début.
   List<Service> get _filteredAndSortedDebutServices {
     final filteredList = _services.where((service) {
-      // Filtre par plage de dates
       bool isInDateRange = service.startTime.isBefore(_endDate.endOfDay()) && service.startTime.isAfter(_startDate.startOfDay());
-      // Filtre par nom d'employé (recherche insensible à la casse)
       bool matchesSearch = _searchQuery.isEmpty ||
           service.employeeName.toLowerCase().contains(_searchQuery.toLowerCase());
       return isInDateRange && matchesSearch;
     }).toList();
 
-    filteredList.sort((a, b) => a.startTime.compareTo(b.startTime)); // Tri par heure de début
+    filteredList.sort((a, b) => a.startTime.compareTo(b.startTime));
     return filteredList;
   }
 
-  // Getter pour les services filtrés et triés pour la colonne "Fin"
+  /// Retourne la liste des services filtrés par plage de dates et par la chaîne de recherche,
+  /// puis triés par heure de fin.
   List<Service> get _filteredAndSortedFinServices {
     final filteredList = _services.where((service) {
-      // Filtre par plage de dates
       bool isInDateRange = service.endTime.isBefore(_endDate.endOfDay()) && service.endTime.isAfter(_startDate.startOfDay());
-      // Filtre par nom d'employé
       bool matchesSearch = _searchQuery.isEmpty ||
           service.employeeName.toLowerCase().contains(_searchQuery.toLowerCase());
       return isInDateRange && matchesSearch;
     }).toList();
 
-    filteredList.sort((a, b) => a.endTime.compareTo(b.endTime)); // Tri par heure de fin
+    filteredList.sort((a, b) => a.endTime.compareTo(b.endTime));
     return filteredList;
   }
 
-  // Getter pour les services filtrés et triés pour la colonne "Résultat" (ajusté)
+  /// Retourne la liste des services filtrés et triés pour la colonne "Résultat".
+  ///
+  /// Actuellement, elle utilise la même logique de filtrage et de tri que la colonne "Début".
   List<Service> get _filteredAndSortedResultServices {
     return _filteredAndSortedDebutServices;
   }
 
-  // Gère le basculement de l'état "Absent" d'un service
+  /// Gère le basculement de l'état "Absent" pour un service donné.
+  ///
+  /// Si un service devient "absent", sa validation est automatiquement retirée.
+  ///
+  /// [serviceId] L'identifiant unique du service à modifier.
+  /// [newAbsentStatus] Le nouvel état d'absence (true si absent, false si présent).
   void _handleAbsentToggle(String serviceId, bool newAbsentStatus) {
     setState(() {
       final serviceIndex = _services.indexWhere((s) => s.id == serviceId);
       if (serviceIndex != -1) {
-        // Si l'état devient absent, la validation est automatiquement retirée
         if (newAbsentStatus == true) {
           _services[serviceIndex] = _services[serviceIndex].copyWith(isAbsent: newAbsentStatus, isValidated: false);
           debugPrint('Service $serviceId - Absent: $newAbsentStatus, Validation retirée.');
         } else {
-          // Si l'état devient présent, on met juste à jour isAbsent
           _services[serviceIndex] = _services[serviceIndex].copyWith(isAbsent: newAbsentStatus);
           debugPrint('Service $serviceId - Absent: $newAbsentStatus');
         }
@@ -184,7 +239,10 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     });
   }
 
-  // Gère le basculement de l'état "Validé" d'un service
+  /// Gère le basculement de l'état "Validé" pour un service donné.
+  ///
+  /// [serviceId] L'identifiant unique du service à modifier.
+  /// [newValidateStatus] Le nouvel état de validation (true si validé, false si non validé).
   void _handleValidate(String serviceId, bool newValidateStatus) {
     setState(() {
       final serviceIndex = _services.indexWhere((s) => s.id == serviceId);
@@ -195,18 +253,26 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     });
   }
 
-  // Gère la modification de l'heure de début ou de fin d'un service
+  /// Gère la modification de l'heure de début ou de fin d'un service spécifique.
+  ///
+  /// Cette méthode ouvre d'abord un sélecteur de date, puis un sélecteur d'heure.
+  /// Elle effectue des validations pour s'assurer que l'heure de début reste antérieure
+  /// à l'heure de fin et vice-versa.
+  ///
+  /// [serviceId] L'identifiant unique du service à modifier.
+  /// [currentTime] L'heure actuelle (début ou fin) du service à modifier.
+  /// [type] Le type de carte temporelle (début ou fin) pour déterminer quelle heure est modifiée.
   Future<void> _handleModifyTime(String serviceId, DateTime currentTime, TimeCardType type) async {
     // Étape 1: Sélectionner la date
     final DateTime? newDate = await showDatePicker(
       context: context,
-      initialDate: currentTime, // Date initiale basée sur l'heure actuelle du service
-      firstDate: DateTime(2000), // Date de début possible
-      lastDate: DateTime(2030), // Date de fin possible
+      initialDate: currentTime,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2030),
       helpText: 'Sélectionner la date',
       cancelText: 'Annuler',
       confirmText: 'Confirmer',
-      locale: const Locale('fr', 'FR'), // Force le sélecteur de date en français
+      locale: const Locale('fr', 'FR'),
     );
 
     if (newDate == null) {
@@ -216,27 +282,25 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     // Étape 2: Sélectionner l'heure
     final TimeOfDay? newTime = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(currentTime), // Heure initiale basée sur l'heure actuelle du service
+      initialTime: TimeOfDay.fromDateTime(currentTime),
       helpText: 'Sélectionner l\'heure',
       cancelText: 'Annuler',
       confirmText: 'Confirmer',
     );
 
     if (newTime != null) {
-      // Trouver le service actuel avant de modifier l'état
       final serviceIndex = _services.indexWhere((s) => s.id == serviceId);
       if (serviceIndex == -1) {
         debugPrint('Erreur: Service non trouvé avec l\'ID $serviceId');
-        return; // Sortir si le service n'est pas trouvé
+        return;
       }
 
       final Service currentService = _services[serviceIndex];
 
-      // Construire le DateTime complet avec la NOUVELLE date et la NOUVELLE heure
       final DateTime updatedDateTime = DateTime(
-        newDate.year, // Utilise l'année de la nouvelle date
-        newDate.month, // Utilise le mois de la nouvelle date
-        newDate.day, // Utilise le jour de la nouvelle date
+        newDate.year,
+        newDate.month,
+        newDate.day,
         newTime.hour,
         newTime.minute,
       );
@@ -253,17 +317,11 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       String? errorMessage;
 
       if (type == TimeCardType.debut) {
-        // Pour une modification de l'heure de DÉBUT :
-        // La nouvelle heure de début (updatedDateTime) doit être AVANT l'heure de fin actuelle (currentService.endTime).
-        // Si elle est APRÈS ou ÉGALE, c'est une erreur.
         if (updatedDateTime.isAfter(currentService.endTime) || updatedDateTime.isAtSameMomentAs(currentService.endTime)) {
           canUpdate = false;
           errorMessage = 'L\'heure de début (${DateFormat('dd/MM HH:mm').format(updatedDateTime)}) ne peut pas être après ou égale à l\'heure de fin actuelle (${DateFormat('dd/MM HH:mm').format(currentService.endTime)}).';
         }
       } else { // type == TimeCardType.fin
-        // Pour une modification de l'heure de FIN :
-        // La nouvelle heure de fin (updatedDateTime) doit être APRÈS l'heure de début actuelle (currentService.startTime).
-        // Si elle est AVANT ou ÉGALE, c'est une erreur.
         if (updatedDateTime.isBefore(currentService.startTime) || updatedDateTime.isAtSameMomentAs(currentService.startTime)) {
           canUpdate = false;
           errorMessage = 'L\'heure de fin (${DateFormat('dd/MM HH:mm').format(updatedDateTime)}) ne peut pas être avant ou égale à l\'heure de début actuelle (${DateFormat('dd/MM HH:mm').format(currentService.startTime)}).';
@@ -280,7 +338,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             debugPrint('Service $serviceId - Nouvelle heure de fin: ${DateFormat('dd/MM HH:mm').format(updatedDateTime)}');
           }
         });
-        // Afficher un SnackBar de succès
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Heure ${type == TimeCardType.debut ? "de début" : "de fin"} mise à jour avec succès.'),
@@ -289,7 +346,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           ),
         );
       } else {
-        // Afficher le message d'erreur si la validation échoue
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage!),
@@ -302,11 +358,15 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
-  // Fait défiler les différentes colonnes pour afficher le service spécifié
+  /// Fait défiler les différentes colonnes de services pour afficher le service spécifié.
+  ///
+  /// Cette méthode calcule la position de défilement pour les contrôleurs
+  /// des colonnes "Début", "Fin" et "Résultat" et anime le défilement.
+  ///
+  /// [serviceToScrollTo] Le service vers lequel faire défiler.
   void _scrollToService(Service serviceToScrollTo) {
-    const double itemHeight = 200.0; // Hauteur estimée d'une carte
+    const double itemHeight = 200.0;
 
-    // Trouver l'index du service dans la liste filtrée et triée de la colonne Début
     final int debutIndex = _filteredAndSortedDebutServices.indexWhere((s) => s.id == serviceToScrollTo.id);
     if (debutIndex != -1) {
       _debutScrollController.animateTo(
@@ -316,7 +376,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       );
     }
 
-    // Trouver l'index du service dans la liste filtrée et triée de la colonne Fin
     final int finIndex = _filteredAndSortedFinServices.indexWhere((s) => s.id == serviceToScrollTo.id);
     if (finIndex != -1) {
       _finScrollController.animateTo(
@@ -326,7 +385,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       );
     }
 
-    // Le défilement de la colonne Résultat suit l'ordre de la colonne Début
     if (debutIndex != -1) {
       _resultatScrollController.animateTo(
         debutIndex * itemHeight,
@@ -336,12 +394,16 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
-  // Fonction pour importer les services depuis un fichier Excel
+  /// Importe les données de service depuis un fichier Excel sélectionné par l'utilisateur.
+  ///
+  /// Cette fonction utilise `file_picker` pour permettre à l'utilisateur de choisir un fichier `.xlsx`.
+  /// Les données sont lues, converties en objets [Service], et mises à jour dans l'état de l'application.
+  /// Des messages d'erreur sont affichés si le fichier est vide ou si la lecture échoue.
   Future<void> _importServicesFromExcel() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['xlsx'], // Autorise uniquement les fichiers .xlsx
+        allowedExtensions: ['xlsx'],
         allowMultiple: false,
       );
 
@@ -361,14 +423,12 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         }
 
         List<String> headers = [];
-        // Récupérer les en-têtes de la première ligne
         if (sheet.rows.isNotEmpty) {
           headers = sheet.rows[0].map((cell) => cell?.value?.toString() ?? '').toList();
         }
 
         List<Service> importedServices = [];
 
-        // Parcourir les lignes de données (à partir de la deuxième ligne)
         for (int i = 1; i < sheet.rows.length; i++) {
           final row = sheet.rows[i];
           Map<String, dynamic> rowData = {};
@@ -381,7 +441,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             importedServices.add(Service.fromExcelRow(rowData));
           } catch (e) {
             debugPrint('Erreur lors de la création du service à partir de la ligne Excel ${i + 1}: $rowData - $e');
-            // Afficher un SnackBar pour chaque erreur de ligne
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Erreur à la ligne ${i + 1}: $e')),
             );
@@ -392,7 +451,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           _services = importedServices;
           _dataLoaded = true;
           debugPrint('Importation de ${importedServices.length} services depuis Excel réussie.');
-          _filterAndSortServices(); // Applique le filtre initial après le chargement
+          _filterAndSortServices();
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -402,7 +461,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
           ),
         );
       } else {
-        // Message plus clair si l'utilisateur annule ou si le fichier est vide
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Aucun fichier sélectionné ou le fichier est vide.')),
         );
@@ -416,7 +474,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
-  // Fonction pour exporter les services vers un fichier Excel
+  /// Exporte la liste des services fournis vers un fichier Excel téléchargeable.
+  ///
+  /// Cette fonction crée un nouveau fichier `.xlsx` avec les en-têtes et les données
+  /// des services, puis déclenche le téléchargement via le navigateur web.
+  ///
+  /// [services] La liste des [Service] à exporter.
+  /// [context] Le BuildContext pour afficher des messages (SnackBar).
   Future<void> exportToExcel(List<Service> services, BuildContext context) async {
     if (services.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -429,7 +493,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       final excel = Excel.createExcel();
       final sheet = excel['Services'];
 
-      // En-têtes
+      // En-têtes des colonnes Excel
       sheet.appendRow([
         TextCellValue('VAC_IDF'),
         TextCellValue('SVR_LIB'),
@@ -447,6 +511,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         TextCellValue('Validé'),
       ]);
 
+      // Remplir les lignes avec les données des services
       for (var service in services) {
         sheet.appendRow([
           TextCellValue(service.id),
@@ -469,9 +534,11 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       final bytes = excel.save();
       if (bytes == null) throw Exception('Erreur lors de la génération Excel');
 
+      // Créer un objet Blob et un URL pour le téléchargement sur le web
       final blob = html.Blob([Uint8List.fromList(bytes)]);
       final url = html.Url.createObjectUrlFromBlob(blob);
 
+      // Déclencher le téléchargement via un élément <a> simulé
       // ignore: unused_local_variable
       final anchor = html.AnchorElement(href: url)
         ..setAttribute('download', 'export_services.xlsx')
@@ -488,13 +555,16 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     }
   }
 
+  /// Appelle la fonction d'exportation Excel avec la liste des services actuels.
   void _onExportPressed() {
     exportToExcel(_services, context);
   }
 
-  // Méthode pour synchroniser les contrôleurs de défilement (ajoutée/restaurée)
+  /// Synchronise les contrôleurs de défilement des différentes colonnes.
+  ///
+  /// Cette méthode assure que le défilement dans une colonne entraîne le défilement
+  /// synchronisé des autres colonnes, offrant une expérience utilisateur cohérente.
   void _syncScrollControllers() {
-    // Empêcher la récursion en retirant et ajoutant les listeners
     void sync(ScrollController source, List<ScrollController> targets) {
       if (!source.hasClients) return;
       for (var target in targets) {
@@ -509,8 +579,17 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     _resultatScrollController.addListener(() => sync(_resultatScrollController, [_debutScrollController, _finScrollController]));
   }
 
-  // Méthode pour construire l'AppBar (barre d'application) de l'interface.
-  // Elle est responsable de l'affichage du titre, du logo, et des boutons d'action.
+
+
+  /// Méthode pour construire l'AppBar (barre d'application) de l'interface.
+  ///
+  /// Elle est responsable de l'affichage du titre, du logo, et des boutons d'action
+  /// pour l'importation et l'exportation des services. Les éléments sont ajustés
+  /// de manière réactive en fonction de la largeur de l'écran.
+  ///
+  /// [context] Le BuildContext de l'application.
+  ///
+  /// Retourne un widget [AppBar] configuré.
   AppBar _buildAppBar(BuildContext context) {
     // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
@@ -665,12 +744,25 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode pour construire le sélecteur de date, incluant les boutons D, F, R pour la visibilité des colonnes.
+  /// Méthode pour construire le sélecteur de date de début et de fin,
+  /// incluant les boutons de navigation mensuelle et les bascules de visibilité des colonnes (D, F, R).
+  ///
+  /// Elle intègre des contrôles pour la sélection des dates et des boutons pour
+  /// afficher/masquer les colonnes "Début", "Fin" et "Résultat". Tous les éléments
+  /// sont réactifs à la taille de l'écran.
+  ///
+  /// Retourne un widget [Widget] représentant le sélecteur de plage de dates.
   Widget _buildDateRangeSelector() {
     // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Fonction d'aide interne pour construire les boutons de basculement de colonne (D, F, R).
+    /// Fonction d'aide interne pour construire les boutons de basculement de colonne (D, F, R).
+    ///
+    /// [label] Le texte affiché sur le bouton (ex: 'D', 'F', 'R').
+    /// [isVisible] L'état actuel de visibilité de la colonne correspondante.
+    /// [onChanged] La fonction de rappel appelée lorsque l'état de visibilité change.
+    ///
+    /// Retourne un widget [Widget] représentant le bouton de basculement.
     Widget buildColumnToggleButton(String label, bool isVisible, ValueChanged<bool> onChanged) {
       return Padding(
         // Ajoute un padding horizontal réactif autour de chaque bouton de colonne.
@@ -819,7 +911,14 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode d'aide pour construire un contrôle individuel de date (boutons +/- et zone de sélection).
+  /// Méthode d'aide pour construire un contrôle individuel de date, avec des boutons
+  /// d'incrémentation/décrémentation journalière et une zone cliquable pour ouvrir
+  /// un sélecteur de date.
+  ///
+  /// [date] La date actuelle affichée par le contrôle.
+  /// [onDateChanged] La fonction de rappel appelée lorsque la date est modifiée.
+  ///
+  /// Retourne un widget [Widget] représentant le contrôle de date.
   Widget _buildDateControl(DateTime date, ValueChanged<DateTime> onDateChanged) {
     // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
@@ -870,7 +969,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode pour construire la barre de recherche des employés.
+  /// Méthode pour construire la barre de recherche permettant de filtrer les services
+  /// par nom d'employé.
+  ///
+  /// La barre de recherche est stylisée avec une icône de recherche et un libellé flottant.
+  /// La taille et le padding sont réactifs à la largeur de l'écran.
+  ///
+  /// Retourne un widget [Padding] contenant le champ de texte de recherche.
   Widget _buildSearchBar() {
     // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
@@ -895,8 +1000,13 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode pour construire les en-têtes de colonne (Début, Fin, Résultat).
-  // Les en-têtes sont affichés de manière conditionnelle en fonction de l'état des variables _showXColumn.
+  /// Méthode pour construire les en-têtes de colonne (Début, Fin, Résultat).
+  ///
+  /// Les en-têtes sont affichés de manière conditionnelle en fonction des variables
+  /// `_showDebutColumn`, `_showFinColumn`, et `_showResultColumn`. Ils sont stylisés
+  /// et ajustés de manière réactive.
+  ///
+  /// Retourne un widget [Padding] contenant les en-têtes des colonnes.
   Widget _buildColumnHeaders() {
     // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
@@ -956,7 +1066,19 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode pour construire une liste de services, formant une colonne (Début, Fin, ou Résultat).
+  /// Méthode pour construire une liste défilante de services, formant une colonne
+  /// (Début, Fin, ou Résultat) dans l'interface utilisateur.
+  ///
+  /// La visibilité de la colonne est contrôlée par les variables d'état (_showDebutColumn, etc.).
+  /// Chaque service est affiché comme une [TimeDetailCard], qui gère les interactions
+  /// telles que le basculement d'absence, la modification de l'heure et la validation.
+  /// Le défilement est synchronisé entre les colonnes.
+  ///
+  /// [services] La liste des services à afficher dans cette colonne.
+  /// [controller] Le [ScrollController] pour cette colonne, permettant la synchronisation du défilement.
+  /// [type] Le [TimeCardType] (début, fin, ou résultat) qui détermine le contenu et le comportement des cartes.
+  ///
+  /// Retourne un widget [Expanded] contenant la colonne de services, ou un [SizedBox.shrink] si la colonne est masquée.
   Widget _buildServiceColumn(List<Service> services, ScrollController controller, TimeCardType type) {
     // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
@@ -999,7 +1121,12 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
     );
   }
 
-  // Méthode pour construire le pied de page de l'application.
+  /// Méthode pour construire le pied de page de l'application.
+  ///
+  /// Le pied de page affiche un copyright et la date/heure actuelle, ajustés
+  /// de manière réactive.
+  ///
+  /// Retourne un widget [Padding] contenant le pied de page.
   Widget _buildFooter() {
     // Récupère la largeur actuelle de l'écran pour ajuster les éléments de manière réactive.
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1031,7 +1158,15 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   }
 
   @override
-  // Méthode principale pour construire l'interface utilisateur de ce widget.
+  /// Méthode principale pour construire l'interface utilisateur de ce widget.
+  ///
+  /// Elle organise l'AppBar, le sélecteur de plage de dates, la barre de recherche,
+  /// les en-têtes de colonne, les colonnes de services (Début, Fin, Résultat) et le pied de page.
+  /// Un message est affiché si aucune donnée n'est encore chargée.
+  ///
+  /// [context] Le BuildContext de l'application.
+  ///
+  /// Retourne un widget [Scaffold] qui contient toute l'interface.
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(context), // Utilise la méthode _buildAppBar pour la barre supérieure.
