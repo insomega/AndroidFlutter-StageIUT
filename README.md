@@ -58,6 +58,43 @@ L'application est développée en **Flutter**, garantissant une base de code uni
 
 Les trois colonnes de services (Début, Fin, Résultat) utilisent des `ScrollController` partagés ou synchronisés. Lorsqu'un utilisateur défile dans une colonne, la position de défilement est répercutée sur les autres colonnes pour maintenir les services alignés horizontalement, améliorant ainsi l'expérience utilisateur.
 
+---
+
+## 📚 Documentation API (DartDoc)
+
+Ce projet génère une documentation complète de son API (Application Programming Interface) à l'aide de **DartDoc**. Cette documentation est une ressource précieuse pour les développeurs souhaitant comprendre le code, les classes, les méthodes et les propriétés disponibles.
+
+### Utilité de la Documentation API
+
+La documentation DartDoc vous permet de :
+
+* **Comprendre rapidement :** Accéder à des descriptions détaillées des classes, des énumérations, des constructeurs et des propriétés, ainsi que de leurs paramètres.
+* **Naviguer efficacement :** Explorer la structure du code, voir les relations entre les différents composants et trouver les éléments dont vous avez besoin.
+* **Collaborer plus facilement :** Faciliter l'intégration de nouvelles fonctionnalités ou la correction de bugs en fournissant une référence claire du code existant.
+
+### Comment Générer la Documentation
+
+Pour générer (ou régénérer) la documentation :
+
+1.  Assurez-vous d'être dans le répertoire racine du projet (`mon_projet`).
+2.  Exécutez la commande suivante dans votre terminal :
+    ```bash
+    dart doc
+    ```
+    Cette commande va analyser les fichiers Dart du projet (y compris le répertoire `lib/` et `test/` grâce à la configuration dans `dartdoc_options.yaml`) et créer les fichiers HTML de la documentation.
+
+### Accéder à la Documentation
+
+Une fois la documentation générée, elle se trouve dans le répertoire `doc/api` à la racine de votre projet.
+
+1.  Ouvrez votre explorateur de fichiers.
+2.  Naviguez vers `mon_projet/doc/api/`.
+3.  Ouvrez le fichier `index.html` dans votre navigateur web préféré.
+
+Vous pourrez alors naviguer à travers toutes les classes et fonctions documentées de l'application.
+
+---
+
 ## 🧪 Tests
 
 L'application est accompagnée d'une suite de tests robustes pour garantir la fiabilité et le bon fonctionnement des différentes composantes. Ces tests sont écrits avec le framework `flutter_test` et simulent les interactions utilisateur pour valider le comportement de l'interface et de la logique métier.
