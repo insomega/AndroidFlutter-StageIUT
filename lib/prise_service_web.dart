@@ -1,18 +1,17 @@
 // lib/prise_service_web.dart
 
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
-// ignore: avoid_web_libraries_in_flutter
+// ignore: deprecated_member_use, avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mon_projet/time_detail_card.dart'; // Assurez-vous que ce fichier existe
-import 'package:mon_projet/models/service.dart'; // Assurez-vous que ce fichier existe
+import 'package:mon_projet/time_detail_card.dart';
+import 'package:mon_projet/models/service.dart'; 
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' hide Border; // Importation pour la lecture et l'écriture Excel
 import 'dart:typed_data'; // Pour Uint8List
-import 'package:mon_projet/utils/date_time_extensions.dart'; // Assurez-vous que ce chemin est correct
+import 'package:mon_projet/utils/date_time_extensions.dart';
 import 'package:mon_projet/utils/responsive_utils_web.dart' as responsive_utils;
 
 
@@ -40,7 +39,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   List<Service> _services = []; // Liste des services chargés
   bool _dataLoaded = false; // Indicateur si les données ont été chargées
 
-  // Visibilité des colonnes (ajouté)
+  // Visibilité des colonnes
   bool _showDebutColumn = true;
   bool _showFinColumn = true;
   bool _showResultColumn = true;
@@ -475,7 +474,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
 
       // ignore: unused_local_variable
       final anchor = html.AnchorElement(href: url)
-        ..setAttribute('download', 'export_services.xlsx') // Nom de fichier clair
+        ..setAttribute('download', 'export_services.xlsx')
         ..click();
       html.Url.revokeObjectUrl(url);
 
