@@ -52,8 +52,6 @@ class MyApp extends StatelessWidget {
           onSecondary: Colors.white,                          // Couleur du texte/icône qui contraste avec `secondary`.
           error: const Color.fromARGB(255, 143, 2, 2),        // Couleur pour les indications d'erreur.
           onError: Colors.white,                              // Couleur du texte/icône qui contraste avec `error`.
-          // background: Colors.white,                         // (Commenté) Couleur de fond générale de l'application.
-          // onBackground: Colors.black87,                     // (Commenté) Couleur du texte/icône sur le fond.
           surface: Colors.white,                              // Couleur des surfaces des composants (cartes, dialogues, menus).
           onSurface: Colors.black87,                          // Couleur du texte/icône sur les surfaces.
         ),
@@ -87,7 +85,6 @@ class MyApp extends StatelessWidget {
         textTheme: const TextTheme(
           bodyLarge: TextStyle(color: Colors.black87), // Style pour le texte de grande taille dans le corps.
           bodyMedium: TextStyle(color: Colors.black87), // Style pour le texte de taille moyenne dans le corps.
-          // Ajoutez d'autres styles de texte si nécessaire (ex: headline, title, label, etc.).
         ),
 
         // Couleur par défaut pour les icônes.
@@ -123,7 +120,6 @@ class MyApp extends StatelessWidget {
       // Locales supportées par l'application.
       supportedLocales: const [
         Locale('fr', 'FR'), // Indique que l'application supporte la locale française (France).
-        // Ajoutez d'autres locales ici si l'application doit supporter d'autres langues et régions.
       ],
       
       // Force l'application à utiliser la locale française par défaut.

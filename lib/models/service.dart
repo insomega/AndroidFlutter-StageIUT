@@ -13,7 +13,6 @@ class Service {
   final String employeeSvrLib; // Libellé de service de l'employé (SVR_LIB).
   final String employeeTelPort; // Numéro de téléphone portable de l'employé (SVR_TELPOR).
 
-  // CHANGED: Removed 'final' to allow re-assignment
   DateTime startTime; // Heure de début du service (VAC_START_HOUR).
   DateTime endTime; // Heure de fin du service (VAC_END_HOUR), peut être modifiée.
   bool isAbsent; // Indique si l'employé est absent pour ce service.
@@ -116,7 +115,7 @@ class Service {
     // Crée une nouvelle instance de `Service` en extrayant et parsant les données de la map.
     return Service(
       id: _extractCellValue(data['VAC_IDF'])?.toString() ?? '',
-      employeeName: _extractCellValue(data['USR_LIB'])?.toString() ?? '', // Correction du champ d'extraction
+      employeeName: _extractCellValue(data['USR_LIB'])?.toString() ?? '',
       employeeSvrCode: _extractCellValue(data['SVR_CODE'])?.toString() ?? '',
       employeeSvrLib: _extractCellValue(data['SVR_LIB'])?.toString() ?? '',
       employeeTelPort: _extractCellValue(data['SVR_TELPOR'])?.toString() ?? '',
@@ -151,7 +150,7 @@ class Service {
     String? clientSvrLib,
   }) {
     return Service(
-      id: id ?? this.id, // Utilise la nouvelle valeur si fournie, sinon la valeur actuelle.
+      id: id ?? this.id,
       employeeName: employeeName ?? this.employeeName,
       employeeSvrCode: employeeSvrCode ?? this.employeeSvrCode,
       employeeSvrLib: employeeSvrLib ?? this.employeeSvrLib,
