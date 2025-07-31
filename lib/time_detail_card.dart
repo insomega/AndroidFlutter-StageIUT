@@ -166,7 +166,7 @@ class TimeDetailCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontSize: helpers.responsiveFontSize(context, 11.0),
                             fontWeight: FontWeight.bold,
-                            // La couleur de la durée est verte si négative (retard) et rouge si positive (avance/normal).
+                            // La couleur de la durée est verte si négative et rouge si positive.
                             color: calculatedDuration.isNegative ? Colors.green : Colors.red,
                           ),
                   overflow: TextOverflow.ellipsis, // Tronque si trop long.
