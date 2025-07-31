@@ -58,6 +58,25 @@ L'application est développée en **Flutter**, garantissant une base de code uni
 
 Les trois colonnes de services (Début, Fin, Résultat) utilisent des `ScrollController` partagés ou synchronisés. Lorsqu'un utilisateur défile dans une colonne, la position de défilement est répercutée sur les autres colonnes pour maintenir les services alignés horizontalement, améliorant ainsi l'expérience utilisateur.
 
+## 🧪 Tests
+
+L'application est accompagnée d'une suite de tests robustes pour garantir la fiabilité et le bon fonctionnement des différentes composantes. Ces tests sont écrits avec le framework `flutter_test` et simulent les interactions utilisateur pour valider le comportement de l'interface et de la logique métier.
+
+Les tests couvrent les aspects suivants :
+
+* **Tests d'AppBar :** Vérifient l'affichage correct du titre et des boutons d'importation/exportation, ainsi que le changement de texte du bouton d'importation après une action.
+* **Tests du Sélecteur de Plage de Dates :** S'assurent que la date et l'heure sont affichées correctement, que les boutons de bascule de colonnes sont interactifs, et que les contrôles de date (jour et mois) fonctionnent comme prévu. Ils incluent également des tests pour l'ouverture et la sélection d'une date via le sélecteur.
+* **Tests de la Barre de Recherche :** Valident la présence de la barre de recherche et sa capacité à recevoir des entrées utilisateur.
+* **Tests des En-têtes de Colonnes :** Vérifient l'affichage et la masquage dynamique des en-têtes de colonnes "Début", "Fin" et "Résultat" en fonction des actions de bascule.
+* **Tests du Pied de Page :** Confirment l'affichage des informations de copyright et de la date/heure actuelle dans le pied de page.
+* **Tests des Cartes de Détail de Service (`TimeDetailCard`) :** Évaluent l'affichage des informations du service, le calcul de la durée pour le type "Résultat", et la visibilité conditionnelle des boutons d'action (valider, modifier, absent) en fonction du type de carte.
+
+Pour exécuter les tests :
+
+```bash
+flutter test
+```
+
 ---
 
 ## 🚀 Démarrer l'Application
