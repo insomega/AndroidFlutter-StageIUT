@@ -343,10 +343,8 @@ class TimeDetailCard extends StatelessWidget {
               ),
             ),
             SizedBox(width: helpers.responsivePadding(context, 8.0)), // Espace entre les colonnes en mode paysage.
-          ],
-          /// Cette section contient les informations du client (code et libellé du service client).
-          /// Elle est toujours affichée, que ce soit pour 'debut', 'fin' ou 'result'.
-          Expanded( // L'Expanded permet à cette section de prendre l'espace disponible.
+            /// Cette section contient les informations du client (code et libellé du service client).
+            Expanded( // L'Expanded permet à cette section de prendre l'espace disponible.
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start, // Aligne le contenu au début.
               children: [
@@ -354,7 +352,8 @@ class TimeDetailCard extends StatelessWidget {
                 Text("Sécurité BMSoft n°1", style: TextStyle(fontSize: helpers.responsiveFontSize(context, 11.0)), overflow: TextOverflow.ellipsis, maxLines: 1), // Nom du client.
               ],
             ),
-          ),
+            ),
+          ],
         ],
       );
     }
