@@ -1,10 +1,6 @@
-// lib/prise_service_mobile.dart (Updated with Excel import functionality)
-
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+// lib/prise_service_mobile.dart
 
 import 'dart:io'; // Importe la classe File pour les opérations sur les fichiers
-// ignore: unused_import
-import 'package:path_provider/path_provider.dart'; // Utile pour obtenir les répertoires du système de fichiers (commenté car pas directement utilisé pour l'export final)
 import 'package:open_filex/open_filex.dart'; // Permet d'ouvrir un fichier avec l'application par défaut du système
 import 'package:flutter/material.dart'; // Importe les composants Material Design de Flutter
 import 'package:intl/intl.dart'; // Pour le formatage des dates et heures
@@ -312,7 +308,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
   // Fait défiler les différentes colonnes de services pour afficher un service spécifique
   void _scrollToService(Service serviceToScrollTo) {
     // Utilisez les listes filtrées qui sont effectivement affichées dans les ListViews
-    final List<Service> currentFilteredServices = _filteredAndSortedDebutServices; // Ou _filteredAndSortedFinServices, peu importe, l'ordre est le même par ID
+    final List<Service> currentFilteredServices = _filteredAndSortedDebutServices;
 
     // Hauteur estimée d'une carte de service.
     // C'est une valeur fixe qui peut être imprécise si les cartes ont des hauteurs variables.
@@ -532,7 +528,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       final List<int>? bytes = excel.save(); // Sauvegarde le classeur Excel en tant que liste d'octets
       if (bytes == null) throw Exception('Erreur lors de la génération Excel'); // Lance une exception si la sauvegarde échoue
 
-      // MODIFICATION IMPORTANTE ICI : Utilisation de FilePicker pour choisir le répertoire de sauvegarde
+      // Utilisation de FilePicker pour choisir le répertoire de sauvegarde
       final String? directoryPath = await FilePicker.platform.getDirectoryPath(); // Ouvre une fenêtre de dialogue pour que l'utilisateur choisisse un répertoire
       if (directoryPath == null) {
         // L'utilisateur a annulé la sélection du répertoire
@@ -546,7 +542,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       final File file = File('$directoryPath/$fileName'); // Crée le chemin complet du fichier
       await file.writeAsBytes(bytes, flush: true); // Écrit les octets du fichier Excel dans le fichier
 
-      // Optionnel : Ouvre le fichier exporté avec l'application par défaut du système
+      // Ouvre le fichier exporté avec l'application par défaut du système
       await OpenFilex.open(file.path);
 
       // Affiche un SnackBar de succès avec le chemin du fichier
@@ -584,7 +580,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       return AppBar(
         // Définit la hauteur de la barre d'outils de l'AppBar en utilisant une valeur responsive
         toolbarHeight: responsive_utils.responsivePadding(context, 80.0), // Hauteur standard pour le titre et le logo
-        // Widget affiché au début de l'AppBar (généralement une icône ou un logo)
+        // Widget affiché au début de l'AppBar
         leading: Padding(
           padding: EdgeInsets.all(responsive_utils.responsivePadding(context, 4.0)),
           // Affiche l'image du logo de l'application
@@ -602,7 +598,6 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             fontSize: responsive_utils.responsiveFontSize(context, 16.0), // Taille peut rester celle-ci si l'espace est suffisant
             color: Theme.of(context).colorScheme.onPrimary,
           ),
-          // Plus besoin de overflow.ellipsis ici car le titre aura plus d'espace
         ),
         // Centre le titre de l'AppBar
         centerTitle: true,
@@ -661,7 +656,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                                 borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
                               ),
                               padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Padding réduit
-                              minimumSize: Size.fromHeight(responsive_utils.responsivePadding(context, 35.0)), // Hauteur suffisante
+                              minimumSize: Size.fromHeight(responsive_utils.responsivePadding(context, 35.0)),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                           ),
@@ -686,7 +681,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                           borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
                         ),
                         padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Padding réduit
-                        minimumSize: Size.fromHeight(responsive_utils.responsivePadding(context, 35.0)), // Hauteur suffisante
+                        minimumSize: Size.fromHeight(responsive_utils.responsivePadding(context, 35.0)),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
@@ -698,7 +693,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         ),
       );
     } else {
-      // Pour l'orientation Paysage (votre code existant, ajusté pour la taille des boutons)
+      // Pour l'orientation Paysage
       return AppBar(
         // Définit la hauteur de la barre d'outils pour l'orientation paysage
         toolbarHeight: responsive_utils.responsivePadding(context, 50.0),
@@ -717,7 +712,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             fontSize: responsive_utils.responsiveFontSize(context, 16.0),
             color: Theme.of(context).colorScheme.onPrimary,
           ),
-          overflow: TextOverflow.ellipsis, // Garder l'ellipsis en paysage si ça risque de déborder
+          overflow: TextOverflow.ellipsis,
         ),
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
@@ -731,36 +726,36 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
                 // Si les données sont chargées, affiche un bouton "Changer fichier"
                 ? ElevatedButton.icon(
                     onPressed: _importServicesFromExcel,
-                    icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Ajusté
+                    icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), 
                     label: FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), // Ajusté
+                      child: Text('Changer fichier', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), 
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
                       ),
-                      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Ajusté
-                      minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // Légèrement réduit
+                      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), 
+                      minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), 
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   )
                 // Si les données ne sont pas chargées, affiche un bouton "Importer services"
                 : ElevatedButton.icon(
                     onPressed: _importServicesFromExcel,
-                    icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Ajusté
+                    icon: Icon(Icons.upload_file, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)),
                     label: FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), // Ajusté
+                      child: Text('Importer services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), 
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
                       ),
-                      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Ajusté
-                      minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // Légèrement réduit
+                      padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)),
+                      minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), 
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
@@ -769,18 +764,18 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
             padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 2.0)),
             child: ElevatedButton.icon(
               onPressed: _onExportPressed,
-              icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)), // Ajusté
+              icon: Icon(Icons.download, color: Theme.of(context).colorScheme.primary, size: responsive_utils.responsiveIconSize(context, 16.0)),
               label: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))), // Ajusté
+                child: Text('Exporter services', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: responsive_utils.responsiveFontSize(context, 9.0))),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(responsive_utils.responsivePadding(context, 6.0)),
                 ),
-                padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)), // Ajusté
-                minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)), // Légèrement réduit
+                padding: EdgeInsets.symmetric(horizontal: responsive_utils.responsivePadding(context, 6.0), vertical: responsive_utils.responsivePadding(context, 2.0)),
+                minimumSize: Size(responsive_utils.responsivePadding(context, 75.0), responsive_utils.responsivePadding(context, 30.0)),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
@@ -1133,17 +1128,16 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center, // Centrer le contenu de la Row
         children: [
-          // const Spacer(), // SUPPRIMEZ CETTE LIGNE (commenté car la demande était de le supprimer)
           Flexible(
             child: Text(
               // Affiche le copyright et la date/heure actuelle formatée
               "© BMSoft 2025, tous droits réservés    ${DateFormat('dd/MM/yyyy HH:mm:ss', 'fr_FR').format(_currentDisplayDate)}",
               style: TextStyle(
-                fontSize: responsive_utils.responsiveFontSize(context, 9.0), // Peut-être réduire à 8.0 ou 7.0 si ça déborde encore
+                fontSize: responsive_utils.responsiveFontSize(context, 9.0),
                 fontWeight: FontWeight.w500,
                 color: Theme.of(context).colorScheme.secondary,
               ),
-              overflow: TextOverflow.visible, // Assurez-vous que l'overflow n'est pas ellipsis ici, ou utilisez FittedBox
+              overflow: TextOverflow.visible,
             ),
           ),
         ],
