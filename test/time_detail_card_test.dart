@@ -26,7 +26,7 @@ void main() {
     /// [type] Le [TimeCardType] (début, fin, résultat) qui détermine le comportement et l'affichage de la carte.
     ///
     /// Retourne un [Future<void>] qui se complète une fois le widget rendu et stabilisé.
-    Future<void> _pumpTimeDetailCard(WidgetTester tester, Service initialService, TimeCardType type) async {
+    Future<void> pumpTimeDetailCard(WidgetTester tester, Service initialService, TimeCardType type) async {
       /// Utilise un [ValueNotifier] pour contenir l'état du service.
       /// Cela permet de modifier l'objet [Service] dans le test et de déclencher
       /// une reconstruction de l'interface utilisateur du widget [TimeDetailCard] en réaction,
@@ -142,7 +142,7 @@ void main() {
     /// Teste que [TimeDetailCard] affiche correctement le nom de l'employé.
     /// Le nom de l'employé doit toujours être visible quelle que soit la configuration de la carte.
     testWidgets('TimeDetailCard displays employee name', (WidgetTester tester) async {
-      await _pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.debut); // Rend la carte avec une copie du service.
+      await pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.debut); // Rend la carte avec une copie du service.
       /// Vérifie qu'un widget [Text] contenant 'Jean Dupont' est trouvé une fois,
       /// confirmant l'affichage du nom de l'employé.
       expect(find.text('Jean Dupont'), findsOneWidget);
@@ -151,7 +151,7 @@ void main() {
     /// Teste que [TimeDetailCard] affiche l'heure de début formatée
     /// lorsque le [TimeCardType] est [TimeCardType.debut].
     testWidgets('TimeDetailCard displays start time for Debut type', (WidgetTester tester) async {
-      await _pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.debut); // Rend la carte de type 'Debut'.
+      await pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.debut); // Rend la carte de type 'Debut'.
       /// Vérifie que les textes pour l'heure de début et la date sont affichés comme attendu.
       expect(find.text('H.D: 08:00'), findsOneWidget); // H.D signifie "Heure de Début".
       expect(find.text('Date: 29/07/2025'), findsOneWidget); // Vérifie également la date.
@@ -160,7 +160,7 @@ void main() {
     /// Teste que [TimeDetailCard] affiche l'heure de fin formatée
     /// lorsque le [TimeCardType] est [TimeCardType.fin].
     testWidgets('TimeDetailCard displays end time for Fin type', (WidgetTester tester) async {
-      await _pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.fin); // Rend la carte de type 'Fin'.
+      await pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.fin); // Rend la carte de type 'Fin'.
       /// Vérifie que les textes pour l'heure de fin et la date sont affichés comme attendu.
       expect(find.text('H.F: 17:00'), findsOneWidget); // H.F signifie "Heure de Fin".
       expect(find.text('Date: 29/07/2025'), findsOneWidget); // Vérifie également la date.
@@ -169,7 +169,7 @@ void main() {
     /// Teste que le bouton "Absent" est correctement activé et affiche le texte "Absent"
     /// lorsque le [TimeCardType] est [TimeCardType.result].
     testWidgets('Absent button is enabled for Result type (and text is Absent)', (WidgetTester tester) async {
-      await _pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.result); // Rend la carte de type 'Result'.
+      await pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.result); // Rend la carte de type 'Result'.
       /// Trouve le bouton "Absent" en utilisant sa clé unique.
       final absentButtonFinder = find.byKey(const Key('absentButtonPortrait'));
       /// Vérifie que le bouton est trouvé.
@@ -190,7 +190,7 @@ void main() {
     /// est effectué pour le type [TimeCardType.debut].
     testWidgets('Tapping on Validate button toggles isValidated status for Debut type', (WidgetTester tester) async {
       /// Rend la carte de type 'Debut' avec un service non validé et non absent initialement.
-      await _pumpTimeDetailCard(tester, testService.copyWith(isValidated: false, isAbsent: false), TimeCardType.debut);
+      await pumpTimeDetailCard(tester, testService.copyWith(isValidated: false, isAbsent: false), TimeCardType.debut);
 
       /// **État initial**: Le bouton devrait afficher "Valider" et l'icône de coche.
       expect(find.byKey(const ValueKey('validateButtonText_valider')), findsOneWidget);
@@ -222,7 +222,7 @@ void main() {
     /// Cependant, il doit rester activé pour le type [TimeCardType.result].
     testWidgets('Validate button is disabled when isAbsent is true (but enabled for Result type)', (WidgetTester tester) async {
       /// **Cas 1**: Type [TimeCardType.result] (le bouton devrait être activé).
-      await _pumpTimeDetailCard(tester, testService.copyWith(isValidated: false, isAbsent: false), TimeCardType.result);
+      await pumpTimeDetailCard(tester, testService.copyWith(isValidated: false, isAbsent: false), TimeCardType.result);
       final validateButtonFinderResult = find.byKey(const Key('validateButtonPortrait'));
       expect(validateButtonFinderResult, findsOneWidget);
       /// Vérifie que le bouton est cliquable (`onPressed` n'est pas null).
@@ -230,7 +230,7 @@ void main() {
       expect(find.byKey(const ValueKey('validateButtonText_valider')), findsOneWidget);
 
       /// **Cas 2**: Type [TimeCardType.debut] mais `isAbsent` est vrai (le bouton devrait être désactivé).
-      await _pumpTimeDetailCard(tester, testService.copyWith(isAbsent: true, isValidated: false), TimeCardType.debut);
+      await pumpTimeDetailCard(tester, testService.copyWith(isAbsent: true, isValidated: false), TimeCardType.debut);
       final validateButtonFinderAbsent = find.byKey(const Key('validateButtonPortrait'));
       expect(validateButtonFinderAbsent, findsOneWidget);
       /// Vérifie que le bouton est désactivé (`onPressed` est null).
@@ -241,7 +241,7 @@ void main() {
     /// Teste que taper sur le bouton "Modifier" pour un [TimeCardType.debut]
     /// affiche le sélecteur d'heure ([TimePicker]) et permet la mise à jour de l'heure.
     testWidgets('Tapping on modify button displays TimePicker and updates time for Debut type', (WidgetTester tester) async {
-      await _pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.debut); // Rend la carte de type 'Debut'.
+      await pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.debut); // Rend la carte de type 'Debut'.
 
       /// Trouve le bouton "Modifier l'heure" par sa clé.
       final modifyButtonFinder = find.byKey(const Key('modifyTimeButtonPortrait'));
@@ -295,7 +295,7 @@ void main() {
     /// lorsque le [TimeCardType] est [TimeCardType.result], car la modification
     /// de l'heure n'est pas permise pour les résultats finaux.
     testWidgets('Modify button is disabled for Result type', (WidgetTester tester) async {
-      await _pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.result); // Rend la carte de type 'Result'.
+      await pumpTimeDetailCard(tester, testService.copyWith(), TimeCardType.result); // Rend la carte de type 'Result'.
       final modifyButtonFinder = find.byKey(const Key('modifyTimeButtonPortrait'));
       /// Vérifie que le bouton "Modifier l'heure" n'est pas du tout présent pour le type 'Result',
       /// confirmant qu'il est bien désactivé pour ce type de carte.

@@ -1,4 +1,5 @@
 /// lib/prise_service.dart
+library;
 
 /// Export conditionnel : ce fichier exporte 'prise_service_web.dart' par défaut.
 ///

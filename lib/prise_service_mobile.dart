@@ -1,4 +1,5 @@
 /// lib/prise_service_mobile.dart
+library;
 
 import 'dart:io'; // Importe la classe [File] pour les opérations sur les fichiers.
 import 'package:open_filex/open_filex.dart'; // Permet d'ouvrir un fichier avec l'application par défaut du système.

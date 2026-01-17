@@ -1,4 +1,5 @@
 /// test/responsive_utils_mobile_test.dart
+library;
 
 // ignore_for_file: unused_local_variable
 
@@ -24,7 +25,7 @@ void main() {
     /// [screenWidth] La largeur d'écran simulée pour le test.
     ///
     /// Retourne un [Future<void>] qui se complète une fois le widget rendu et stabilisé.
-    Future<void> _pumpTestWidget(WidgetTester tester, double screenWidth) async {
+    Future<void> pumpTestWidget(WidgetTester tester, double screenWidth) async {
       // S'assure que le binding de test des widgets Flutter est initialisé.
       final TestWidgetsFlutterBinding binding = TestWidgetsFlutterBinding.ensureInitialized();
       // Définit la taille physique de l'écran virtuel pour le test.
@@ -65,7 +66,7 @@ void main() {
     /// lorsque la largeur de l'écran correspond à la largeur de référence.
     testWidgets('responsiveFontSize devrait retourner la valeur de base pour la largeur d\'écran de référence', (WidgetTester tester) async {
       // Simule un écran à la largeur de référence.
-      await _pumpTestWidget(tester, kReferenceScreenWidth);
+      await pumpTestWidget(tester, kReferenceScreenWidth);
       // Récupère le BuildContext à partir d'un élément rendu (le Container vide).
       final BuildContext context = tester.element(find.byType(Container));
 
@@ -79,7 +80,7 @@ void main() {
     /// tout en restant au-dessus de la taille minimale.
     testWidgets('responsiveFontSize devrait réduire proportionnellement (au-dessus du minimum)', (WidgetTester tester) async {
       double screenWidth = 750.0; // 75% de la largeur de référence.
-      await _pumpTestWidget(tester, screenWidth);
+      await pumpTestWidget(tester, screenWidth);
       final BuildContext context = tester.element(find.byType(Container));
 
       double baseFontSize = 20.0;
@@ -92,7 +93,7 @@ void main() {
     /// en dessous de [kMinFontSize] même pour des écrans très petits.
     testWidgets('responsiveFontSize devrait être plafonnée à kMinFontSize pour les très petits écrans', (WidgetTester tester) async {
       double screenWidth = 400.0; // Le résultat calculé serait 20.0 * (400/1000) = 8.0, mais le minimum est 10.0.
-      await _pumpTestWidget(tester, screenWidth);
+      await pumpTestWidget(tester, screenWidth);
       final BuildContext context = tester.element(find.byType(Container));
 
       double baseFontSize = 20.0;
@@ -104,7 +105,7 @@ void main() {
     /// la taille de police si la largeur de l'écran est supérieure à la référence.
     testWidgets('responsiveFontSize devrait augmenter proportionnellement', (WidgetTester tester) async {
       double screenWidth = 1200.0; // 120% de la largeur de référence.
-      await _pumpTestWidget(tester, screenWidth);
+      await pumpTestWidget(tester, screenWidth);
       final BuildContext context = tester.element(find.byType(Container));
 
       double baseFontSize = 15.0;
@@ -117,7 +118,7 @@ void main() {
     /// Teste que [mobile_responsive.responsiveIconSize] retourne la valeur de base
     /// lorsque la largeur de l'écran correspond à la largeur de référence.
     testWidgets('responsiveIconSize devrait retourner la valeur de base pour la largeur d\'écran de référence', (WidgetTester tester) async {
-      await _pumpTestWidget(tester, kReferenceScreenWidth);
+      await pumpTestWidget(tester, kReferenceScreenWidth);
       final BuildContext context = tester.element(find.byType(Container));
 
       double baseIconSize = 24.0;
@@ -129,7 +130,7 @@ void main() {
     /// en dessous de [kMinIconSize] même pour des écrans très petits.
     testWidgets('responsiveIconSize devrait être plafonnée à kMinIconSize pour les très petits écrans', (WidgetTester tester) async {
       double screenWidth = 400.0; // Le résultat calculé serait 24.0 * (400/1000) = 9.6, mais le minimum est 12.0.
-      await _pumpTestWidget(tester, screenWidth);
+      await pumpTestWidget(tester, screenWidth);
       final BuildContext context = tester.element(find.byType(Container));
 
       double baseIconSize = 24.0;
@@ -141,7 +142,7 @@ void main() {
     /// Teste que [mobile_responsive.responsivePadding] retourne la valeur de base
     /// lorsque la largeur de l'écran correspond à la largeur de référence.
     testWidgets('responsivePadding devrait retourner la valeur de base pour la largeur d\'écran de référence', (WidgetTester tester) async {
-      await _pumpTestWidget(tester, kReferenceScreenWidth);
+      await pumpTestWidget(tester, kReferenceScreenWidth);
       final BuildContext context = tester.element(find.byType(Container));
 
       double basePadding = 16.0;
@@ -156,7 +157,7 @@ void main() {
       double screenWidth = 100.0; // Le résultat calculé serait 16.0 * (100/1000) = 1.6.
       // Cependant, le facteur de mise à l'échelle est plafonné à 0.5 (défini implicitement ou explicitement dans responsive_utils.dart),
       // donc 16.0 * 0.5 = 8.0.
-      await _pumpTestWidget(tester, screenWidth);
+      await pumpTestWidget(tester, screenWidth);
       final BuildContext context = tester.element(find.byType(Container));
 
       double basePadding = 16.0;
@@ -168,7 +169,7 @@ void main() {
     /// en dessous de [kMinPadding] pour de très petites tailles de base sur de petits écrans.
     testWidgets('responsivePadding devrait être plafonné à kMinPadding pour de très petites tailles de base sur de petits écrans', (WidgetTester tester) async {
       double screenWidth = 100.0; // Le facteur de mise à l'échelle sera plafonné à 0.5.
-      await _pumpTestWidget(tester, screenWidth);
+      await pumpTestWidget(tester, screenWidth);
       final BuildContext context = tester.element(find.byType(Container));
 
       double basePadding = 3.0; // 3.0 * 0.5 = 1.5, ce qui est inférieur à `kMinPadding` (2.0).

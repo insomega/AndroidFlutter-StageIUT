@@ -1,4 +1,5 @@
 /// test/prise_service_screen_test.dart
+library;
 
 // ignore_for_file: unused_element
 
@@ -93,14 +94,14 @@ class TimeDetailCard extends StatelessWidget {
 
   /// Constructeur de la classe [TimeDetailCard] dummy.
   const TimeDetailCard({
-    Key? key, // Clé du widget.
+    super.key, // Clé du widget.
     required this.service,
     required this.type,
     required this.onAbsentPressed,
     required this.onModifyTime,
     required this.onValidate,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -199,6 +200,8 @@ class TimeDetailCard extends StatelessWidget {
 /// comme parent pour les widgets testés. Dans un vrai test, il pourrait contenir
 /// le widget `PriseServiceScreen` et gérer son état.
 class MockMyHomePage extends StatefulWidget {
+  const MockMyHomePage({super.key});
+
   @override
   _MockMyHomePageState createState() => _MockMyHomePageState(); // Crée l'état associé.
 }
