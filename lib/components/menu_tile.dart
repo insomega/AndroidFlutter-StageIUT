@@ -1,3 +1,5 @@
+// lib/components/menu_tile.dart
+
 import 'package:flutter/material.dart';
 import '../core/menu_model.dart';
 

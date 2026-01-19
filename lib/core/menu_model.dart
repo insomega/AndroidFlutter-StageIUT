@@ -1,3 +1,5 @@
+// lib/core/menu_model.dart
+
 class MenuModel {
   final String caption;
   final String id;

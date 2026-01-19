@@ -1,3 +1,5 @@
+// lib/components/digital_clock.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
