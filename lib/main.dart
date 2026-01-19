@@ -17,8 +17,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true, primaryColor: Colors.blue[900]),
-      localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
+      theme: ThemeData(
+        useMaterial3: true,
+        primaryColor: Colors.blue[900],
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue[900]!),
+      ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       supportedLocales: const [Locale('fr', 'FR')],
       home: const MainNavigator(),
     );
@@ -33,39 +41,49 @@ class MainNavigator extends StatefulWidget {
 }
 
 class _MainNavigatorState extends State<MainNavigator> {
-  String _currentViewId = 'menu';
+  // On initialise sur 'home_link' pour afficher l'accueil au démarrage
+  String _currentViewId = 'home_link';
 
   @override
   Widget build(BuildContext context) {
-    // Gestion du bouton "Retour" physique sur Android
     return WillPopScope(
       onWillPop: () async {
-        if (_currentViewId != 'menu') {
-          setState(() => _currentViewId = 'menu');
+        // Si on n'est pas sur l'accueil, le bouton retour ramène à l'accueil
+        if (_currentViewId != 'home_link') {
+          setState(() => _currentViewId = 'home_link');
           return false;
         }
         return true;
       },
       child: Scaffold(
-        body: SafeArea(
-          child: _currentViewId == 'menu'
-              ? DynamicMenu(
-                  jsonPath: 'assets/menu_config.json',
-                  onItemSelected: (id) => setState(() => _currentViewId = id),
-                )
-              : Stack(
-                  children: [
-                    AppRouter.getPage(_currentViewId),
-                    Positioned(
-                      top: 10,
-                      left: 10,
-                      child: FloatingActionButton.small(
-                        onPressed: () => setState(() => _currentViewId = 'menu'),
-                        child: const Icon(Icons.arrow_back),
-                      ),
-                    ),
-                  ],
-                ),
+        // L'AppBar contient automatiquement l'icône pour ouvrir le Drawer
+        appBar: AppBar(
+          title: const Text("Espace Salarié", 
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+          ),
+          backgroundColor: Colors.blue[900],
+          iconTheme: const IconThemeData(color: Colors.white),
+          centerTitle: true,
+        ),
+        
+        // Ton menu transformé en tiroir dépliant
+        drawer: DynamicMenu(
+          jsonPath: 'assets/menu_config.json',
+          onItemSelected: (id) {
+            setState(() => _currentViewId = id);
+          },
+        ),
+        
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          // Utilise une Key pour que l'AnimatedSwitcher détecte le changement de widget
+          child: Container(
+            key: ValueKey(_currentViewId),
+            child: AppRouter.getPage(_currentViewId),
+          ),
         ),
       ),
     );

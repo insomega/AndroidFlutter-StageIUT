@@ -602,7 +602,7 @@ class _PriseServiceScreenState extends State<PriseServiceScreen> {
         // Ajoute un padding réactif autour du logo.
         padding: EdgeInsets.all(responsive_utils.responsivePadding(screenWidth, 8.0)),
         child: Image.asset(
-          'assets/logo_app.png', // Chemin de l'image du logo.
+          '../../assets/logo_app.png', // Chemin de l'image du logo.
           // Ajuste la hauteur et la largeur du logo de manière réactive.
           height: responsive_utils.responsiveIconSize(screenWidth, 40.0),
           width: responsive_utils.responsiveIconSize(screenWidth, 40.0),

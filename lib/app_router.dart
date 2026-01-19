@@ -1,13 +1,14 @@
 // lib/app_router.dart
 
 import 'package:flutter/material.dart';
+import 'package:mon_projet/features/home_screen.dart';
 import 'features/service/prise_service.dart'; // Import du nouveau module
 
 class AppRouter {
   static Widget getPage(String id) {
     switch (id) {
       case 'home_link':
-        return const Center(child: Text("Bienvenue sur l'Accueil"));
+        return const HomeScreen();
         
       case 'PlanningVacPrise': // ID du menu_config.json
         return const PriseServiceScreen();

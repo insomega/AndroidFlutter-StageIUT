@@ -32,39 +32,66 @@ class _DynamicMenuState extends State<DynamicMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildHeader(),
-        Expanded(
-          child: FutureBuilder<List<MenuModel>>(
-            future: _menuFuture,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-              return ListView.separated(
-                itemCount: snapshot.data!.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
-                itemBuilder: (context, index) => MenuTile(
-                  item: snapshot.data![index],
-                  onTap: widget.onItemSelected,
-                ),
-              );
-            },
+    return Drawer( // Utilisation du widget Drawer
+      child: Column(
+        children: [
+          _buildHeader(),
+          Expanded(
+            child: FutureBuilder<List<MenuModel>>(
+              future: _menuFuture,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                return ListView.separated(
+                  padding: EdgeInsets.zero,
+                  itemCount: snapshot.data!.length,
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, index) => MenuTile(
+                    item: snapshot.data![index],
+                    onTap: (id) {
+                      Navigator.pop(context); // Ferme le tiroir après le clic
+                      widget.onItemSelected(id);
+                    },
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-        const DigitalClockFooter(),
-      ],
+          const DigitalClockFooter(),
+        ],
+      ),
     );
   }
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.blue[900]!, Colors.blue[700]!])),
-      child: const Row(
+      width: double.infinity, // Force la largeur totale du tiroir
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 20, // Évite la barre de statut
+        bottom: 20,
+        left: 20,
+        right: 20,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue[900]!, Colors.blue[700]!],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+      ),
+      child: Row(
         children: [
-          Icon(Icons.menu_open, color: Colors.white, size: 30),
-          SizedBox(width: 15),
-          Text("ESPACE SALARIÉ", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          const Icon(Icons.menu_open, color: Colors.white, size: 30),
+          const SizedBox(width: 15),
+          const Expanded( // Permet au texte de prendre la place restante sans déborder
+            child: Text(
+              "ESPACE SALARIÉ",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ],
       ),
     );
