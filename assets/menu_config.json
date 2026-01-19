@@ -1,0 +1,14 @@
+[
+  {
+    "caption": "Accueil",
+    "id": "home_screen",
+    "icon": "home",
+    "type": "font"
+  },
+  {
+    "caption": "Profil",
+    "id": "profile_screen",
+    "icon": "assets/user.png",
+    "type": "asset"
+  }
+]
