@@ -56,15 +56,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_currentView == 'menu' ? 'Menu Principal' : 'Prise de Service'),
-        leading: _currentView != 'menu' 
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back), 
-              onPressed: () => setState(() => _currentView = 'menu'),
-            )
-          : null,
-      ),
       body: _currentView == 'menu'
         ? DynamicMenuPackage(
             jsonPath: 'assets/menu_config.json',

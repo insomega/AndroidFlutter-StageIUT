@@ -6,7 +6,7 @@ class DynamicMenu extends StatelessWidget {
   const DynamicMenu({super.key});
 
   // Gestion des icônes selon le type (Font ou Asset)
-  Widget _buildIcon(MenuItem item) {
+  Widget _buildIcon(MenuData item) {
     if (item.type == 'font') {
       // Mapping simple des noms de chaînes vers les icônes Material
       IconData iconData;
@@ -29,7 +29,7 @@ class DynamicMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<MenuItem>>(
+    return FutureBuilder<List<MenuData>>(
       future: JsonLoader.loadMenu(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

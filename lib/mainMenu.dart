@@ -24,7 +24,7 @@ class DynamicMenu extends StatelessWidget {
   const DynamicMenu({super.key});
 
   // Fonction pour choisir entre icône Font ou Image Asset
-  Widget _buildIcon(MenuItem item) {
+  Widget _buildIcon(MenuData item) {
     if (item.type == 'font') {
       // Pour l'exercice, on simule quelques icônes Material
       IconData iconData = Icons.help; 
@@ -38,7 +38,7 @@ class DynamicMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<MenuItem>>(
+    return FutureBuilder<List<MenuData>>(
       future: JsonLoader.loadMenu(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

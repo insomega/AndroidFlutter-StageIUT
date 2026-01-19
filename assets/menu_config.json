@@ -1,20 +1,169 @@
 [
   {
+    "type": "header",
+    "href": "../../_Commun/Images/home_QA.png",
     "caption": "Accueil",
-    "id": "home_screen",
-    "icon": "home",
-    "type": "font"
+    "classColor": "it-red",
+    "icon": "bmi-entite",
+    "id": "home_link"
   },
   {
-    "caption": "Profil",
-    "id": "profile_screen",
-    "icon": "assets/user.png",
-    "type": "asset"
+    "href": "../../_Commun/Images/planning.png",
+    "caption": "Planning",
+    "type": "header",
+    "classColor": "it-yallow",
+    "icon": "bmi-bm-planning",
+    "hideIfEmpty": 1,
+    "child": [
+      {
+        "bmsyu_objet": "planninglistquery",
+        "caption": "Mon Planning",
+        "href": "../../BMServer/HTML/bmserver_svr_planning.html",
+        "type": "link",
+        "icon": "bmi-bm-planning"
+      },
+      {
+        "bmsyu_objet": "PlanningVacPrise",
+        "caption": "Prise de vacations",
+        "href": "../../BMServer/HTML/bmserver_Planning_VacPriseNG.html",
+        "type": "link",
+        "icon": "bmi-bm-ventilation"
+      },
+      {
+        "bmsyu_objet": "disponible",
+        "caption": "Disponibilités",
+        "href": "../../BMServer/HTML/bmserver_Disponible_NG.html",
+        "type": "link",
+        "icon": "bmi-liste-salaries-disponibles"
+      },
+      {
+        "bmsyu_objet": "Preferences",
+        "caption": "Préférences",
+        "type": "link",
+        "href": "../../BMServer/HTML/bmserver_Preferences_NG.html",
+        "icon": "bmi-exclure"
+      },
+      {
+        "bmsyu_objet": "Report_PC_Client_Form",
+        "href": "../../BMServer/HTML/bmserver_Report_Client.html",
+        "caption": "Planning Clients",
+        "icon": "bmi-planning-clients",
+        "type": "link"
+      }
+    ]
   },
   {
-    "caption": "Prise de Service",
-    "id": "prise_service",
-    "icon": "work",
-    "type": "font"
+    "href": "../../_Commun/Images/absence.png",
+    "caption": "Absences",
+    "classColor": "it-green",
+    "type": "header",
+    "icon": "bmi-bm-absence",
+    "hideIfEmpty": 1,
+    "child": [
+      {
+        "bmsyu_objet": "AbsenceIUD",
+        "caption": "Demande d'absence",
+        "href": "../../BMServer/HTML/bmserver_Absence_IUD_NG.html",
+        "type": "link",
+        "icon": "bmi-bm-absence"
+      },
+      {
+        "bmsyu_objet": "indisponibiliteIUD",
+        "caption": "Demande d'indisponibilité",
+        "href": "../../BMServer/HTML/bmserver_Indisponibilite_IUD_NG.html",
+        "type": "link",
+        "icon": "bmi-indisponibilites"
+      },
+      {
+        "bmsyu_objet": "indisponible",
+        "caption": "Indisponibilité récurrente",
+        "href": "../../BMServer/HTML/bmserver_indisponible_NG.html",
+        "type": "link",
+        "icon": "bmi-bm-indisponible"
+      },
+      {
+        "bmsyu_objet": "cet",
+        "caption": "C.E.T",
+        "href": "../../BMServer/HTML/bmserver_cet.html",
+        "type": "link",
+        "icon": "bmi-box"
+      }
+    ]
+  },
+  {
+    "href": "../../_Commun/Images/infos-server.png",
+    "caption": "Infos Salarié",
+    "classColor": "it-black",
+    "type": "header",
+    "icon": "bmi-info-salarie",
+    "hideIfEmpty": 1,
+    "child": [
+      {
+        "bmsyu_objet": "infos_server",
+        "caption": "Mes Informations",
+        "href": "../../BMServer/HTML/bmserver_Server_info.html",
+        "type": "link",
+        "icon": "bmi-info-salarie"
+      },
+      {
+        "bmsyu_objet": "carte_pro",
+        "caption": "Cartes Professionnelles",
+        "href": "../../BMServer/HTML/bmserver_Report_Server_Carte_Pro_sal.html",
+        "type": "link",
+        "icon": "bmi-info-salarie"
+      },
+      {
+        "bmsyu_objet": "demande_tenue",
+        "caption": "Demande de tenue",
+        "href": "",
+        "type": "link",
+        "icon": "bmi-tenues"
+      },
+      {
+        "bmsyu_objet": "bm_messenger",
+        "caption": "Messenger",
+        "type": "link",
+        "href": "../../BMServer/HTML/bmserver_server_messenger.html",
+        "icon": "bmi-bm-messagerie"
+      },
+      {
+        "bmsyu_objet": "Options",
+        "caption": "Options",
+        "type": "link",
+        "href": "../../BMServer/HTML/bmserver_Options_NG.html",
+        "icon": "bmi-bm-option"
+      }
+    ]
+  },
+  {
+    "href": "../../_Commun/Images/documents.png",
+    "caption": "Documents",
+    "classColor": "it-purple",
+    "type": "header",
+    "icon": "bmi-dossier-embauche",
+    "hideIfEmpty": 1,
+    "child": [
+      {
+        "bmsyu_objet": "documents",
+        "caption": "Mes Documents",
+        "type": "link",
+        "href": "../../BMServer/HTML/bmserver_Server_Details.html",
+        "icon": "bmi-dossier-embauche"
+      },
+      {
+        "bmsyu_objet": "ENTREPRISE_Document_annexe_Int",
+        "caption": "Documents Entreprise",
+        "href": "../../BMServer/HTML/bmserver_ENTREPRISE_Document_Annexe.html",
+        "type": "link",
+        "icon": "bmi-documents"
+      },
+      {
+        "bmsyu_objet": "note_frais",
+        "caption": "Notes de frais",
+        "type": "link",
+        "href": "../../BMServer/HTML/bmserver_Server_note_frais.html",
+        "icon": "bmi-facturation"
+      }
+    ]
   }
 ]
