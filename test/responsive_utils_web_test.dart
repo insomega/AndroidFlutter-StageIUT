@@ -4,7 +4,7 @@ library;
 // ignore_for_file: unused_local_variable
 
 import 'package:flutter_test/flutter_test.dart'; // Importe le framework de test de Flutter, essentiel pour écrire des tests unitaires et de widgets.
-import '../stageS4/lib/utils/responsive_utils_web.dart' as web_responsive; // Importe les fonctions utilitaires pour la responsivité web.
+import '../lib/utils/responsive_utils_web.dart' as web_responsive; // Importe les fonctions utilitaires pour la responsivité web.
 
 /// Constantes importées ou définies localement pour refléter celles du fichier
 /// de production. Ces valeurs sont cruciales pour garantir que les tests
