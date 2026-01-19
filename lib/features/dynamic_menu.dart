@@ -32,7 +32,7 @@ class _DynamicMenuState extends State<DynamicMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return Drawer( // Utilisation du widget Drawer
+    return Drawer(
       child: Column(
         children: [
           _buildHeader(),
@@ -48,7 +48,7 @@ class _DynamicMenuState extends State<DynamicMenu> {
                   itemBuilder: (context, index) => MenuTile(
                     item: snapshot.data![index],
                     onTap: (id) {
-                      Navigator.pop(context); // Ferme le tiroir après le clic
+                      Navigator.pop(context);
                       widget.onItemSelected(id);
                     },
                   ),
