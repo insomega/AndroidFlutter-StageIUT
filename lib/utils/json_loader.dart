@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import '../models/menu_item.dart';
+import 'package:mon_projet/dynamic_menu_pkg.dart';
 
 class JsonLoader {
   static Future<List<MenuData>> loadMenu() async {

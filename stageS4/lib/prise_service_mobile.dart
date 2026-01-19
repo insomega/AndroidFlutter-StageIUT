@@ -5,14 +5,14 @@ import 'dart:io'; // Importe la classe [File] pour les opérations sur les fichi
 import 'package:open_filex/open_filex.dart'; // Permet d'ouvrir un fichier avec l'application par défaut du système.
 import 'package:flutter/material.dart'; // Importe les composants Material Design de Flutter.
 import 'package:intl/intl.dart'; // Pour le formatage des dates et heures.
-import 'package:mon_projet/time_detail_card.dart'; // Importe le widget [TimeDetailCard] personnalisé.
-import 'package:mon_projet/models/service.dart'; // Importe le modèle de données [Service].
+import 'time_detail_card.dart'; // Importe le widget [TimeDetailCard] personnalisé.
+import 'models/service.dart'; // Importe le modèle de données [Service].
 import 'dart:async'; // Pour utiliser [Timer].
 import 'package:file_picker/file_picker.dart'; // Pour permettre à l'utilisateur de choisir un fichier.
 import 'package:excel/excel.dart' hide Border; // Importation de la bibliothèque Excel, en masquant la classe [Border] pour éviter les conflits avec Flutter.
 import 'dart:typed_data'; // Pour manipuler des listes d'octets ([Uint8List]).
-import 'package:mon_projet/utils/date_time_extensions.dart'; // Importe les extensions personnalisées pour [DateTime].
-import 'package:mon_projet/utils/responsive_utils.dart' as responsive_utils; // Importe les utilitaires de responsive design avec un alias.
+import 'utils/date_time_extensions.dart'; // Importe les extensions personnalisées pour [DateTime].
+import 'utils/responsive_utils.dart' as responsive_utils; // Importe les utilitaires de responsive design avec un alias.
 
 /// [PriseServiceScreen] est un [StatefulWidget] qui affiche une interface
 /// pour la gestion des services, incluant l'affichage de cartes de détails,

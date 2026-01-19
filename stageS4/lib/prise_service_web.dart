@@ -4,14 +4,14 @@
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mon_projet/time_detail_card.dart';
-import 'package:mon_projet/models/service.dart';
+import 'time_detail_card.dart';
+import 'models/service.dart';
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart' hide Border;
 import 'dart:typed_data';
-import 'package:mon_projet/utils/date_time_extensions.dart';
-import 'package:mon_projet/utils/responsive_utils_web.dart' as responsive_utils;
+import 'utils/date_time_extensions.dart';
+import 'utils/responsive_utils_web.dart' as responsive_utils;
 
 /// Écran principal pour la gestion et l'affichage des services.
 ///

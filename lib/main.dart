@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:mon_projet/prise_service.dart'; // Importe PriseServiceScreen
 import 'dynamic_menu_pkg.dart';
 
 void main() async {
@@ -50,33 +49,52 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+// lib/main.dart
+
 class _MyHomePageState extends State<MyHomePage> {
-  String _currentView = 'menu'; 
+  // On stocke l'ID de la vue actuelle
+  String _currentViewId = 'menu'; 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _currentView == 'menu'
-        ? DynamicMenuPackage(
-            jsonPath: 'assets/menu_config.json',
-              onDestinationSelected: (id) {
-                print("ID cliqué : $id"); // Ajoute ceci pour déboguer dans la console VS Code
-                
-                if (id == 'prise_service') {
-                  setState(() => _currentView = 'prise_service');
-                } else if (id == 'home_screen') {
-                  // Action pour l'accueil (par exemple, rester sur le menu ou afficher une snackbar)
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Vous êtes déjà sur l'accueil")),
-                  );
-                } else if (id == 'profile_screen') {
-                  // Action pour le profil
-                  print("Ouvrir le profil");
-                }
-              },
-            )
-          // Correction du nom de la classe : PriseServiceScreen (d'après tes fichiers)
-          : const PriseServiceScreen(), 
+      // On utilise un simple "if/else" ou un "Switch" pour la modularité
+      body: WillPopScope(
+        onWillPop: () async {
+          if (_currentViewId != 'menu') {
+            setState(() => _currentViewId = 'menu');
+            return false;
+          }
+          return true;
+        },
+        child: _buildCurrentScreen(),
+      ),
     );
+  }
+
+  Widget _buildCurrentScreen() {
+    switch (_currentViewId) {
+      case 'menu':
+        return DynamicMenuPackage(
+          jsonPath: 'assets/menu_config.json',
+          onDestinationSelected: (id) {
+            setState(() => _currentViewId = id);
+          },
+        );
+      
+      // Ajoutez vos modules ici au fur et à mesure
+      case 'planninglistquery':
+        return const Center(child: Text("Module Planning")); 
+        
+      case 'bm_messenger':
+        return const Center(child: Text("Module Messagerie"));
+
+      default:
+        // Si l'ID n'est pas reconnu, on reste sur le menu avec un message
+        return DynamicMenuPackage(
+          jsonPath: 'assets/menu_config.json',
+          onDestinationSelected: (id) => setState(() => _currentViewId = id),
+        );
+    }
   }
 }

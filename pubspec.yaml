@@ -69,15 +69,14 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   # fonts:
-  #   - family: Schyler
+  #   - family: BMIIcons  # Le nom que tu utiliseras dans ton code
   #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
+  #       - asset: assets/fonts/BMIIcons.ttf
+
+  #   - family: MaPolice  # Pour le texte général
   #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
+  #       - asset: assets/fonts/MaPolice-Regular.ttf
+  #       - asset: assets/fonts/MaPolice-Bold.ttf
   #         weight: 700
   #
   # For details regarding fonts from package dependencies,

@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart'; // Importe le package Flutter, essentiel pour construire des interfaces utilisateur (widgets, Material Design, etc.).
 import 'package:intl/intl.dart'; // Importe le package `intl` pour des fonctionnalités d'internationalisation, notamment pour la mise en forme des dates et heures selon des formats locaux.
-import 'package:mon_projet/models/service.dart'; // Importe la définition de la classe `Service` depuis le chemin `models/service.dart`. Cette classe représente la structure des données pour un service.
-import 'package:mon_projet/utils/time_card_helpers.dart' as helpers; // Importe un ensemble de fonctions d'aide (`helpers`) définies dans `utils/time_card_helpers.dart`. Ces fonctions sont utilisées pour calculer des tailles responsives (police, espacement, icônes) et formater des durées, améliorant l'adaptabilité de l'UI.
+import 'models/service.dart'; // Importe la définition de la classe `Service` depuis le chemin `models/service.dart`. Cette classe représente la structure des données pour un service.
+import 'utils/time_card_helpers.dart' as helpers; // Importe un ensemble de fonctions d'aide (`helpers`) définies dans `utils/time_card_helpers.dart`. Ces fonctions sont utilisées pour calculer des tailles responsives (police, espacement, icônes) et formater des durées, améliorant l'adaptabilité de l'UI.
 
 /// Enumération (énum) définissant les différents types que peut prendre une carte horaire.
 enum TimeCardType {
