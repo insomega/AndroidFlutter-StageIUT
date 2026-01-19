@@ -10,5 +10,11 @@
     "id": "profile_screen",
     "icon": "assets/user.png",
     "type": "asset"
+  },
+  {
+    "caption": "Prise de Service",
+    "id": "prise_service",
+    "icon": "work",
+    "type": "font"
   }
 ]
