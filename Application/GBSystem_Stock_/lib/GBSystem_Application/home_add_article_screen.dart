@@ -6,6 +6,7 @@ import 'package:gbsystem_root/GBSystem_LogEvent.dart';
 import 'package:gbsystem_root/GBSystem_snack_bar.dart';
 import 'package:gbsystem_root/GBSystem_waiting.dart';
 import 'package:gbsystem_stock/GBSystem_Application/GBSystem_article_ref_model.dart';
+import 'package:gbsystem_stock/GBSystem_Application/GBSystem_catalogue_model.dart';
 import 'package:gbsystem_stock/GBSystem_Application/GBSystem_Auth/GBSystem_auth_service.dart';
 import 'package:gbsystem_stock/GBSystem_Application/article_widget.dart';
 import 'package:gbsystem_stock/GBSystem_Application/catalogue_widget.dart';

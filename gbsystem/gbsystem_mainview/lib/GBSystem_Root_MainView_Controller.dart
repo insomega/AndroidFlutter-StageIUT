@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'GBSystem_MenuService.dart';
-import 'package:gbsystem_stock/GBSystem_Application/Routes/GBSystem_Application_Routes.dart';
+//import 'package:gbsystem_stock/GBSystem_Application/Routes/GBSystem_Application_Routes.dart';
 
 class GBSystem_MainViewController extends GetxController {
   final MenuService menuService = Get.find<MenuService>();
@@ -55,7 +55,7 @@ class GBSystem_MainViewController extends GetxController {
     for (int i = 0; i < mainIndex; i++) {
       final item = menuService.filteredMenuItems[i];
       if (item.hasSubItems && menuService.isExpanded(item.id)) {
-        flatIndex += item.subItems!.length as int;
+        flatIndex += item.subItems!.length;
       }
     }
     return flatIndex;

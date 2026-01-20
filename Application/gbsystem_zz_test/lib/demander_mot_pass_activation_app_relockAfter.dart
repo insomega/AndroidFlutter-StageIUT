@@ -24,7 +24,7 @@
 // <string>Cette app utilise Face ID pour vous authentifier.</string>
 
 
-2) Service GetX (AppLockService)
+// 2) Service GetX (AppLockService)
 import 'package:get/get.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter/material.dart';
@@ -41,11 +41,10 @@ class AppLockService extends GetxService with WidgetsBindingObserver {
 
   AppLockService({this.relockAfter = const Duration(seconds: 0)});
 
-  Future<AppLockService> init() async {
+  Future<void> init() async {
     WidgetsBinding.instance.addObserver(this);
     // Authentification initiale au démarrage si tu veux
     await _triggerAuth();
-    return this;
   }
 
   @override
@@ -136,38 +135,36 @@ class AppLockService extends GetxService with WidgetsBindingObserver {
   }
 }
 
-3) Initialisation du service
+// 3) Initialisation du service
 
-Dans ton main.dart :
+// Dans ton main.dart :
 
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'app_lock_service.dart';
-import 'my_app.dart';
+// import 'app_lock_service.dart';
+// import 'main.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
 
-  // init GetX service
-  await Get.putAsync(() => AppLockService(relockAfter: Duration(seconds: 0)).init());
+//   // init GetX service
+//   await Get.putAsync(() => AppLockService(relockAfter: Duration(seconds: 0)).init());
 
-  runApp(const MyApp());
-}
+//   runApp(const MyApp());
+// }
 
-4) Utilisation
+// 4) Utilisation
 
-Tu n’as rien à ajouter dans les vues : le AppLockService est global et surveille automatiquement le cycle de vie.
-Dès que l’app revient en avant-plan après un certain délai (relockAfter), l’écran d’auth s’affiche.
+// Tu n’as rien à ajouter dans les vues : le AppLockService est global et surveille automatiquement le cycle de vie.
+// Dès que l’app revient en avant-plan après un certain délai (relockAfter), l’écran d’auth s’affiche.
 
-5) Options possibles
+// 5) Options possibles
 
-Forcer le relock immédiat (ex : bouton "Verrouiller l’app") :
+// Forcer le relock immédiat (ex : bouton "Verrouiller l’app") :
 
-Get.find<AppLockService>().forceLock();
+// Get.find<AppLockService>().forceLock();
 
 
-(tu peux ajouter une méthode forceLock() dans le service qui appelle _triggerAuth() directement).
+// (tu peux ajouter une méthode forceLock() dans le service qui appelle _triggerAuth() directement).
 
-Retour login : si tu veux que l’utilisateur doive se reconnecter à ton backend en cas d’échec, remplace Get.back() dans "Annuler" par Get.offAllNamed('/login').
+// Retour login : si tu veux que l’utilisateur doive se reconnecter à ton backend en cas d’échec, remplace Get.back() dans "Annuler" par Get.offAllNamed('/login').
 
-👉 Veux-tu que je t’adapte ce service en GetX Middleware aussi, pour que certaines routes sensibles soient protégées (ex: /salaire, /parametres) et demandent une réauth même si l’app est déjà déverrouillée ?
+// 👉 Veux-tu que je t’adapte ce service en GetX Middleware aussi, pour que certaines routes sensibles soient protégées (ex: /salaire, /parametres) et demandent une réauth même si l’app est déjà déverrouillée ?

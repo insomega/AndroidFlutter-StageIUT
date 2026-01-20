@@ -104,7 +104,7 @@ class GBSystemData {
         sender['exchange'] = _param(exchange);
         _sendRequest(sender);
       } else {
-        sender['ClientData'] = json.decode(dataItem.first['ClientData']);
+        sender['ClientData'] = json.decode(dataItem.first['ClientData'] as String);
         sender['USRLD_LOAD_DATE'] = dataItem.first['USRLD_LOAD_DATE'];
         _setEntityDataCallBack(sender);
       }
@@ -134,7 +134,7 @@ class GBSystemData {
         sender['exchange'] = _param(exchange);
         _sendRequest(sender);
       } else {
-        sender['ClientData'] = json.decode(dataItem.first['ClientData']);
+        sender['ClientData'] = json.decode(dataItem.first['ClientData'] as String);
         sender['BinaryData'] = dataItem.first['BinaryData'];
         sender['Pageinfo'] = dataItem.first['Pageinfo'];
         sender['USRLD_LOAD_DATE'] = dataItem.first['USRLD_LOAD_DATE'];
@@ -245,6 +245,31 @@ class GBSystemData {
       }
     } catch (e) {
       _addLogEvent('_setDBDataCallBack', e.toString());
+      rethrow;
+    }
+  }
+
+  void _setBinaryData(Map<String, dynamic> sender) {
+    try {
+      final completeCallback = sender['Sender_Complete'];
+      if (completeCallback != null) {
+        completeCallback(sender);
+      }
+    } catch (e) {
+      _addLogEvent('_setBinaryData', e.toString());
+      rethrow;
+    }
+  }
+
+  void _setEntityData(Map<String, dynamic> sender) {
+    try {
+      var requestData = sender['ClientData'];
+      final completeCallback = sender['Sender_Complete'];
+      if (completeCallback != null) {
+        completeCallback(requestData, null, sender);
+      }
+    } catch (e) {
+      _addLogEvent('_setEntityData', e.toString());
       rethrow;
     }
   }

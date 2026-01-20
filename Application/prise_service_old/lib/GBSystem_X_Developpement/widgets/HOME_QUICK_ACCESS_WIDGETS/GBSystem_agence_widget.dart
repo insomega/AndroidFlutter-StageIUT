@@ -87,7 +87,7 @@ class _AgenceQuickAccessWidgetState extends State<AgenceQuickAccessWidget> {
                             duration: const Duration(milliseconds: 400),
                             curve: Curves.easeInOut);
                       },
-                      position: currentIndex.round().toInt(),
+                      position: currentIndex.round().toDouble(),
                     );
                   }),
                 ),
