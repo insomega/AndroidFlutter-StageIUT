@@ -5,7 +5,7 @@ library;
 
 import 'package:flutter/material.dart'; // Importe les composants Material Design de Flutter.
 import 'package:flutter_test/flutter_test.dart'; // Importe le package de test de Flutter pour écrire des tests de widgets.
-import '../lib/utils/responsive_utils.dart' as mobile_responsive; // Importe le fichier des utilitaires responsives. On le renomme `mobile_responsive` pour éviter les conflits de noms et améliorer la clarté dans les tests.
+import 'package:mon_projet/utils/responsive_utils.dart' as mobile_responsive; // Importe le fichier des utilitaires responsives. On le renomme `mobile_responsive` pour éviter les conflits de noms et améliorer la clarté dans les tests.
 
 /// Constantes importées ou reflétant celles définies dans `lib/utils/responsive_utils.dart`
 /// pour garantir que les tests sont basés sur les mêmes valeurs de référence.

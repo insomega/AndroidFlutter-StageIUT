@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart'; // Importe les widgets de Material Design pour construire l'interface utilisateur.
 import 'package:flutter_test/flutter_test.dart'; // Importe le package de test de Flutter pour écrire des tests de widgets.
-import '../lib/components/time_detail_card.dart'; // Ajuste le chemin si nécessaire. Importe le widget à tester.
-import '../lib/core/service.dart'; // Ajuste le chemin si nécessaire. Importe le modèle de données 'Service'.
+import 'package:mon_projet/components/time_detail_card.dart'; // Ajuste le chemin si nécessaire. Importe le widget à tester.
+import 'package:mon_projet/core/service.dart'; // Ajuste le chemin si nécessaire. Importe le modèle de données 'Service'.
 import 'package:flutter_localizations/flutter_localizations.dart'; // Importe les délégués pour la localisation (internationalisation) des widgets.
 
 /// Point d'entrée principal pour l'exécution des tests du widget [TimeDetailCard].
