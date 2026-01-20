@@ -3,12 +3,14 @@ import 'package:flutter/services.dart'; // Target of URI doesn't exist: 'package
 import 'package:get/get.dart'; // 
 import 'package:gbsystem_root/GBSystem_Storage_Service.dart';
 import 'GBSystem_MenuModel.dart';
-import 'GBSystem_Application_Routes.dart';
+import 'package:gbsystem_root/GBSystem_Application_Config.dart';
 
 class MenuService extends GetxService {
   final Rx<GBSystem_MenuConfig> menuConfig = GBSystem_MenuConfig(items: [], version: '1.0.0', lastUpdated: DateTime.now()).obs;
   final RxList<GBSystem_MenuItem> filteredGBSystem_MenuItems = <GBSystem_MenuItem>[].obs;
   final RxMap<String, bool> expandedItems = <String, bool>{}.obs;
+
+  get filteredMenuItems => null;
 
   @override
   void onInit() {
@@ -63,7 +65,7 @@ class MenuService extends GetxService {
           id: 'stock',
           title: 'Gestion Stock',
           icon: 'assets/icons/stock.svg',
-          route: GBSystem_Application_Routes.View3,
+          route: GBSystem_Application_Config.View3,
           requiredPermissions: ['stock_access'],
           isExpandable: true,
           subItems: [

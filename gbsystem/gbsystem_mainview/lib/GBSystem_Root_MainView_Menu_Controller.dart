@@ -27,4 +27,42 @@ class GBSystem_MenuController extends GBSystem_Root_Controller {
       isLoading.value = false;
     }
   }
+
+  final RxBool isMenuOpen = false.obs;
+  final RxString currentRoute = ''.obs;
+  
+  void toggleMenu() {
+    isMenuOpen.toggle();
+  }
+  
+  void closeMenu() {
+    isMenuOpen.value = false;
+  }
+
+  void selectMenuItem(String itemId, String route) {
+    currentRoute.value = route;
+    isMenuOpen.value = false;
+    // Add any additional logic here (e.g., navigation, analytics)
+    Get.toNamed(route);
+  }
+
+  final RxString selectedMenuItemId = ''.obs;
+  
+  get menuService => null;
+  
+  get filteredMenuItems => null;
+  bool isCurrentItem(String itemId) {
+    return selectedMenuItemId.value == itemId;
+  }
+
+  void toggleSubMenu(String itemId) {
+    menuService.toggleExpanded(itemId);
+  }
+
+  void toggleExpanded(String itemId) {
+    final index = filteredMenuItems.indexWhere((item) => item.id == itemId);
+    if (index != -1) {
+      filteredMenuItems[index].isExpanded = !filteredMenuItems[index].isExpanded;
+    }
+  }
 }

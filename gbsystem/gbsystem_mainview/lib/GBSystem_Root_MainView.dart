@@ -24,7 +24,7 @@ class GBSystem_Root_MainView extends StatelessWidget {
           _buildContentArea(),
           
           // Menu Overlay
-          Obx(() => controller.isMenuOpen.value ? _buildMenuOverlay() : const SizedBox()),
+          Obx(() => controller.isMenuOpen.value ? _buildMenuOverlay() : const SizedBox()),  // *
         ],
       ),
       
@@ -37,9 +37,9 @@ class GBSystem_Root_MainView extends StatelessWidget {
     return Container(
       color: Colors.grey[100],
       child: Center(
-        child: Obx(() => Text(
-          'Contenu de: ${controller.currentRoute.value}',
-          style: GBSystem_TextHelper().titleText(textColor: Colors.black),
+        child: Obx(() => GBSystem_TextHelper().normalText(
+          text: 'Contenu de: ${controller.currentRoute.value}',  // *
+          textColor: Colors.black,
         )),
       ),
     );
@@ -47,7 +47,7 @@ class GBSystem_Root_MainView extends StatelessWidget {
 
   Widget _buildMenuOverlay() {
     return GestureDetector(
-      onTap: controller.closeMenu,
+      onTap: controller.closeMenu, // *
       child: Container(
         color: Colors.black54,
         child: Row(
@@ -58,7 +58,7 @@ class GBSystem_Root_MainView extends StatelessWidget {
             // Empty space to close menu on tap
             Expanded(
               child: GestureDetector(
-                onTap: controller.closeMenu,
+                onTap: controller.closeMenu, // *
                 child: Container(color: Colors.transparent),
               ),
             ),
@@ -93,7 +93,7 @@ class GBSystem_Root_MainView extends StatelessWidget {
           // Menu Items
           Expanded(
             child: ListView.builder(
-              itemCount: menuService.filteredMenuItems.length,
+              itemCount: menuService.filteredMenuItems.length, // *
               itemBuilder: (context, index) => _buildMenuItem(index),
             ),
           ),
@@ -135,8 +135,8 @@ class GBSystem_Root_MainView extends StatelessWidget {
   }
 
   Widget _buildMenuItem(int mainIndex) {
-    final item = menuService.filteredMenuItems[mainIndex];
-    final isSelected = controller.isCurrentItem(item.id);
+    final item = menuService.filteredMenuItems[mainIndex]; // *
+    final isSelected = controller.isCurrentItem(item.id); // *
     final isExpanded = menuService.isExpanded(item.id);
 
     return Column(
@@ -151,7 +151,7 @@ class GBSystem_Root_MainView extends StatelessWidget {
     );
   }
 
-  Widget _buildMainMenuItem(GBSyetm_MenuItem item, bool isSelected, bool isExpanded) {
+  Widget _buildMainMenuItem(GBSystem_MenuItem item, bool isSelected, bool isExpanded) { // *
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       decoration: BoxDecoration(
@@ -171,7 +171,7 @@ class GBSystem_Root_MainView extends StatelessWidget {
           color: isSelected ? Colors.blue : Colors.grey[700],
         ),
         title: GBSystem_TextHelper().normalText(text: item.title,
-            textColor: isSelected ? Colors.blue : Colors.grey[700],
+            textColor: isSelected ? Colors.blue : Colors.grey[700] ?? Colors.grey, // *
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         
@@ -185,23 +185,23 @@ class GBSystem_Root_MainView extends StatelessWidget {
                 : null,
         onTap: () {
           if (item.hasSubItems) {
-            controller.toggleSubMenu(item.id);
+            controller.toggleSubMenu(item.id); // *
           } else {
-            controller.selectMenuItem(item.id, item.route);
+            controller.selectMenuItem(item.id, item.route); // *
           }
         },
       ),
     );
   }
 
-  List<Widget> _buildSubMenuItems(GBSyetm_MenuItem mainItem) {
+  List<Widget> _buildSubMenuItems(GBSystem_MenuItem mainItem) { // *
     return mainItem.subItems!.where((subItem) {
       // Filtrer les sous-items selon les permissions
-      final userPermissions = GBSystem_Storage_Service().getUserPermissions();
+      final userPermissions = GBSystem_Storage_Service().getUserPermissions(); // *
       return subItem.isActive && 
              subItem.requiredPermissions.every((permission) => userPermissions.contains(permission));
     }).map((subItem) {
-      final isSubSelected = controller.isCurrentItem(subItem.id);
+      final isSubSelected = controller.isCurrentItem(subItem.id); // *
 
       return Padding(
         padding: const EdgeInsets.only(left: 24.0),
@@ -231,7 +231,7 @@ class GBSystem_Root_MainView extends StatelessWidget {
             trailing: isSubSelected 
                 ? const Icon(Icons.arrow_forward, size: 16, color: Colors.blue)
                 : null,
-            onTap: () => controller.selectMenuItem(subItem.id, subItem.route),
+            onTap: () => controller.selectMenuItem(subItem.id, subItem.route), // *
             contentPadding: const EdgeInsets.only(left: 16, right: 16),
             visualDensity: const VisualDensity(vertical: -3),
           ),
@@ -244,7 +244,7 @@ class GBSystem_Root_MainView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.top: BorderSide(color: Colors.grey[300]!),
+        border: Border(top: BorderSide(color: Colors.grey[300]!)), // *
       ),
       child: Column(
         children: [
@@ -253,7 +253,7 @@ class GBSystem_Root_MainView extends StatelessWidget {
             title:  GBSystem_TextHelper().normalText( text: 'Paramètres', textColor: Colors.grey),
             
             onTap: () {
-              controller.closeMenu();
+              controller.closeMenu(); // *
             },
           ),
           ListTile(
@@ -263,7 +263,7 @@ class GBSystem_Root_MainView extends StatelessWidget {
                GBSystem_TextHelper().normalText(text:'Déconnexion', textColor: Colors.red),
             
             onTap: () {
-              controller.closeMenu();
+              controller.closeMenu(); // *
             },
           ),
         ],
@@ -274,13 +274,13 @@ class GBSystem_Root_MainView extends StatelessWidget {
   Widget _buildMenuButton() {
     return AnimatedScale(
       duration: const Duration(milliseconds: 300),
-      scale: controller.isMenuOpen.value ? 0 : 1,
+      scale: controller.isMenuOpen.value ? 0 : 1, // *
       child: FloatingActionButton(
-        onPressed: controller.toggleMenu,
+        onPressed: controller.toggleMenu, // *
         backgroundColor: Colors.blue[800],
         child: AnimatedRotation(
           duration: const Duration(milliseconds: 300),
-          turns: controller.isMenuOpen.value ? 0.125 : 0,
+          turns: controller.isMenuOpen.value ? 0.125 : 0, // *
           child: const Icon(Icons.menu, color: Colors.white),
         ),
       ),

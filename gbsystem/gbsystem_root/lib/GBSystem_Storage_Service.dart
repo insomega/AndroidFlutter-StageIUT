@@ -100,4 +100,6 @@ class GBSystem_Storage_Service {
     await _storage.remove(_keyEmail);
     await _storage.remove(_keyIsLoggedIn);
   }
+
+  getUserPermissions() {}
 }

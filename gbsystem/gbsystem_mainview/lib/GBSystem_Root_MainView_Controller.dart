@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
-import 'MenuService.dart';
+import 'GBSystem_MenuService.dart';
 
 class GBSystem_MainViewController extends GetxController {
-  final GBSystem_MenuService menuService = Get.find<GBSystem_MenuService>();
+  final MenuService menuService = Get.find<MenuService>();
   final RxString selectedItemId = ''.obs;
   final RxBool isMenuOpen = false.obs;
   final RxString currentRoute = GBSystem_Application_Routes.dashboard.obs;
