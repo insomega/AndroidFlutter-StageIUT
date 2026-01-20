@@ -108,7 +108,15 @@ class _DynamicMenuState extends State<DynamicMenu> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.menu_open, color: Colors.white, size: 30),
+          // Remplacement de l'Icon simple par un IconButton cliquable
+          IconButton(
+            icon: const Icon(Icons.menu_open, color: Colors.white, size: 30),
+            tooltip: "Fermer le menu",
+            onPressed: () {
+              // Cette commande ferme le Drawer (le tiroir latéral)
+              Navigator.pop(context); 
+            },
+          ),
           const SizedBox(width: 15),
           const Expanded(
             child: Text(
