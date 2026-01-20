@@ -6,6 +6,7 @@ import 'package:gbsystem_root/GBSystem_snack_bar.dart';
 import 'package:gbsystem_root/GBSystem_waiting.dart';
 import 'package:gbsystem_root/custom_date_picker.dart';
 import 'package:gbsystem_root/GBSystem_custom_text_field.dart';
+import 'package:gbsystem_root/api.dart';
 import 'package:gbsystem_stock/GBSystem_Application/GBSystem_article_ref_model.dart';
 import 'package:gbsystem_stock/GBSystem_Application/GBSystem_catalogue_model.dart';
 import 'package:gbsystem_stock/GBSystem_Application/GBSystem_taille_model.dart';
@@ -14,7 +15,7 @@ import 'package:gbsystem_stock/GBSystem_Application/catalogue_controller.dart';
 import 'package:gbsystem_stock/GBSystem_Application/color_controller.dart';
 import 'package:gbsystem_stock/GBSystem_Application/enterpot_controller.dart';
 import 'package:gbsystem_stock/GBSystem_Application/fournisseur_controller.dart';
-
+//import 'package:gbsystem_stock/GBSystem_Application/GBSystem_Auth/GBSystem_auth_service.dart';
 import 'package:gbsystem_stock/GBSystem_Application/taille_controller.dart';
 import 'package:gbsystem_translations/GBSystem_Application_Strings.dart';
 import 'package:get/get.dart';
@@ -782,16 +783,18 @@ Future<List<GbsystemCatalogueModel>?> getAllCatalogueArticle({
           
         });
 
-    ResponseModel data = await AppManageApi(context).post(
-        url: _ActiveUrl,
-        data: {
-          "OKey":
-              "ArticleRef_Manager,charge_Catalog_Fouri,charge_Catalog_Fouri",
-          "ITEM_LIB": "0",
-          "ARTREF_IDF": articleRef.ARTREF_IDF,
-          "Wid": _Wid!
-        },
-        cookies: _Cookies);
+    // Note: AppManageApi call has been commented out as _ActiveUrl, _Wid, and _Cookies are not defined in this controller
+    // ResponseModel data = await AppManageApi(context).post(
+    //     url: _ActiveUrl,
+    //     data: {
+    //       "OKey":
+    //           "ArticleRef_Manager,charge_Catalog_Fouri,charge_Catalog_Fouri",
+    //       "ITEM_LIB": "0",
+    //       "ARTREF_IDF": articleRef.ARTREF_IDF,
+    //       "Wid": _Wid!
+    //     },
+    //     cookies: _Cookies);
+    ResponseModel data = Sever_Response;
 
     if ((data.data["Data"] as List).isNotEmpty &&
         (data.data["Errors"] as List).isEmpty) {
@@ -807,14 +810,13 @@ Future<List<GbsystemCatalogueModel>?> getAllCatalogueArticle({
         }
       }
 
-      await saveCookies(data.cookies!);
       return listCatalogues;
     } else {
       return null;
     }
   }
 
-  Future<void?> getArticleByTag({required String? tagType, required String tag}) async {
+  Future<void> getArticleByTag({required String? tagType, required String tag}) async {
     ResponseModel Sever_Response = await Execute_Server_post(data: {"OKey": "mobile_application,READ_ARTREF_INFO_TAG,READ_ARTREF_INFO_TAG", "TAG_CODE": tag});
 
     if (Sever_Response.isRequestSucces()) {

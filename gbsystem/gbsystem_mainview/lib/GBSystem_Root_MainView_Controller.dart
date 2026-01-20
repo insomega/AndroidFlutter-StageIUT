@@ -1,22 +1,20 @@
 import 'package:get/get.dart';
 import 'GBSystem_MenuService.dart';
-import 'GBSystem_Application_Routes.dart';
+import 'package:gbsystem_stock/GBSystem_Application/Routes/GBSystem_Application_Routes.dart';
 
 class GBSystem_MainViewController extends GetxController {
   final MenuService menuService = Get.find<MenuService>();
   final RxString selectedItemId = ''.obs;
   final RxBool isMenuOpen = false.obs;
-  final RxString currentRoute = GBSystem_Application_Routes.dashboard.obs;
+  final RxString currentRoute = "".obs;
 
   @override
   void onInit() {
     super.onInit();
     // Sélectionner le premier item par défaut
-    ever(menuService.filteredMenuItems, (_) {
-      if (menuService.filteredMenuItems.isNotEmpty && selectedItemId.isEmpty) {
-        selectedItemId.value = menuService.filteredMenuItems.first.id;
-      }
-    });
+    if (menuService.filteredMenuItems.isNotEmpty && selectedItemId.isEmpty) {
+      selectedItemId.value = menuService.filteredMenuItems.first.id;
+    }
   }
 
   void selectMenuItem(String itemId, String route) {
@@ -57,7 +55,7 @@ class GBSystem_MainViewController extends GetxController {
     for (int i = 0; i < mainIndex; i++) {
       final item = menuService.filteredMenuItems[i];
       if (item.hasSubItems && menuService.isExpanded(item.id)) {
-        flatIndex += item.subItems!.length;
+        flatIndex += item.subItems!.length as int;
       }
     }
     return flatIndex;

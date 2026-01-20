@@ -12,4 +12,9 @@ class GBSystem_Application_Routes {
   static const homeGestionStock = '/homeGestionStock';
 
   //static const splashScreen = '/splashScreen';
+  // Ajoutez les vues manquantes utilisées dans votre MenuService
+  static const View1 = '/view1';
+  static const View2 = '/view2';
+  static const View3 = '/view3';
+  static const View4 = '/view4';
 }

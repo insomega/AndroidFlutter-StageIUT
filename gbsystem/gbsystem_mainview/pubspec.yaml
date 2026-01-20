@@ -16,6 +16,8 @@ dependencies:
     path: ../gbsystem_root
   gbsystem_translations:
     path: ../gbsystem_translations 
+  gbsystem_stock:
+    path: ../../Application/GBSystem_Stock
   get: ^4.7.2
 
 dev_dependencies:
