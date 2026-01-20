@@ -128,9 +128,9 @@ class CustomDropDownButtonTypeMessage extends StatelessWidget {
           isExpanded: true,
           hint: selectedItem == null
               ? Center(
-                  child: Text(hint, style: TextStyle(color: Colors.black)),
+                  child: Text(hint, style: const TextStyle(color: Colors.black)),
                 )
-              : Text(selectedItem!, style: TextStyle(color: Colors.black)),
+              : Text(selectedItem!, style: const TextStyle(color: Colors.black)),
           initialValue: selectedItem,
           items: listItems?.map(
                     (item) => DropdownMenuItem<String>(

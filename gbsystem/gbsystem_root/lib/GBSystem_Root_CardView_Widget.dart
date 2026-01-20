@@ -18,10 +18,10 @@ class GBSystem_Root_CardViewWidgetGenerique extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       decoration: BoxDecoration(
         border: Border.all(width: 0.4, color: Colors.grey),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 1, spreadRadius: 1)],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 1, spreadRadius: 1)],
         borderRadius: BorderRadius.circular(12),
         color: tileColor,
       ),
@@ -464,7 +464,7 @@ class GBSystem_Root_CardView_VacationWidget extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         isThreeLine: true,
-        title: Text("${vacation.SVR_CODE_LIB}", maxLines: 2, overflow: TextOverflow.ellipsis),
+        title: Text(vacation.SVR_CODE_LIB, maxLines: 2, overflow: TextOverflow.ellipsis),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

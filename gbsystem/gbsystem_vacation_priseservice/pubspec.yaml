@@ -13,9 +13,9 @@ dependencies:
     sdk: flutter
   font_awesome_flutter: ^10.9.0
   gbsystem_root:
-    path: ../../_Packages/gbsystem_root
+    path: ../gbsystem_root
   gbsystem_translations:
-    path: ../../_Packages/gbsystem_translations        
+    path: ../gbsystem_translations        
   get: ^4.7.2
   
   

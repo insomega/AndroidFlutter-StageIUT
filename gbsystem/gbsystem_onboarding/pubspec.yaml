@@ -20,11 +20,11 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   gbsystem_root:
-    path: ../../_Packages/gbsystem_root
+    path: ../gbsystem_root
   gbsystem_translations:
-    path: ../../_Packages/gbsystem_translations  
+    path: ../gbsystem_translations  
   gbsystem_splash_screen:
-    path: ../../_Packages/gbsystem_splash_screen  
+    path: ../gbsystem_splash_screen  
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

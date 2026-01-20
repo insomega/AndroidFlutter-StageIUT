@@ -2,6 +2,7 @@ name: gbsystem_mainview
 description: "A new Flutter package project."
 version: 0.0.1
 homepage:
+publish_to: none
 
 environment:
   sdk: ^3.8.1
@@ -10,10 +11,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_svg: ^2.0.0
   gbsystem_root:
-    path: ../../_Packages/gbsystem_root
+    path: ../gbsystem_root
   gbsystem_translations:
-    path: ../../_Packages/gbsystem_translations 
+    path: ../gbsystem_translations 
   get: ^4.7.2
 
 dev_dependencies:

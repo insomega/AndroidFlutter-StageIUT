@@ -187,7 +187,7 @@ class Api {
       Get.closeCurrentSnackbar();
 
       // 🔁 attendre la prochaine frame ou un court délai pour que la fermeture soit propre
-      await Future.delayed(Duration(milliseconds: 300));
+      await Future.delayed(const Duration(milliseconds: 300));
     }
 
     // ✅ maintenant on peut afficher la modale en toute sécurité

@@ -70,25 +70,25 @@ void showErrorDialog(String text) {
     borderWidth: 1,
     borderColor: Colors.grey.shade300,
     borderRadius: 0,
-    duration: Duration(seconds: 5),
-    animationDuration: Duration(milliseconds: 300),
+    duration: const Duration(seconds: 5),
+    animationDuration: const Duration(milliseconds: 300),
     snackbarStatus: (status) {
       if (status == SnackbarStatus.CLOSED || status == SnackbarStatus.CLOSING) {
         _isErrorDisplayed = false;
         print("------------------------****---_isErrorDisplayed = false;");
       }
     },
-    margin: EdgeInsets.symmetric(vertical: 3, horizontal: 5),
+    margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
     mainButton: TextButton(
       onPressed: () {
         Get.closeCurrentSnackbar();
       },
       child: Text(
         GBSystem_Application_Strings.str_fermer.tr,
-        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
       ),
     ),
-    icon: Icon(Icons.error_outlined, size: 30, color: Colors.red),
+    icon: const Icon(Icons.error_outlined, size: 30, color: Colors.red),
   );
 }
 
@@ -108,7 +108,7 @@ void showSuccesDialog(String text) {
     colorText: Colors.black,
     isDismissible: false,
     leftBarIndicatorColor: Colors.green,
-    animationDuration: Duration(milliseconds: 800),
+    animationDuration: const Duration(milliseconds: 800),
 
     mainButton: TextButton(
       onPressed: () {
@@ -116,7 +116,7 @@ void showSuccesDialog(String text) {
       },
       child: Text(
         GBSystem_Application_Strings.str_fermer.tr,
-        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
       ),
     ),
 
@@ -130,9 +130,9 @@ void showSuccesDialog(String text) {
       }
     },
 
-    margin: EdgeInsets.symmetric(vertical: 3, horizontal: 5),
+    margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
 
-    icon: Icon(Icons.check_circle, size: 30, color: Colors.green),
+    icon: const Icon(Icons.check_circle, size: 30, color: Colors.green),
   );
 
   // ElegantNotification.success(
@@ -183,8 +183,8 @@ void showWarningDialog(String text) {
     borderWidth: 1,
     borderColor: Colors.grey.shade300,
     borderRadius: 0,
-    duration: Duration(minutes: 1),
-    animationDuration: Duration(milliseconds: 800),
+    duration: const Duration(minutes: 1),
+    animationDuration: const Duration(milliseconds: 800),
 
     snackbarStatus: (status) {
       if (status == SnackbarStatus.CLOSED || status == SnackbarStatus.CLOSING) {
@@ -192,18 +192,18 @@ void showWarningDialog(String text) {
       }
     },
 
-    margin: EdgeInsets.symmetric(vertical: 3, horizontal: 5),
+    margin: const EdgeInsets.symmetric(vertical: 3, horizontal: 5),
     mainButton: TextButton(
       onPressed: () {
         Get.closeCurrentSnackbar();
       },
       child: Text(
         GBSystem_Application_Strings.str_fermer.tr,
-        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
       ),
     ),
 
-    icon: Icon(Icons.info, size: 30, color: Colors.yellow),
+    icon: const Icon(Icons.info, size: 30, color: Colors.yellow),
   );
 
   // ElegantNotification.info(

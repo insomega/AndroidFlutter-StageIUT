@@ -13,9 +13,9 @@ dependencies:
   get: ^4.7.2
   qr_flutter: ^4.1.0
   gbsystem_root:
-    path: ../../_Packages/gbsystem_root
+    path: ../gbsystem_root
   gbsystem_translations:
-    path: ../../_Packages/gbsystem_translations  
+    path: ../gbsystem_translations  
 
 dev_dependencies:
   flutter_test:

@@ -31,7 +31,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
           initialDate: date,
           firstDate: DateTime(1900),
           lastDate: DateTime(2101),
-          locale: Locale('fr'),
+          locale: const Locale('fr'),
           helpText: GBSystem_Application_Strings.str_datePickerHelpText,
           cancelText: GBSystem_Application_Strings.str_annuler,
           confirmText: GBSystem_Application_Strings.str_done,
@@ -116,13 +116,13 @@ class _CustomTimePickerFrenchState extends State<CustomTimePickerFrench> {
         padding: EdgeInsets.zero,
         decoration: BoxDecoration(color: widget.enabled ? Colors.grey.shade200 : widget.color, borderRadius: BorderRadius.circular(8)),
         child: InputDecorator(
-          decoration: InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5), labelText: widget.labelText, border: OutlineInputBorder()),
+          decoration: InputDecoration(contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), labelText: widget.labelText, border: const OutlineInputBorder()),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(widget.selectedDate != null ? "${widget.selectedDate?.hour.toString().padLeft(2, '0')}:${widget.selectedDate?.minute.toString().padLeft(2, '0')}" : "", style: TextStyle(fontSize: 12)),
-              Icon(Icons.arrow_drop_down),
+              Text(widget.selectedDate != null ? "${widget.selectedDate?.hour.toString().padLeft(2, '0')}:${widget.selectedDate?.minute.toString().padLeft(2, '0')}" : "", style: const TextStyle(fontSize: 12)),
+              const Icon(Icons.arrow_drop_down),
             ],
           ),
         ),
@@ -172,10 +172,10 @@ class _CustomDatePickerSearchState extends State<CustomDatePickerSearch> {
             height: 50,
             margin: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.secondary),
-            child: Center(
+            child: const Center(
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text('choisie la date', style: const TextStyle(fontSize: 20, color: Colors.black)),
+                padding: EdgeInsets.all(8.0),
+                child: Text('choisie la date', style: TextStyle(fontSize: 20, color: Colors.black)),
               ),
             ),
           ),
@@ -226,10 +226,10 @@ class _CustomDatePickerDialogState extends State<CustomDatePickerDialog> {
             height: 50,
             margin: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary),
-            child: Center(
+            child: const Center(
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text('Date', style: const TextStyle(fontSize: 14, color: Colors.white)),
+                padding: EdgeInsets.all(8.0),
+                child: Text('Date', style: TextStyle(fontSize: 14, color: Colors.white)),
               ),
             ),
           ),
@@ -280,10 +280,10 @@ class _CustomDatePickerSecondryState extends State<CustomDatePickerSecondry> {
             height: 50,
             margin: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.secondary),
-            child: Center(
+            child: const Center(
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text('choisie la date', style: const TextStyle(fontSize: 14, color: Colors.black)),
+                padding: EdgeInsets.all(8.0),
+                child: Text('choisie la date', style: TextStyle(fontSize: 14, color: Colors.black)),
               ),
             ),
           ),
@@ -341,7 +341,7 @@ class _CustomDatePickerNewState extends State<CustomDatePickerNew> {
                   ),
                 ),
               ),
-              SizedBox(width: 5),
+              const SizedBox(width: 5),
               Container(
                 width: 30,
                 height: 30,
@@ -353,7 +353,7 @@ class _CustomDatePickerNewState extends State<CustomDatePickerNew> {
                   ),
                 ),
               ),
-              SizedBox(width: 5),
+              const SizedBox(width: 5),
               Container(
                 width: 50,
                 height: 30,
@@ -401,7 +401,7 @@ class _CustomDatePickerFrenchState extends State<CustomDatePickerFrench> {
       initialDate: widget.selectedDate,
       firstDate: DateTime(1900),
       lastDate: DateTime(2101),
-      locale: Locale('fr'),
+      locale: const Locale('fr'),
       helpText: GBSystem_Application_Strings.str_datePickerHelpText,
       cancelText: GBSystem_Application_Strings.str_annuler,
       confirmText: GBSystem_Application_Strings.str_done,
@@ -431,7 +431,7 @@ class _CustomDatePickerFrenchState extends State<CustomDatePickerFrench> {
         padding: EdgeInsets.zero,
         decoration: BoxDecoration(color: widget.enabled ? Colors.grey.shade200 : widget.color, borderRadius: BorderRadius.circular(8)),
         child: InputDecorator(
-          decoration: InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5), labelText: widget.labelText, border: OutlineInputBorder()),
+          decoration: InputDecoration(contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), labelText: widget.labelText, border: const OutlineInputBorder()),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             mainAxisSize: MainAxisSize.min,
@@ -441,9 +441,9 @@ class _CustomDatePickerFrenchState extends State<CustomDatePickerFrench> {
                     ? "${widget.selectedDate?.day.toString().padLeft(2, '0')}/${widget.selectedDate?.month.toString().padLeft(2, '0')}/${widget.selectedDate?.year}"
                     // '${widget.selectedDate?.year}-${widget.selectedDate?.month.toString().padLeft(2, '0')}-${widget.selectedDate?.day.toString().padLeft(2, '0')}'
                     : "",
-                style: TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12),
               ),
-              Icon(Icons.arrow_drop_down),
+              const Icon(Icons.arrow_drop_down),
             ],
           ),
         ),

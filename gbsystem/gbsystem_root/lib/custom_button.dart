@@ -78,10 +78,10 @@ class _CustomButtonState extends State<CustomButton> {
       child: Container(
         height: widget.height,
         width: widget.width,
-        padding: showAnimation ? EdgeInsets.symmetric(horizontal: 2, vertical: 2) : null,
+        padding: showAnimation ? const EdgeInsets.symmetric(horizontal: 2, vertical: 2) : null,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
-          boxShadow: showAnimation ? [BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5)] : null,
+          boxShadow: showAnimation ? [const BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5)] : null,
           color: widget.enabled ? Colors.grey.shade300 : (widget.color ?? GBSystem_Application_Strings.str_primary_color),
         ),
         child: Padding(
@@ -133,7 +133,7 @@ class _CustomButtonWithTraillingState extends State<CustomButtonWithTrailling> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
           color: widget.color ?? GBSystem_Application_Strings.str_primary_color,
-          boxShadow: showAnimation ? [BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5)] : null,
+          boxShadow: showAnimation ? [const BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5)] : null,
         ),
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: widget.verPadding ?? size.height * 0.025, horizontal: widget.horPadding ?? size.width * 0.2),
@@ -181,7 +181,7 @@ class _CustomButtonWithLeadingState extends State<CustomButtonWithLeading> {
       child: Container(
         width: widget.width,
         decoration: BoxDecoration(
-          boxShadow: showAnimation ? [BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5)] : null,
+          boxShadow: showAnimation ? [const BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5)] : null,
           borderRadius: BorderRadius.circular(6),
           color: widget.color ?? GBSystem_Application_Strings.str_primary_color,
         ),
@@ -230,7 +230,7 @@ class _CustomIconButtonState extends State<CustomIconButton> {
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          boxShadow: showAnimation ? [BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5)] : null,
+          boxShadow: showAnimation ? [const BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 5)] : null,
           borderRadius: BorderRadius.circular(widget.raduis ?? 6),
           color: widget.color ?? GBSystem_Application_Strings.str_primary_color,
         ),

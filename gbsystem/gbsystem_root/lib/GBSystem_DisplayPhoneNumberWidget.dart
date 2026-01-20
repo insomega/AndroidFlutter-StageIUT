@@ -13,7 +13,7 @@ class GBSystem_DisplayPhoneNumberWidget extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(width: 3, color: GBSystem_Application_Strings.str_primary_color),
@@ -21,7 +21,7 @@ class GBSystem_DisplayPhoneNumberWidget extends StatelessWidget {
           ),
           child: GBSystem_TextHelper().normalText(text: phoneNumber, textColor: Colors.black),
         ),
-        Positioned(
+        const Positioned(
           top: -5,
           left: -40,
           child: CircleAvatar(

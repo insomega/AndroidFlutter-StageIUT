@@ -31,7 +31,7 @@ class LocationService {
 
     if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
       try {
-        Position position = await Geolocator.getCurrentPosition(timeLimit: Duration(seconds: 10));
+        Position position = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 10));
         print(position.latitude);
         return position;
       } catch (e) {
@@ -71,7 +71,7 @@ class LocationService {
 
     if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
       try {
-        Position position = await Geolocator.getCurrentPosition(timeLimit: Duration(seconds: 10));
+        Position position = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 10));
         print(position.latitude);
         print(position.longitude);
 

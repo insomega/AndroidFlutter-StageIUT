@@ -12,9 +12,9 @@ dependencies:
   flutter:
     sdk: flutter
   gbsystem_root:
-    path: ../../_Packages/gbsystem_root
+    path: ../gbsystem_root
   gbsystem_translations:
-    path: ../../_Packages/gbsystem_translations  
+    path: ../gbsystem_translations  
   get: ^4.7.2
 
 dev_dependencies:

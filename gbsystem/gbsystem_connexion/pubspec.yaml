@@ -12,7 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_pw_validator: ^1.6.0
-  get: ^4.7.2
+  get: ^4.6.5 
   
 
 dev_dependencies:
@@ -20,13 +20,13 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   gbsystem_root:
-    path: ../../_Packages/gbsystem_root
+    path: ../gbsystem_root
   gbsystem_translations:
-    path: ../../_Packages/gbsystem_translations  
+    path: ../gbsystem_translations  
   gbsystem_lookup:
-    path: ../../_Packages/gbsystem_lookup  
+    path: ../gbsystem_lookup  
   gbsystem_nfc:
-    path: ../../_Packages/gbsystem_nfc  
+    path: ../gbsystem_nfc  
     
 assets:
   - assets/lotties/

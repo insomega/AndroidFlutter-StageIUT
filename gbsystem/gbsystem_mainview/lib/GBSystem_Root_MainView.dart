@@ -5,14 +5,15 @@ import 'package:get/get.dart';
 import 'package:gbsystem_root/GBSystem_ScreenHelper.dart';
 import 'package:gbsystem_root/GBSystem_text_helper.dart';
 import 'GBSystem_Root_MainView_Controller.dart';
-import 'MenuService.dart';
-import 'MenuModel.dart';
+import 'GBSystem_MenuService.dart';
+import 'GBSystem_MenuModel.dart';
+import 'GBSystem_Root_MainView_Menu_Controller.dart';
 
 class GBSystem_Root_MainView extends StatelessWidget {
   GBSystem_Root_MainView({super.key});
 
-  final GBSystem_Root_MainView_Controller controller = Get.put(GBSystem_Root_MainView_Controller());
-  final GBSystem_MenuService menuService = Get.find<GBSystem_MenuService>();
+  final GBSystem_MenuController controller = Get.put(GBSystem_MenuController());
+  final MenuService menuService = Get.find<MenuService>();
 
   @override
   Widget build(BuildContext context) {

@@ -18,10 +18,10 @@ class ChooseModeButtonWidget extends StatelessWidget {
         duration: const Duration(seconds: 2),
         // height: hideWidget ? 0 : null,
         width: GBSystem_ScreenHelper.screenWidth(context),
-        padding: EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
         decoration: BoxDecoration(
             color: Colors.white,
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
                 color: Colors.black12,
                 blurRadius: 10,
