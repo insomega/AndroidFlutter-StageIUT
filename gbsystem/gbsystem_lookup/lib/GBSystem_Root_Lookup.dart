@@ -108,11 +108,6 @@ class GBSystem_Root_Lookup_Controller<T extends GBSystem_Root_DataModel_Lookup> 
     }
   }
 
-  @override
-  void onInit() {
-    super.onInit();
-    //initializeData();
-  }
 
   // Méthode abstraite à implémenter par les classes filles
   Future<List<T>> loadData() async {

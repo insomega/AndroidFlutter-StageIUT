@@ -295,7 +295,7 @@ class GBSystem_Login_Controller extends GBSystem_Root_Controller {
   void incrementIdentificationTap() {
     identificationTapCount.value++;
     if (identificationTapCount.value >= 7) {
-      Get.snackbar("apiUrl", "${GBSystem_Application_Config.apiUrl}", snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("apiUrl", GBSystem_Application_Config.apiUrl, snackPosition: SnackPosition.BOTTOM);
       identificationTapCount.value = 0; // reset après affichage
     }
   }

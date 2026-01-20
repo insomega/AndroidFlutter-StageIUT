@@ -29,6 +29,7 @@ class GBSystem_Dossier_Lookup_Model extends GBSystem_Root_DataModel_Lookup {
   @override
   String get id => dos_idf;
 
+  @override
   Map<String, dynamic> toJson() => {
     //
     'id': id,

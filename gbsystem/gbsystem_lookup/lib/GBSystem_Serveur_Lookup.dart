@@ -26,6 +26,7 @@ class GBSystem_Exemple_Serveur_Lookup_Model extends GBSystem_Root_DataModel_Look
   @override
   String get id => svr_idf;
 
+  @override
   Map<String, dynamic> toJson() => {'id': id, 'matricule': matricule, 'nom': nom, 'prenom': prenom, 'departement': departement, 'statut': statut, 'dateEmbauche': dateEmbauche};
 }
 

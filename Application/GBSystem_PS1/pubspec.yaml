@@ -1,0 +1,59 @@
+name: BMPlanning_PS1
+description: "BMsoft BMplanning PS1."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  gbsystem_root:
+    path: ../../gbsystem/gbsystem_root
+  gbsystem_connexion:  
+    path: ../../gbsystem/GBSystem_Connexion
+  gbsystem_onboarding:
+    path: ../../gbsystem/gbsystem_onboarding
+  gbsystem_serveur:
+    path: ../../gbsystem/gbsystem_serveur
+  gbsystem_translations:
+    path: ../../gbsystem/gbsystem_translations
+  gbsystem_vacation_priseservice:
+    path: ../../gbsystem/gbsystem_vacation_priseservice    
+  gbsystem_splash_screen:
+    path: ../../gbsystem/gbsystem_splash_screen    
+  gbsystem_lookup:
+    path: ../../gbsystem/gbsystem_lookup   
+  gbsystem_assets:
+    path: ../../gbsystem/gbsystem_assets   
+  gbsystem_nfc:
+    path: ../../gbsystem/gbsystem_nfc       
+  get: ^4.7.2
+  flutter_localizations:
+    sdk: flutter
+  local_auth: ^2.3.0
+  cupertino_icons: ^1.0.8
+  
+  
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+  rename_app: ^1.5.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/lotties/
+    - assets/images/
+    - assets/images/flags/
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png" # Chemin vers votre icône
+
+  

@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 
 class GBSystem_MenuController extends GBSystem_Root_Controller {
   final RxList<GBSystem_MenuItemModel> menuItems = <GBSystem_MenuItemModel>[].obs;
+  @override
   final RxBool isLoading = false.obs;
   final RxString error = "".obs;
 

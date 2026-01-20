@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'GBSystem_MenuService.dart';
+import 'GBSystem_Application_Routes.dart';
 
 class GBSystem_MainViewController extends GetxController {
   final MenuService menuService = Get.find<MenuService>();

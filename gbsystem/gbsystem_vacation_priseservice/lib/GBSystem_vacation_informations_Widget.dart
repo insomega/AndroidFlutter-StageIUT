@@ -102,7 +102,7 @@ class _VacationInformationsState extends State<GBSystem_Vacation_Informations_Wi
                             child: Obx(
                               () => GBSystem_TextHelper().superSmallText(
                                 //text: "${Vacation_Informations_Controller.currentVacationSafe_VAC_BREAK}", //
-                                text: "${Vacation_Informations_Controller.currentVacationRx.value?.Safe_VAC_BREAK ?? ''}",
+                                text: Vacation_Informations_Controller.currentVacationRx.value?.Safe_VAC_BREAK ?? '',
 
                                 fontWeight: FontWeight.normal,
                                 textAlign: TextAlign.left,
