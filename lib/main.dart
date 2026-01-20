@@ -5,9 +5,13 @@ import 'package:get/get.dart';
 import 'features/navigation_controller.dart';
 import 'features/dynamic_menu.dart';
 import 'app_router.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await initializeDateFormatting('fr_FR', null);
+  
   // Injection globale du contrôleur
   Get.put(NavigationController());
   runApp(const MyApp());

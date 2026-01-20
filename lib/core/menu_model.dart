@@ -19,15 +19,14 @@ class MenuModel {
   String get pageId {
     if (id.isEmpty) return 'home_link';
     
-    // 1. On prend la partie après le dernier "/" -> "bmserver_svr_planning.html"
+    // 1. On récupère le nom du fichier (ex: home_QA.png)
     String fileName = id.split('/').last;
     
-    // 2. On retire l'extension ".html" -> "bmserver_svr_planning"
-    if (fileName.contains('.html')) {
-      return fileName.replaceAll('.html', '');
-    }
-    
-    return fileName;
+    // 2. On supprime l'extension finale (tout ce qui suit le dernier point)
+    // Résultat : "home_QA.png" -> "home_QA" | "page.html" -> "page"
+    return fileName.contains('.') 
+        ? fileName.substring(0, fileName.lastIndexOf('.')) 
+        : fileName;
   }
 
   factory MenuModel.fromJson(Map<String, dynamic> json) {

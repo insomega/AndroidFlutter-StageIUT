@@ -7,24 +7,27 @@ import 'features/service/prise_service.dart';
 class AppRouter {
   static Widget getPage(String id) {
     switch (id) {
+      // Gestion des différents alias de l'accueil
       case 'home_link':
+      case 'home_QA':
+      case '':
         return const HomeScreen();
         
-      case 'PlanningVacPrise': 
+      case 'bmserver_Planning_VacPriseNG': 
         return const PriseServiceScreen();
-        
-      case 'bmserver_svr_planning': 
-        return const Center(child: Text("Page Mon Planning (Extraction HREF)"));
-        
-      case 'planninglistquery':
-        return const Center(child: Text("Page Mon Planning (ID fallback)"));
-        
-      case 'bm_messenger':
-        return const Center(child: Text("Messagerie interne"));
         
       default:
         return Scaffold(
-          body: Center(child: Text("ID reçu : $id")),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.warning_amber_rounded, size: 50, color: Colors.orange),
+                const SizedBox(height: 10),
+                Text("Page non implémentée\nID reçu : $id", textAlign: TextAlign.center),
+              ],
+            ),
+          ),
         );
     }
   }
