@@ -1,7 +1,7 @@
 // lib/app_router.dart
 
 import 'package:flutter/material.dart';
-import 'package:mon_projet/features/home_screen.dart';
+import 'package:gbsystem_menu/features/home_screen.dart';
 import 'features/service/prise_service.dart';
 
 class AppRouter {
