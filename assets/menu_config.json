@@ -110,7 +110,7 @@
         "caption": "Cartes Professionnelles",
         "href": "../../BMServer/HTML/bmserver_Report_Server_Carte_Pro_sal.html",
         "type": "link",
-        "icon": "bmi-info-salarie"
+        "icon": "bmi-carte-professionnelle"
       },
       {
         "bmsyu_objet": "demande_tenue",
@@ -140,7 +140,7 @@
     "caption": "Documents",
     "classColor": "it-purple",
     "type": "header",
-    "icon": "bmi-dossier-embauche",
+    "icon": "bmi-documents",
     "hideIfEmpty": 1,
     "child": [
       {

@@ -1,10 +1,12 @@
-// lib/features/dynamic_menu.dart
+// gbsystem_menu/lib/features/dynamic_menu.dart
+
 import 'package:flutter/material.dart';
+import 'package:gbsystem_menu/features/navigation_controller.dart';
 import 'package:get/get.dart';
-import '../components/menu_tile.dart';
-import '../core/menu_model.dart';
-import '../components/digital_clock.dart';
+import 'package:gbsystem_menu/components/menu_tile.dart';
+import 'package:gbsystem_menu/components/digital_clock.dart';
 import 'package:gbsystem_mainview/GBSystem_Root_MainView_Menu_Controller.dart';
+import 'package:gbsystem_mainview/GBSystem_MenuModel.dart';
 
 class DynamicMenu extends GetView<GBSystem_MenuController> {
   const DynamicMenu({super.key});
@@ -30,25 +32,27 @@ class DynamicMenu extends GetView<GBSystem_MenuController> {
                 itemCount: controller.menuItems.length,
                 separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
-                final apiItem = controller.menuItems[index];
+                  // apiItem est déjà un GBSystem_MenuItem
+                  final GBSystem_MenuItem apiItem = controller.menuItems[index];
 
-                // On crée un MenuModel à partir des données de GBSystem_MenuItemModel
-                final menuModel = MenuModel(
-                  id: apiItem.id,
-                  caption: apiItem.title,
-                  icon: apiItem.icon,
-                  child: apiItem.children.map((child) => MenuModel(
-                    id: child.id,
-                    caption: child.title,
-                    icon: child.icon,
-                  )).toList(),
-                );
-
-                return MenuTile(
-                  item: menuModel, 
-                  onTap: (id) => controller.selectMenuItem(apiItem.id, apiItem.route ?? ''),
-                );
-              },
+                  return Obx(() {
+                    final bool isExpanded = controller.menuService.isExpanded(apiItem.id);
+                    
+                    return MenuTile(
+                      item: apiItem, 
+                      isExpanded: isExpanded,
+                      onTap: (id) {
+                        if (apiItem.hasSubItems) {
+                          controller.toggleSubMenu(id);
+                        } else {
+                          // On envoie le pageId (ex: bmserver_Planning_VacPriseNG)
+                          Get.find<NavigationController>().navigateTo(apiItem.pageId);
+                          if (Navigator.canPop(context)) Navigator.pop(context);
+                        }
+                      },
+                    );
+                  });
+                },
               );
             }),
           ),
@@ -63,14 +67,10 @@ class DynamicMenu extends GetView<GBSystem_MenuController> {
       width: double.infinity,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 20,
-        bottom: 20,
-        left: 20,
-        right: 20,
+        bottom: 20, left: 20, right: 20,
       ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue[900]!, Colors.blue[700]!],
-        ),
+        gradient: LinearGradient(colors: [Colors.blue[900]!, Colors.blue[700]!]),
       ),
       child: Row(
         children: [
@@ -79,11 +79,9 @@ class DynamicMenu extends GetView<GBSystem_MenuController> {
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 15),
-          const Expanded(
-            child: Text(
-              "ESPACE SALARIÉ",
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+          const Text(
+            "ESPACE SALARIÉ",
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ],
       ),
