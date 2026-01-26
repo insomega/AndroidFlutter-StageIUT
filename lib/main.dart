@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'features/navigation_controller.dart';
-import 'features/dynamic_menu.dart';
-import 'app_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:gbsystem_mainview/GBSystem_Root_MainView_Menu_Controller.dart';
 import 'package:gbsystem_mainview/GBSystem_MenuService.dart';
-import 'core/bmsoft_icons.dart';
+import 'package:gbsystem_menu/features/main_navigator.dart';
+import 'package:gbsystem_translations/gbsystem_application_strings.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,66 +32,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Espace Salarié',
+      title: GBSystem_Application_Strings.str_app_title,
       theme: ThemeData(
         useMaterial3: true, 
         primaryColor: Colors.blue[900],
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue[900]!),
       ),
       home: const MainNavigator(),
-    );
-  }
-}
-
-class MainNavigator extends StatelessWidget {
-  const MainNavigator({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // On récupère l'instance déjà injectée dans le main
-    final navCtrl = Get.find<NavigationController>();
-
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        elevation: 2,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(BMSoftIcons.logo, color: Colors.white, size: 28), 
-            const SizedBox(width: 12),
-            const Text(
-              "ESPACE SALARIÉ", 
-              style: TextStyle(
-                color: Colors.white, 
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                letterSpacing: 1.1
-              )
-            ),
-          ],
-        ),
-        backgroundColor: Colors.blue[900],
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      drawer: const DynamicMenu(),
-      // L'Obx réagit au changement de navCtrl.currentViewId.value
-      body: Obx(() {
-        final currentId = navCtrl.currentViewId.value;
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          // La transition se déclenche car la ValueKey change
-          transitionBuilder: (Widget child, Animation<double> animation) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          child: Container(
-            key: ValueKey(currentId),
-            color: Colors.white,
-            // AppRouter.getPage retourne le bon Widget (ex: GBSystem_Vacation_List_PS2_Wigget)
-            child: AppRouter.getPage(currentId),
-          ),
-        );
-      }),
     );
   }
 }

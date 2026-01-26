@@ -3,32 +3,59 @@ import 'package:get/get.dart';
 import 'navigation_controller.dart';
 import 'dynamic_menu.dart';
 import '../app_router.dart';
+import '../core/bmsoft_icons.dart';
+import 'package:gbsystem_translations/gbsystem_application_strings.dart';
 
 class MainNavigator extends StatelessWidget {
   const MainNavigator({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // On utilise putIfAbsent ou une vérification simple
-    final navCtrl = Get.isRegistered<NavigationController>() 
-        ? Get.find<NavigationController>() 
-        : Get.put(NavigationController());
+    // On récupère l'instance déjà injectée dans le main
+    final navCtrl = Get.find<NavigationController>();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("ESPACE SALARIÉ"),
+        centerTitle: true,
+        elevation: 2,
         backgroundColor: Colors.blue[900],
         iconTheme: const IconThemeData(color: Colors.white),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Utilisation du logo avec une taille explicite et une couleur contrastée
+            Icon(
+              BMSoftIcons.logo, 
+              color: Colors.white, 
+              size: 50, // Augmentez un peu la taille pour mieux le voir
+            ), 
+            const SizedBox(width: 12),
+            const Text(
+              GBSystem_Application_Strings.str_menu_title, 
+              style: TextStyle(
+                color: Colors.white, 
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
       ),
-      drawer: const DynamicMenu(), // Plus besoin de passer jsonPath si c'est géré en interne
+      drawer: const DynamicMenu(),
+      // L'Obx réagit au changement de navCtrl.currentViewId.value
       body: Obx(() {
-        print("DEBUG: Affichage de l'ID : ${navCtrl.currentViewId.value}"); // Regarde ta console !
+        final currentId = navCtrl.currentViewId.value;
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
+          // La transition se déclenche car la ValueKey change
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return FadeTransition(opacity: animation, child: child);
+          },
           child: Container(
-            color: Colors.white, // Force un fond blanc pour voir si ça s'affiche
-            key: ValueKey(navCtrl.currentViewId.value),
-            child: AppRouter.getPage(navCtrl.currentViewId.value),
+            key: ValueKey(currentId),
+            color: Colors.white,
+            // AppRouter.getPage retourne le bon Widget (ex: GBSystem_Vacation_List_PS2_Wigget)
+            child: AppRouter.getPage(currentId),
           ),
         );
       }),

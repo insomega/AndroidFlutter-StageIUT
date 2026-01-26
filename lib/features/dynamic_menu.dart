@@ -7,6 +7,7 @@ import 'package:gbsystem_menu/components/menu_tile.dart';
 import 'package:gbsystem_menu/components/digital_clock.dart';
 import 'package:gbsystem_mainview/GBSystem_Root_MainView_Menu_Controller.dart';
 import 'package:gbsystem_mainview/GBSystem_MenuModel.dart';
+import 'package:gbsystem_translations/gbsystem_application_strings.dart';
 
 class DynamicMenu extends GetView<GBSystem_MenuController> {
   const DynamicMenu({super.key});
@@ -24,7 +25,7 @@ class DynamicMenu extends GetView<GBSystem_MenuController> {
               }
               
               if (controller.error.value.isNotEmpty) {
-                return Center(child: Text("Erreur: ${controller.error.value}"));
+                return Center(child: Text("${GBSystem_Application_Strings.str_dialog_erreur} ${controller.error.value}"));
               }
 
               return ListView.separated(
@@ -80,7 +81,7 @@ class DynamicMenu extends GetView<GBSystem_MenuController> {
           ),
           const SizedBox(width: 15),
           const Text(
-            "ESPACE SALARIÉ",
+            GBSystem_Application_Strings.str_menu_title,
             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ],

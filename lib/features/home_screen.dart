@@ -1,6 +1,7 @@
 // lib/features/home_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:gbsystem_translations/gbsystem_application_strings.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -12,7 +13,7 @@ class HomeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Tableau de bord", 
+          const Text(GBSystem_Application_Strings.str_home_board, 
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)
           ),
           const SizedBox(height: 20),
@@ -25,10 +26,10 @@ class HomeScreen extends StatelessWidget {
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
             children: [
-              _buildHomeCard("Planning", Icons.calendar_today, Colors.blue),
-              _buildHomeCard("Messages", Icons.message, Colors.orange),
-              _buildHomeCard("Absences", Icons.event_busy, Colors.green),
-              _buildHomeCard("Documents", Icons.description, Colors.purple),
+              _buildHomeCard(GBSystem_Application_Strings.str_planning, Icons.calendar_today, Colors.blue),
+              _buildHomeCard(GBSystem_Application_Strings.str_dash_messages, Icons.message, Colors.orange),
+              _buildHomeCard(GBSystem_Application_Strings.str_dash_absences, Icons.event_busy, Colors.green),
+              _buildHomeCard(GBSystem_Application_Strings.str_documents, Icons.description, Colors.purple),
             ],
           ),
           const SizedBox(height: 20),
@@ -38,8 +39,8 @@ class HomeScreen extends StatelessWidget {
             elevation: 2,
             child: ListTile(
               leading: Icon(Icons.info, color: Colors.blue),
-              title: Text("Note de service"),
-              subtitle: Text("N'oubliez pas de valider vos heures avant vendredi."),
+              title: Text(GBSystem_Application_Strings.str_note_service),
+              subtitle: Text(GBSystem_Application_Strings.str_note_service_msg),
             ),
           ),
         ],

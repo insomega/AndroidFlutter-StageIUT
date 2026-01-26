@@ -47,6 +47,8 @@ dependencies:
     path: ../gbsystem_mainview
   bmsoft_ps2:
     path: ../../Application/GBSystem_PS2
+  gbsystem_translations:
+    path: ../gbsystem_translations
 
 dev_dependencies:
   flutter_test:
@@ -70,7 +72,7 @@ flutter:
 
     - family: FontBMSoft
       fonts:
-        - asset: assets/fonts/fontbmsoft.ttf
+        - asset: assets/fonts/FontBMSoft.ttf
 
   # To add assets to your application, add an assets section, like this:
   assets:

@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:gbsystem_translations/gbsystem_application_strings.dart';
 
 class DigitalClockFooter extends StatefulWidget {
   const DigitalClockFooter({super.key});
@@ -38,7 +39,7 @@ class _DigitalClockFooterState extends State<DigitalClockFooter> {
       color: Colors.grey[200],
       child: Center(
         child: Text(
-          "BMSoft • ${DateFormat('dd/MM/yyyy HH:mm:ss').format(_now)}",
+          "${GBSystem_Application_Strings.str_entreprise_name} • ${DateFormat('dd/MM/yyyy HH:mm:ss').format(_now)}",
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blueGrey),
         ),
       ),
