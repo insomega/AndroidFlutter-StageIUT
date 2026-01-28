@@ -2,7 +2,7 @@
 
 import 'package:get/get.dart';
 
-class NavigationController extends GetxController {
+class GBSystem_NavigationController extends GetxController {
   // Variable réactive pour suivre l'ID de la page actuelle
   var currentViewId = 'home_link'.obs;
 

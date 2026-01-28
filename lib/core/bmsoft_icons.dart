@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 
-class BMSoftIcons {
+class GBSystem_BMSoftIcons {
   static const String _fontFamily = 'FontBMSoft';
   static const String _package = 'gbsystem_menu'; // Ajoute ceci
 
-  BMSoftIcons._();
+  GBSystem_BMSoftIcons._();
 
   // Ajoute fontPackage: _package à TOUTES tes icônes
   static const IconData logo = IconData(0xe074, fontFamily: _fontFamily, fontPackage: _package);
