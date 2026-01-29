@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gbsystem_menu/features/home_screen.dart';
 import 'package:bmsoft_ps2/GBSystem_Application/GBSystem_Vacation_List_PS2_Wigget.dart';
 
-class AppRouter {
+class GBSystem_AppRouter {
   static Widget getPage(String pageId) {
     // pageId est déjà nettoyé par MenuModel.pageId (ex: "bmserver_Planning_VacPriseNG")
 
@@ -12,7 +12,7 @@ class AppRouter {
       case 'home_link':
       case 'home_QA':
       case 'home':
-        return const HomeScreen();
+        return const GBSystem_HomeScreen();
 
       case 'bmserver_Planning_VacPriseNG': 
         return const GBSystem_Vacation_List_PS2_Wigget();

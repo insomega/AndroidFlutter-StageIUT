@@ -6,13 +6,13 @@ import '../app_router.dart';
 import '../core/bmsoft_icons.dart';
 import 'package:gbsystem_translations/gbsystem_application_strings.dart';
 
-class MainNavigator extends StatelessWidget {
-  const MainNavigator({super.key});
+class GBSystem_MainNavigator extends StatelessWidget {
+  const GBSystem_MainNavigator({super.key});
 
   @override
   Widget build(BuildContext context) {
     // On récupère l'instance déjà injectée dans le main
-    final navCtrl = Get.find<NavigationController>();
+    final navCtrl = Get.find<GBSystem_NavigationController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -25,13 +25,13 @@ class MainNavigator extends StatelessWidget {
           children: [
             // Utilisation du logo avec une taille explicite et une couleur contrastée
             Icon(
-              BMSoftIcons.logo, 
+              GBSystem_BMSoftIcons.logo, 
               color: Colors.white, 
               size: 50, // Augmentez un peu la taille pour mieux le voir
             ), 
             const SizedBox(width: 12),
             const Text(
-              GBSystem_Application_Strings.str_menu_title, 
+              GBSystem_Application_Strings.str_app_title, 
               style: TextStyle(
                 color: Colors.white, 
                 fontWeight: FontWeight.bold,
@@ -41,7 +41,7 @@ class MainNavigator extends StatelessWidget {
           ],
         ),
       ),
-      drawer: const DynamicMenu(),
+      drawer: const GBSystem_DynamicMenu(),
       // L'Obx réagit au changement de navCtrl.currentViewId.value
       body: Obx(() {
         final currentId = navCtrl.currentViewId.value;
@@ -55,7 +55,7 @@ class MainNavigator extends StatelessWidget {
             key: ValueKey(currentId),
             color: Colors.white,
             // AppRouter.getPage retourne le bon Widget (ex: GBSystem_Vacation_List_PS2_Wigget)
-            child: AppRouter.getPage(currentId),
+            child: GBSystem_AppRouter.getPage(currentId),
           ),
         );
       }),

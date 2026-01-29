@@ -20,7 +20,7 @@ void main() async {
   Get.put(GBSystem_MenuController());
   
   // Injecte le contrôleur de navigation
-  Get.put(NavigationController());
+  Get.put(GBSystem_NavigationController());
   
   runApp(const MyApp());
 }
@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.blue[900],
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue[900]!),
       ),
-      home: const MainNavigator(),
+      home: const GBSystem_MainNavigator(),
     );
   }
 }

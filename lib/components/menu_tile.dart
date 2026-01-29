@@ -6,12 +6,12 @@ import 'package:get/get.dart';
 import '../features/navigation_controller.dart';
 import 'package:gbsystem_mainview/GBSystem_MenuModel.dart';
 
-class MenuTile extends StatelessWidget {
+class GBSystem_MenuTile extends StatelessWidget {
   final GBSystem_MenuItem item;
   final Function(String id)? onTap;
   final bool isExpanded;
 
-  const MenuTile({
+  const GBSystem_MenuTile({
     super.key,
     required this.item,
     this.onTap,
@@ -20,7 +20,7 @@ class MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final navCtrl = Get.find<NavigationController>();
+    final navCtrl = Get.find<GBSystem_NavigationController>();
 
     return Obx(() {
       final String currentId = navCtrl.currentViewId.value;
@@ -80,7 +80,7 @@ class MenuTile extends StatelessWidget {
   }
 
   Widget _buildIcon(String iconKey, bool isSelected, {double size = 24}) {
-    final IconData iconData = BMSoftIcons.fromKey(iconKey);
+    final IconData iconData = GBSystem_BMSoftIcons.fromKey(iconKey);
     return Icon(
       iconData,
       color: isSelected ? Colors.blue[900] : Colors.blueGrey[600],

@@ -9,8 +9,8 @@ import 'package:gbsystem_mainview/GBSystem_Root_MainView_Menu_Controller.dart';
 import 'package:gbsystem_mainview/GBSystem_MenuModel.dart';
 import 'package:gbsystem_translations/gbsystem_application_strings.dart';
 
-class DynamicMenu extends GetView<GBSystem_MenuController> {
-  const DynamicMenu({super.key});
+class GBSystem_DynamicMenu extends GetView<GBSystem_MenuController> {
+  const GBSystem_DynamicMenu({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class DynamicMenu extends GetView<GBSystem_MenuController> {
                   return Obx(() {
                     final bool isExpanded = controller.menuService.isExpanded(apiItem.id);
                     
-                    return MenuTile(
+                    return GBSystem_MenuTile(
                       item: apiItem, 
                       isExpanded: isExpanded,
                       onTap: (id) {
@@ -47,7 +47,7 @@ class DynamicMenu extends GetView<GBSystem_MenuController> {
                           controller.toggleSubMenu(id);
                         } else {
                           // On envoie le pageId (ex: bmserver_Planning_VacPriseNG)
-                          Get.find<NavigationController>().navigateTo(apiItem.pageId);
+                          Get.find<GBSystem_NavigationController>().navigateTo(apiItem.pageId);
                           if (Navigator.canPop(context)) Navigator.pop(context);
                         }
                       },
@@ -81,7 +81,7 @@ class DynamicMenu extends GetView<GBSystem_MenuController> {
           ),
           const SizedBox(width: 15),
           const Text(
-            GBSystem_Application_Strings.str_menu_title,
+            GBSystem_Application_Strings.str_app_title,
             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ],

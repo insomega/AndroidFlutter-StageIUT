@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:gbsystem_translations/gbsystem_application_strings.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class GBSystem_HomeScreen extends StatelessWidget {
+  const GBSystem_HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,8 +27,8 @@ class HomeScreen extends StatelessWidget {
             mainAxisSpacing: 10,
             children: [
               _buildHomeCard(GBSystem_Application_Strings.str_planning, Icons.calendar_today, Colors.blue),
-              _buildHomeCard(GBSystem_Application_Strings.str_dash_messages, Icons.message, Colors.orange),
-              _buildHomeCard(GBSystem_Application_Strings.str_dash_absences, Icons.event_busy, Colors.green),
+              _buildHomeCard(GBSystem_Application_Strings.str_menu_messages, Icons.message, Colors.orange),
+              _buildHomeCard(GBSystem_Application_Strings.str_menu_absences, Icons.event_busy, Colors.green),
               _buildHomeCard(GBSystem_Application_Strings.str_documents, Icons.description, Colors.purple),
             ],
           ),
