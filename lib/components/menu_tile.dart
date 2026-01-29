@@ -21,7 +21,7 @@ class GBSystem_MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navCtrl = Get.find<GBSystem_NavigationController>();
-
+    
     return Obx(() {
       final String currentId = navCtrl.currentViewId.value;
       final bool isParentSelected = currentId == item.pageId;
